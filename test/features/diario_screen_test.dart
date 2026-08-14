@@ -51,9 +51,9 @@ void main() {
     expect(find.text('MERIENDA'), findsOneWidget);
     expect(find.text('CENA'), findsOneWidget);
     expect(find.text('SNACK'), findsOneWidget);
-    expect(find.text('CONSUMIDAS'), findsOneWidget);
-    expect(find.text('RESTANTES'), findsOneWidget);
-    expect(find.text('QUEMADAS'), findsOneWidget);
+    expect(find.text('Consumidas'), findsOneWidget);
+    expect(find.text('Restantes'), findsOneWidget);
+    expect(find.text('Quemadas'), findsOneWidget);
     expect(find.textContaining('Sin registrar'), findsWidgets);
 
     await _teardown(tester, container, db);

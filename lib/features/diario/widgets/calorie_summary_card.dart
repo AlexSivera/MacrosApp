@@ -13,8 +13,6 @@ class CalorieSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return AppCard(
       child: Column(
         children: [
@@ -24,25 +22,23 @@ class CalorieSummaryCard extends StatelessWidget {
               Expanded(
                 child: _StatColumn(
                   value: summary.consumedKcal.round().toString(),
-                  label: 'CONSUMIDAS',
+                  label: 'Consumidas',
                 ),
               ),
               CircularCalorieRing(
                 fraction: summary.ringFraction,
                 isOverTarget: summary.isOverTarget,
                 centerValue: summary.remainingKcal.round().abs().toString(),
-                centerLabel: summary.isOverTarget ? 'EXCEDIDAS' : 'RESTANTES',
+                centerLabel: summary.isOverTarget ? 'Excedidas' : 'Restantes',
               ),
               Expanded(
                 child: _StatColumn(
                   value: summary.burnedKcal.round().toString(),
-                  label: 'QUEMADAS',
+                  label: 'Quemadas',
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.xl),
-          Text('Objetivo: ${summary.calorieTarget} kcal', style: theme.textTheme.bodySmall),
           const SizedBox(height: AppSpacing.lg),
           MacroProgressBars(summary: summary),
         ],
