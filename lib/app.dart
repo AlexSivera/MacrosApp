@@ -24,7 +24,7 @@ class MacrosApp extends ConsumerWidget {
         ref.watch(userProfileStreamProvider).valueOrNull?.appearanceMode ?? AppearanceMode.dark;
 
     return MaterialApp.router(
-      title: 'MacrosApp',
+      title: 'Kalibra',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
