@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../theme/app_motion.dart';
@@ -7,6 +9,10 @@ import '../theme/app_theme.dart';
 // the "Restantes" figure as the number inside it. fraction is always
 // pre-clamped to [0,1] by the caller (see DiarySummary.ringFraction) so the
 // ring itself never needs to reason about over-target state.
+//
+// Drawn as an open gauge (270° sweep, gap centered at the bottom) rather
+// than a closed circle — a full ring reads as "done"/a clock face, while
+// the open gauge reads as a meter with headroom left in it.
 class CircularCalorieRing extends StatelessWidget {
   const CircularCalorieRing({
     super.key,
@@ -25,6 +31,9 @@ class CircularCalorieRing extends StatelessWidget {
   final double size;
   final double strokeWidth;
 
+  static const double _startAngle = 0.75 * math.pi; // 135°, bottom-left
+  static const double _sweepAngle = 1.5 * math.pi; // 270°
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -36,27 +45,17 @@ class CircularCalorieRing extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          SizedBox(
-            width: size,
-            height: size,
-            child: CircularProgressIndicator(
-              value: 1,
-              strokeWidth: strokeWidth,
-              color: AppTheme.statusEmpty,
-            ),
-          ),
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0, end: fraction),
             duration: AppMotion.slow,
             curve: AppMotion.curve,
-            builder: (context, value, _) => SizedBox(
-              width: size,
-              height: size,
-              child: CircularProgressIndicator(
-                value: value,
+            builder: (context, value, _) => CustomPaint(
+              size: Size(size, size),
+              painter: _GaugePainter(
+                trackColor: AppTheme.statusEmpty,
+                progressColor: ringColor,
                 strokeWidth: strokeWidth,
-                color: ringColor,
-                strokeCap: StrokeCap.round,
+                fraction: value,
               ),
             ),
           ),
@@ -76,5 +75,60 @@ class CircularCalorieRing extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _GaugePainter extends CustomPainter {
+  _GaugePainter({
+    required this.trackColor,
+    required this.progressColor,
+    required this.strokeWidth,
+    required this.fraction,
+  });
+
+  final Color trackColor;
+  final Color progressColor;
+  final double strokeWidth;
+  final double fraction;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final ringRect = (Offset.zero & size).deflate(strokeWidth / 2);
+
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(
+      ringRect,
+      CircularCalorieRing._startAngle,
+      CircularCalorieRing._sweepAngle,
+      false,
+      trackPaint,
+    );
+
+    if (fraction > 0) {
+      final progressPaint = Paint()
+        ..color = progressColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round;
+      canvas.drawArc(
+        ringRect,
+        CircularCalorieRing._startAngle,
+        CircularCalorieRing._sweepAngle * fraction.clamp(0, 1),
+        false,
+        progressPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GaugePainter oldDelegate) {
+    return oldDelegate.trackColor != trackColor ||
+        oldDelegate.progressColor != progressColor ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.fraction != fraction;
   }
 }
