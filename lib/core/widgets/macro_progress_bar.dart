@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import '../theme/app_motion.dart';
 import '../theme/app_spacing.dart';
 
-// One macro's row: label, "consumed / target g", a progress bar tinted with
-// the macro's own color, and a percentage — reused by the Diario summary,
-// Detalles modal, and recipe cards so a macro is identifiable by color alone
-// everywhere in the app.
+// One macro's column: label, a progress bar tinted with the macro's own
+// color, and "consumed / target g" — reused by the Diario summary so a
+// macro is identifiable by color alone everywhere in the app. Centered and
+// stacked (rather than label+percent sharing a row) so the label always has
+// the column's full width and never has to ellipsize.
 class MacroProgressBar extends StatelessWidget {
   const MacroProgressBar({
     super.key,
@@ -25,26 +26,17 @@ class MacroProgressBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final fraction = targetG <= 0 ? 0.0 : (consumedG / targetG).clamp(0, 1).toDouble();
-    final percent = (fraction * 100).round();
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelLarge,
-              ),
-            ),
-            Text('$percent%', style: theme.textTheme.bodySmall),
-          ],
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.labelLarge,
         ),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: AppSpacing.sm),
         ClipRRect(
           borderRadius: BorderRadius.circular(AppRadius.pill),
           child: TweenAnimationBuilder<double>(
@@ -59,9 +51,10 @@ class MacroProgressBar extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           '${consumedG.round()} / ${targetG.round()} g',
+          textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall,
         ),
       ],
