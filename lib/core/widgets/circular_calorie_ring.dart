@@ -39,19 +39,9 @@ class CircularCalorieRing extends StatelessWidget {
     final theme = Theme.of(context);
     final ringColor = isOverTarget ? AppTheme.statusOverTarget : AppTheme.accent;
 
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: ringColor.withValues(alpha: 0.32),
-            blurRadius: 32,
-            spreadRadius: -12,
-          ),
-        ],
-      ),
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -119,25 +109,26 @@ class _GaugePainter extends CustomPainter {
     );
 
     if (fraction > 0) {
-      // Sweep gradient across the full track range (not just the drawn
-      // portion) so the stroke reads as one continuous light-to-color band
-      // that fills in as progress grows, instead of a flat tint.
+      final sweep = CircularCalorieRing._sweepAngle * fraction.clamp(0, 1);
+
+      // A soft blurred pass of the same stroke, drawn first and only
+      // slightly wider, so the glow hugs the arc itself — a BoxShadow on
+      // the widget would instead shadow the ring's full circular bounds,
+      // washing the whole card center with a flat tinted disc.
+      final glowPaint = Paint()
+        ..color = progressColor.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth + 6
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+      canvas.drawArc(ringRect, CircularCalorieRing._startAngle, sweep, false, glowPaint);
+
       final progressPaint = Paint()
+        ..color = progressColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round
-        ..shader = SweepGradient(
-          endAngle: CircularCalorieRing._sweepAngle,
-          colors: [progressColor.withValues(alpha: 0.55), progressColor],
-          transform: const GradientRotation(CircularCalorieRing._startAngle),
-        ).createShader(ringRect);
-      canvas.drawArc(
-        ringRect,
-        CircularCalorieRing._startAngle,
-        CircularCalorieRing._sweepAngle * fraction.clamp(0, 1),
-        false,
-        progressPaint,
-      );
+        ..strokeCap = StrokeCap.round;
+      canvas.drawArc(ringRect, CircularCalorieRing._startAngle, sweep, false, progressPaint);
     }
   }
 

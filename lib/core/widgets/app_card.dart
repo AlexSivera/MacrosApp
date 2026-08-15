@@ -15,7 +15,6 @@ class AppCard extends StatelessWidget {
     this.padding,
     this.color,
     this.borderColor,
-    this.gradient,
   });
 
   final Widget child;
@@ -27,10 +26,6 @@ class AppCard extends StatelessWidget {
   // introducing a one-off shape everywhere it's needed.
   final Color? borderColor;
 
-  // Optional background gradient, used in place of `color` — e.g. a subtle
-  // accent-tinted wash on the Diario's hero card. Null everywhere else.
-  final Gradient? gradient;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -41,8 +36,7 @@ class AppCard extends StatelessWidget {
     return Container(
       padding: padding ?? const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: gradient == null ? (color ?? theme.cardTheme.color) : null,
-        gradient: gradient,
+        color: color ?? theme.cardTheme.color,
         borderRadius: radius,
         border: Border.all(
           color: borderColor ?? theme.colorScheme.outline,
