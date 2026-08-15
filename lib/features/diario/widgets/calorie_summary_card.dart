@@ -13,7 +13,17 @@ class CalorieSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final surfaceColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final isDark = theme.brightness == Brightness.dark;
+    final tint = Color.lerp(surfaceColor, theme.colorScheme.primary, isDark ? 0.1 : 0.06)!;
+
     return AppCard(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [tint, surfaceColor],
+      ),
       child: Column(
         children: [
           Row(

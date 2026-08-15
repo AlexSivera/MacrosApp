@@ -1,8 +1,22 @@
 import 'package:flutter/material.dart';
 
-// Shared rounded, padded card used across every stat/section surface.
+import '../theme/app_spacing.dart';
+import '../theme/app_theme.dart';
+
+// Shared rounded, padded card used across every stat/section surface. Built
+// on a plain Container (not Card) so it can carry a soft directional shadow
+// alongside its border — that combination is what makes surfaces read as
+// raised, tactile panels instead of the flat bordered boxes a bare
+// CardTheme produces.
 class AppCard extends StatelessWidget {
-  const AppCard({super.key, required this.child, this.padding, this.color, this.borderColor});
+  const AppCard({
+    super.key,
+    required this.child,
+    this.padding,
+    this.color,
+    this.borderColor,
+    this.gradient,
+  });
 
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -13,23 +27,30 @@ class AppCard extends StatelessWidget {
   // introducing a one-off shape everywhere it's needed.
   final Color? borderColor;
 
+  // Optional background gradient, used in place of `color` — e.g. a subtle
+  // accent-tinted wash on the Diario's hero card. Null everywhere else.
+  final Gradient? gradient;
+
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
-      color: color,
-      shape: borderColor == null
-          ? null
-          : RoundedRectangleBorder(
-              borderRadius: (Theme.of(context).cardTheme.shape as RoundedRectangleBorder?)
-                      ?.borderRadius ??
-                  BorderRadius.zero,
-              side: BorderSide(color: borderColor!, width: 1.5),
-            ),
-      child: Padding(
-        padding: padding ?? const EdgeInsets.all(20),
-        child: child,
+    final theme = Theme.of(context);
+    final cardShape = theme.cardTheme.shape as RoundedRectangleBorder?;
+    final radius = cardShape?.borderRadius as BorderRadius? ??
+        BorderRadius.circular(AppRadius.md);
+
+    return Container(
+      padding: padding ?? const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: gradient == null ? (color ?? theme.cardTheme.color) : null,
+        gradient: gradient,
+        borderRadius: radius,
+        border: Border.all(
+          color: borderColor ?? theme.colorScheme.outline,
+          width: borderColor == null ? 1 : 1.5,
+        ),
+        boxShadow: AppTheme.softShadow(context),
       ),
+      child: child,
     );
   }
 }

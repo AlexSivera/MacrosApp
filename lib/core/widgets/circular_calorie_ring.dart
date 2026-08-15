@@ -39,9 +39,19 @@ class CircularCalorieRing extends StatelessWidget {
     final theme = Theme.of(context);
     final ringColor = isOverTarget ? AppTheme.statusOverTarget : AppTheme.accent;
 
-    return SizedBox(
+    return Container(
       width: size,
       height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: ringColor.withValues(alpha: 0.32),
+            blurRadius: 32,
+            spreadRadius: -12,
+          ),
+        ],
+      ),
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -109,11 +119,18 @@ class _GaugePainter extends CustomPainter {
     );
 
     if (fraction > 0) {
+      // Sweep gradient across the full track range (not just the drawn
+      // portion) so the stroke reads as one continuous light-to-color band
+      // that fills in as progress grows, instead of a flat tint.
       final progressPaint = Paint()
-        ..color = progressColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round;
+        ..strokeCap = StrokeCap.round
+        ..shader = SweepGradient(
+          endAngle: CircularCalorieRing._sweepAngle,
+          colors: [progressColor.withValues(alpha: 0.55), progressColor],
+          transform: const GradientRotation(CircularCalorieRing._startAngle),
+        ).createShader(ringRect);
       canvas.drawArc(
         ringRect,
         CircularCalorieRing._startAngle,

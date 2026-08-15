@@ -31,6 +31,16 @@ class MealSectionCard extends StatelessWidget {
         children: [
           Row(
             children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(mealType.icon, size: 18, color: theme.colorScheme.primary),
+              ),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
                   mealType.label.toUpperCase(),
@@ -40,7 +50,14 @@ class MealSectionCard extends StatelessWidget {
                 ),
               ),
               if (!isEmpty) ...[
-                Text('${totalKcal.round()} kcal', style: theme.textTheme.bodyMedium),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text('${totalKcal.round()} kcal', style: theme.textTheme.labelLarge),
+                ),
                 IconButton(
                   icon: const Icon(Icons.bookmark_add_outlined, size: 20),
                   tooltip: 'Guardar como receta',
@@ -55,27 +72,21 @@ class MealSectionCard extends StatelessWidget {
           ),
           if (isEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text('Sin registrar', style: theme.textTheme.bodyMedium),
-            const SizedBox(height: AppSpacing.sm),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Añadir'),
-                onPressed: () => _addEntry(context, mealType),
-              ),
+            Padding(
+              padding: const EdgeInsets.only(left: 48),
+              child: Text('Sin registrar', style: theme.textTheme.bodyMedium),
             ),
+            const SizedBox(height: AppSpacing.sm),
+            _AddEntryButton(onPressed: () => _addEntry(context, mealType)),
           ] else ...[
             const Divider(height: AppSpacing.lg),
-            for (final entry in entries) DiaryEntryTile(display: entry),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Añadir'),
-                onPressed: () => _addEntry(context, mealType),
-              ),
-            ),
+            for (var i = 0; i < entries.length; i++) ...[
+              DiaryEntryTile(display: entries[i]),
+              if (i != entries.length - 1)
+                Divider(height: AppSpacing.lg, color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+            ],
+            const SizedBox(height: AppSpacing.sm),
+            _AddEntryButton(onPressed: () => _addEntry(context, mealType)),
           ],
         ],
       ),
@@ -104,5 +115,44 @@ class MealSectionCard extends StatelessWidget {
           await FoodQuantitySheet.showAdd(context, food: food, mealType: mealType);
         }
     }
+  }
+}
+
+// Compact tonal pill shared by the empty and populated section states, so
+// "Añadir" reads as one consistent affordance across every meal section
+// instead of an OutlinedButton in one state and a TextButton in the other.
+class _AddEntryButton extends StatelessWidget {
+  const _AddEntryButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Material(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          onTap: onPressed,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.add_rounded, size: 18, color: theme.colorScheme.primary),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  'Añadir',
+                  style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

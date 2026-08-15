@@ -55,7 +55,7 @@ void main() {
     // Today has nothing logged.
     expect(find.textContaining('Manzana'), findsNothing);
 
-    await tester.tap(find.byIcon(Icons.chevron_left));
+    await tester.tap(find.byIcon(Icons.chevron_left_rounded));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 

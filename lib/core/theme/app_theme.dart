@@ -51,6 +51,23 @@ class AppTheme {
   static const statusOnTrack = Color(0xFF34D399);
   static const statusEmpty = Color(0xFF3A3F45);
 
+  // Soft directional shadow shared by every raised surface (cards, the date
+  // capsule) — negative spread keeps it tight to the shape instead of a
+  // generic blur, which is what makes it read as a subtle lift rather than a
+  // Material drop shadow. Tuned per-brightness since a dark-mode shadow
+  // needs far more opacity to register against a near-black background.
+  static List<BoxShadow> softShadow(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return [
+      BoxShadow(
+        color: isDark ? Colors.black.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.06),
+        blurRadius: 24,
+        offset: const Offset(0, 10),
+        spreadRadius: -14,
+      ),
+    ];
+  }
+
   static ThemeData get dark => _build(
         brightness: Brightness.dark,
         background: background,

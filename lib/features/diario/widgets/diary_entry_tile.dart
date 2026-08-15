@@ -32,26 +32,55 @@ class DiaryEntryTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final entry = display.entry;
+    final subtitle = _subtitle();
 
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(display.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodyLarge),
-      subtitle: Text(_subtitle(), style: theme.textTheme.bodySmall),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('${entry.kcal.round()} kcal', style: theme.textTheme.bodyMedium),
-          const SizedBox(width: AppSpacing.xs),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            onSelected: (action) => _handleAction(context, ref, action),
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'edit', child: Text('Editar cantidad')),
-              PopupMenuItem(value: 'move', child: Text('Mover de comida')),
-              PopupMenuItem(value: 'delete', child: Text('Eliminar')),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        onTap: () => _handleAction(context, ref, 'edit'),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      display.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyLarge,
+                    ),
+                    if (subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(subtitle, style: theme.textTheme.bodySmall),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Text('${entry.kcal.round()} kcal', style: theme.textTheme.labelLarge),
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                onSelected: (action) => _handleAction(context, ref, action),
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'edit', child: Text('Editar cantidad')),
+                  PopupMenuItem(value: 'move', child: Text('Mover de comida')),
+                  PopupMenuItem(value: 'delete', child: Text('Eliminar')),
+                ],
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

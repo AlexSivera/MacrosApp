@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import '../../data/database/enums.dart';
 
 extension MealTypeLabel on MealType {
@@ -7,6 +9,17 @@ extension MealTypeLabel on MealType {
         MealType.snackMerienda => 'Merienda',
         MealType.dinner => 'Cena',
         MealType.snack => 'Snack',
+      };
+
+  // One icon per meal so each Diario section is identifiable at a glance —
+  // all rendered in the theme's single accent color (never a per-meal
+  // palette) to stay consistent with the app's "one vivid accent" identity.
+  IconData get icon => switch (this) {
+        MealType.breakfast => Icons.free_breakfast_rounded,
+        MealType.lunch => Icons.lunch_dining_rounded,
+        MealType.snackMerienda => Icons.local_cafe_rounded,
+        MealType.dinner => Icons.dinner_dining_rounded,
+        MealType.snack => Icons.cookie_rounded,
       };
 }
 
