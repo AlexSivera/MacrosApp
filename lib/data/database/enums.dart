@@ -10,7 +10,9 @@ enum WeightUnit { kg, lb }
 
 enum FoodMassUnit { g, oz }
 
-enum AppearanceMode { dark, light, system }
+// `pastel` is appended last, not alphabetically, so its stored index (3)
+// never collides with the indices already saved for existing users.
+enum AppearanceMode { dark, light, system, pastel }
 
 enum RecipeCategory { breakfast, lunch, dinner, snack }
 

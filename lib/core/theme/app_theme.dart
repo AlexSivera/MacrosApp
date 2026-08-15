@@ -28,6 +28,16 @@ class AppTheme {
   static const surfaceRaisedLight = Color(0xFFF1F0EE);
   static const borderLight = Color(0xFFE5E3E0);
 
+  // Pastel palette — cotton-candy pink on white, its own accent instead of
+  // the coral used by dark/light so it reads as a distinct "skin" rather
+  // than a tinted light mode.
+  static const pastelAccent = Color(0xFFFF6FA5);
+  static const pastelOnAccent = Color(0xFF3D1330);
+  static const backgroundPastel = Color(0xFFFFF6FB);
+  static const surfacePastel = Color(0xFFFFFFFF);
+  static const surfaceRaisedPastel = Color(0xFFFCE4F0);
+  static const borderPastel = Color(0xFFF6D3E6);
+
   // Macro-specific tints — used consistently by progress bars, chips and
   // legends so a macro is identifiable by color alone across every screen.
   // Same in both themes: these are identity colors, not surface colors.
@@ -61,6 +71,18 @@ class AppTheme {
         mutedTextColor: const Color(0xFF6B7076),
       );
 
+  static ThemeData get pastel => _build(
+        brightness: Brightness.light,
+        background: backgroundPastel,
+        surface: surfacePastel,
+        surfaceRaised: surfaceRaisedPastel,
+        border: borderPastel,
+        textColor: const Color(0xFF4A2942),
+        mutedTextColor: const Color(0xFF9B7C93),
+        accentColor: pastelAccent,
+        onAccentColor: pastelOnAccent,
+      );
+
   static ThemeData _build({
     required Brightness brightness,
     required Color background,
@@ -69,9 +91,11 @@ class AppTheme {
     required Color border,
     required Color textColor,
     required Color mutedTextColor,
+    Color accentColor = accent,
+    Color onAccentColor = const Color(0xFF2A0E06),
   }) {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: accent,
+      seedColor: accentColor,
       brightness: brightness,
       surface: surface,
     );
@@ -154,15 +178,15 @@ class AppTheme {
       dividerTheme: DividerThemeData(color: border, space: 1, thickness: 1),
       chipTheme: ChipThemeData(
         backgroundColor: surfaceRaised,
-        selectedColor: accent.withValues(alpha: 0.22),
+        selectedColor: accentColor.withValues(alpha: 0.22),
         labelStyle: TextStyle(color: textColor, fontWeight: FontWeight.w500),
         side: BorderSide(color: border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: accent,
-          foregroundColor: const Color(0xFF2A0E06),
+          backgroundColor: accentColor,
+          foregroundColor: onAccentColor,
           disabledBackgroundColor: surfaceRaised,
           textStyle: display(const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
@@ -180,7 +204,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: accent,
+          foregroundColor: accentColor,
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
@@ -197,13 +221,13 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.sm),
-          borderSide: const BorderSide(color: accent),
+          borderSide: BorderSide(color: accentColor),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surface,
-        indicatorColor: accent.withValues(alpha: 0.18),
+        indicatorColor: accentColor.withValues(alpha: 0.18),
         elevation: 0,
         height: 64,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
@@ -234,11 +258,11 @@ class AppTheme {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(color: accent),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: accentColor),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
           backgroundColor: surfaceRaised,
-          selectedBackgroundColor: accent.withValues(alpha: 0.22),
+          selectedBackgroundColor: accentColor.withValues(alpha: 0.22),
           side: BorderSide(color: border),
         ),
       ),
