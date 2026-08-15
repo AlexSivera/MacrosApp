@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../../data/database/app_database.dart';
 import '../../diario/providers/diary_providers.dart';
 import '../providers/progress_providers.dart';
@@ -48,12 +49,14 @@ class ProgressScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.lg),
           const RangeSelector(),
           const SizedBox(height: AppSpacing.lg),
-          SizedBox(
-            height: 220,
-            child: historyAsync.when(
-              data: (logs) => WeightChart(logs: logs),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('Error: $err')),
+          AppCard(
+            child: SizedBox(
+              height: 220,
+              child: historyAsync.when(
+                data: (logs) => WeightChart(logs: logs),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, _) => Center(child: Text('Error: $err')),
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),

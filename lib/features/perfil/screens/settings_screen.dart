@@ -21,6 +21,7 @@ class SettingsScreen extends ConsumerWidget {
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancelar')),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
             child: const Text('Restablecer'),
           ),
         ],
@@ -34,6 +35,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('Configuración')),
       body: Padding(
@@ -41,9 +43,14 @@ class SettingsScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            OutlinedButton(
+            OutlinedButton.icon(
               onPressed: () => _confirmReset(context, ref),
-              child: const Text('Restablecer datos de la app'),
+              icon: Icon(Icons.delete_outline_rounded, color: theme.colorScheme.error),
+              label: Text(
+                'Restablecer datos de la app',
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
+              style: OutlinedButton.styleFrom(side: BorderSide(color: theme.colorScheme.error)),
             ),
           ],
         ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../diario/providers/diary_providers.dart';
 import '../widgets/profile_header_card.dart';
 
@@ -71,18 +72,44 @@ class _SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
+    final theme = Theme.of(context);
+    return AppCard(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Column(
         children: [
           for (var i = 0; i < items.length; i++) ...[
-            ListTile(
-              leading: Icon(items[i].icon),
-              title: Text(items[i].label),
-              trailing: const Icon(Icons.chevron_right),
+            InkWell(
+              borderRadius: BorderRadius.circular(AppRadius.sm),
               onTap: () => context.push(items[i].route),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.sm,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(items[i].icon, size: 18, color: theme.colorScheme.primary),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(child: Text(items[i].label, style: theme.textTheme.bodyLarge)),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+              ),
             ),
-            if (i != items.length - 1) const Divider(height: 1, indent: AppSpacing.xxl),
+            if (i != items.length - 1)
+              Divider(height: AppSpacing.xs, color: theme.colorScheme.outline.withValues(alpha: 0.5)),
           ],
         ],
       ),

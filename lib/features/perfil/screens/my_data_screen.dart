@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/date_field_tile.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../diario/providers/diary_providers.dart';
@@ -78,11 +79,9 @@ class _MyDataScreenState extends ConsumerState<MyDataScreen> {
                 onSelectionChanged: (s) => setState(() => _sex = s.first),
               ),
               const SizedBox(height: AppSpacing.md),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Fecha de nacimiento'),
-                subtitle: Text('${_birthDate.day}/${_birthDate.month}/${_birthDate.year}'),
-                trailing: const Icon(Icons.calendar_today_outlined),
+              DateFieldTile(
+                label: 'Fecha de nacimiento',
+                value: '${_birthDate.day}/${_birthDate.month}/${_birthDate.year}',
                 onTap: () async {
                   final picked = await showDatePicker(
                     context: context,

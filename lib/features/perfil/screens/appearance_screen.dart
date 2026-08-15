@@ -71,6 +71,7 @@ class AppearanceScreen extends ConsumerWidget {
                       color: isSelected ? theme.colorScheme.primary : theme.dividerColor,
                       width: isSelected ? 1.5 : 1,
                     ),
+                    boxShadow: AppTheme.softShadow(context),
                   ),
                   child: Row(
                     children: [

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../diario/widgets/recipe_quantity_sheet.dart';
@@ -89,12 +90,8 @@ class _RecipeDetailBody extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           macrosAsync.when(
-            data: (perServing) => Container(
+            data: (perServing) => AppCard(
               padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -115,21 +112,40 @@ class _RecipeDetailBody extends ConsumerWidget {
             stream: db.recipeIngredientsDao.watchForRecipe(recipe.id),
             builder: (context, snapshot) {
               final ingredients = snapshot.data ?? [];
-              return Column(
-                children: [
-                  for (final ingredient in ingredients)
-                    FutureBuilder<Food?>(
-                      future: db.foodsDao.getById(ingredient.foodId),
-                      builder: (context, foodSnapshot) {
-                        final food = foodSnapshot.data;
-                        return ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(food?.name ?? '…'),
-                          trailing: Text('${ingredient.grams.round()} g'),
-                        );
-                      },
-                    ),
-                ],
+              if (ingredients.isEmpty) return const SizedBox.shrink();
+              return AppCard(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Column(
+                  children: [
+                    for (var i = 0; i < ingredients.length; i++) ...[
+                      FutureBuilder<Food?>(
+                        future: db.foodsDao.getById(ingredients[i].foodId),
+                        builder: (context, foodSnapshot) {
+                          final food = foodSnapshot.data;
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(food?.name ?? '…', style: theme.textTheme.bodyLarge),
+                                ),
+                                Text(
+                                  '${ingredients[i].grams.round()} g',
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                      if (i != ingredients.length - 1)
+                        Divider(
+                          height: AppSpacing.xs,
+                          color: theme.colorScheme.outline.withValues(alpha: 0.5),
+                        ),
+                    ],
+                  ],
+                ),
               );
             },
           ),
