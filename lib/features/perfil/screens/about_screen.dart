@@ -31,7 +31,7 @@ class AboutScreen extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('MacrosApp', style: theme.textTheme.titleLarge),
+                    Text('Kalibra', style: theme.textTheme.titleLarge),
                     Text('Versión 1.0.0', style: theme.textTheme.bodySmall),
                   ],
                 ),
@@ -42,6 +42,15 @@ class AboutScreen extends StatelessWidget {
               'Controla tus calorías, macros, recetas y progreso sin que '
               'controlar tu alimentación se convierta en un trabajo.',
               style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            Text('Datos y licencias', style: theme.textTheme.labelLarge),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'El catálogo de productos envasados incluye datos de Open Food '
+              'Facts (openfoodfacts.org), una base de datos colaborativa '
+              'bajo licencia Open Database License (ODbL).',
+              style: theme.textTheme.bodySmall,
             ),
           ],
         ),
