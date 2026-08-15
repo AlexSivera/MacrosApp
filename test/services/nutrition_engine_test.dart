@@ -106,6 +106,7 @@ void main() {
       carbsPer100g: 0,
       fatPer100g: 3.6,
       isCustom: false,
+      category: FoodCategory.carnePescado,
     );
 
     test('scaleFoodMacros scales linearly with grams', () {

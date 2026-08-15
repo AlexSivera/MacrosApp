@@ -11,12 +11,12 @@ void main() {
     addTearDown(db.close);
 
     await syncSeedFoods(db);
-    final afterFirstRun = await db.foodsDao.watchAll().first;
+    final afterFirstRun = await db.foodsDao.watchFiltered().first;
     expect(afterFirstRun, hasLength(foodSeedData.length));
 
     // Simulate a second app launch against the same (now-populated) DB.
     await syncSeedFoods(db);
-    final afterSecondRun = await db.foodsDao.watchAll().first;
+    final afterSecondRun = await db.foodsDao.watchFiltered().first;
     expect(afterSecondRun, hasLength(foodSeedData.length));
 
     final names = afterSecondRun.map((f) => f.name).toSet();
@@ -38,7 +38,7 @@ void main() {
     ));
 
     await syncSeedFoods(db);
-    final all = await db.foodsDao.watchAll().first;
+    final all = await db.foodsDao.watchFiltered().first;
     expect(all, hasLength(foodSeedData.length + 1));
     final custom = all.firstWhere((f) => f.name == 'Mi batido casero');
     expect(custom.isCustom, isTrue);

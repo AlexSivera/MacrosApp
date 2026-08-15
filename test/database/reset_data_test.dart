@@ -48,7 +48,7 @@ void main() {
       weightKg: 80,
     ));
 
-    final seededCountBefore = (await db.foodsDao.watchAll().first).length;
+    final seededCountBefore = (await db.foodsDao.watchFiltered().first).length;
     expect(seededCountBefore, greaterThan(100)); // seed + the 1 custom food
 
     await db.resetAllData();
@@ -58,7 +58,7 @@ void main() {
     expect(await db.diaryDao.watchEntriesForDate(DateTime(2026, 8, 1)).first, isEmpty);
     expect(await db.bodyWeightDao.watchLatest().first, isNull);
 
-    final foodsAfter = await db.foodsDao.watchAll().first;
+    final foodsAfter = await db.foodsDao.watchFiltered().first;
     expect(foodsAfter.any((f) => f.name == 'Mi batido'), isFalse, reason: 'custom food removed');
     expect(foodsAfter.length, seededCountBefore - 1, reason: 'seeded catalog kept intact');
   });

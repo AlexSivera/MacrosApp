@@ -47,14 +47,15 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        // No columns to migrate yet — schema v1 is the initial release.
-        // Future column additions go here as `if (from < N) { ... }` steps,
-        // mirroring GymApp's AppDatabase.
-        onUpgrade: (Migrator m, int from, int to) async {},
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from < 2) {
+            await m.addColumn(foods, foods.category);
+          }
+        },
         beforeOpen: (details) async {
           // Required for onDelete: KeyAction.cascade/setNull to actually take
           // effect — SQLite ignores foreign key constraints unless this is

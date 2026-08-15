@@ -5,6 +5,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../data/database/app_database.dart';
 import '../providers/food_search_providers.dart';
 import 'custom_food_form_sheet.dart';
+import 'food_category_chips.dart';
 
 // Fast food lookup sheet — search the bundled + custom Foods table by name,
 // tap a result to hand it back to the caller (add-entry flow, ingredient
@@ -43,6 +44,8 @@ class FoodSearchSheet extends ConsumerWidget {
                 onChanged: (value) =>
                     ref.read(foodSearchQueryProvider.notifier).state = value,
               ),
+              const SizedBox(height: AppSpacing.md),
+              const FoodCategoryChips(),
               const SizedBox(height: AppSpacing.md),
               Expanded(
                 child: resultsAsync.when(

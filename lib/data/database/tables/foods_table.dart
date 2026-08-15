@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart';
 
+import '../enums.dart';
+
 class Foods extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
@@ -13,4 +15,6 @@ class Foods extends Table {
   TextColumn get servingLabel => text().nullable()();
   // false = bundled seed data, true = created via "Crear alimento personalizado".
   BoolColumn get isCustom => boolean().withDefault(const Constant(false))();
+  IntColumn get category =>
+      intEnum<FoodCategory>().withDefault(Constant(FoodCategory.otros.index))();
 }

@@ -5,8 +5,12 @@ import '../../../data/database/database_provider.dart';
 
 final foodSearchQueryProvider = StateProvider.autoDispose<String>((ref) => '');
 
+// null = "Todos" — no category filter applied.
+final foodCategoryFilterProvider = StateProvider.autoDispose<FoodCategory?>((ref) => null);
+
 final foodSearchResultsProvider = StreamProvider.autoDispose<List<Food>>((ref) {
   final query = ref.watch(foodSearchQueryProvider);
+  final category = ref.watch(foodCategoryFilterProvider);
   final foodsDao = ref.watch(appDatabaseProvider).foodsDao;
-  return query.trim().isEmpty ? foodsDao.watchAll() : foodsDao.watchSearch(query);
+  return foodsDao.watchFiltered(query: query, category: category);
 });

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
+import 'food_category_chips.dart';
 
 // "Crear alimento personalizado" — a minimal form (name + macros per 100g),
 // saved to Foods with isCustom = true, then handed back to the caller so it
@@ -30,6 +31,7 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
   final _protein = TextEditingController();
   final _carbs = TextEditingController();
   final _fat = TextEditingController();
+  FoodCategory _category = FoodCategory.otros;
   String? _error;
 
   @override
@@ -66,6 +68,7 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
       carbsPer100g: carbs,
       fatPer100g: fat,
       isCustom: const Value(true),
+      category: Value(_category),
     ));
     final food = await db.foodsDao.getById(id);
     if (mounted) Navigator.of(context).pop(food);
@@ -92,6 +95,18 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
               controller: _name,
               autofocus: true,
               decoration: const InputDecoration(labelText: 'Nombre'),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            DropdownButtonFormField<FoodCategory>(
+              initialValue: _category,
+              decoration: const InputDecoration(labelText: 'Categoría'),
+              items: [
+                for (final category in FoodCategory.values)
+                  DropdownMenuItem(value: category, child: Text(category.label)),
+              ],
+              onChanged: (value) {
+                if (value != null) setState(() => _category = value);
+              },
             ),
             const SizedBox(height: AppSpacing.md),
             Text('Valores por 100 g', style: theme.textTheme.labelMedium),

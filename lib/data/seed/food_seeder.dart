@@ -24,6 +24,7 @@ Future<void> syncSeedFoods(AppDatabase db) async {
         defaultServingGrams: Value(seed.defaultServingGrams),
         servingLabel: Value(seed.servingLabel),
         isCustom: const Value(false),
+        category: Value(seed.category),
       ),
   ];
   if (entries.isNotEmpty) await db.foodsDao.insertAll(entries);

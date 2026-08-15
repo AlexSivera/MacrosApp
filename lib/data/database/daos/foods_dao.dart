@@ -32,15 +32,22 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
   Future<Food?> getById(int id) =>
       (select(foods)..where((f) => f.id.equals(id))).getSingleOrNull();
 
-  Stream<List<Food>> watchAll() =>
-      (select(foods)..orderBy([(f) => OrderingTerm.asc(f.name)])).watch();
-
-  Stream<List<Food>> watchSearch(String query) {
-    final q = '%${query.trim()}%';
-    return (select(foods)
-          ..where((f) => f.name.like(q))
-          ..orderBy([(f) => OrderingTerm.asc(f.name)])
-          ..limit(50))
-        .watch();
+  // query filters by name (SQL LIKE, only applied — and result-capped — when
+  // non-empty); category filters exactly when given. Either, both, or
+  // neither can be active at once, matching the search sheet's text field +
+  // category chips.
+  Stream<List<Food>> watchFiltered({String query = '', FoodCategory? category}) {
+    final statement = select(foods)..orderBy([(f) => OrderingTerm.asc(f.name)]);
+    final trimmed = query.trim();
+    if (trimmed.isNotEmpty) {
+      final likeQuery = '%$trimmed%';
+      statement
+        ..where((f) => f.name.like(likeQuery))
+        ..limit(50);
+    }
+    if (category != null) {
+      statement.where((f) => f.category.equalsValue(category));
+    }
+    return statement.watch();
   }
 }

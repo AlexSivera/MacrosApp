@@ -27,7 +27,7 @@ void main() {
       carbsPer100g: 0,
       fatPer100g: 3.6,
     ));
-    final results = await db.foodsDao.watchSearch('pollo').first;
+    final results = await db.foodsDao.watchFiltered(query: 'pollo').first;
     expect(results, hasLength(1));
     expect(results.first.name, 'Pechuga de pollo');
   });

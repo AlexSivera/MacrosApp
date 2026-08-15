@@ -1432,6 +1432,16 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
     defaultValue: const Constant(false),
   );
   @override
+  late final GeneratedColumnWithTypeConverter<FoodCategory, int> category =
+      GeneratedColumn<int>(
+        'category',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+        defaultValue: Constant(FoodCategory.otros.index),
+      ).withConverter<FoodCategory>($FoodsTable.$convertercategory);
+  @override
   List<GeneratedColumn> get $columns => [
     id,
     name,
@@ -1443,6 +1453,7 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
     defaultServingGrams,
     servingLabel,
     isCustom,
+    category,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1590,6 +1601,12 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
         DriftSqlType.bool,
         data['${effectivePrefix}is_custom'],
       )!,
+      category: $FoodsTable.$convertercategory.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}category'],
+        )!,
+      ),
     );
   }
 
@@ -1597,6 +1614,9 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
   $FoodsTable createAlias(String alias) {
     return $FoodsTable(attachedDatabase, alias);
   }
+
+  static JsonTypeConverter2<FoodCategory, int, int> $convertercategory =
+      const EnumIndexConverter<FoodCategory>(FoodCategory.values);
 }
 
 class Food extends DataClass implements Insertable<Food> {
@@ -1610,6 +1630,7 @@ class Food extends DataClass implements Insertable<Food> {
   final double? defaultServingGrams;
   final String? servingLabel;
   final bool isCustom;
+  final FoodCategory category;
   const Food({
     required this.id,
     required this.name,
@@ -1621,6 +1642,7 @@ class Food extends DataClass implements Insertable<Food> {
     this.defaultServingGrams,
     this.servingLabel,
     required this.isCustom,
+    required this.category,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1641,6 +1663,11 @@ class Food extends DataClass implements Insertable<Food> {
       map['serving_label'] = Variable<String>(servingLabel);
     }
     map['is_custom'] = Variable<bool>(isCustom);
+    {
+      map['category'] = Variable<int>(
+        $FoodsTable.$convertercategory.toSql(category),
+      );
+    }
     return map;
   }
 
@@ -1662,6 +1689,7 @@ class Food extends DataClass implements Insertable<Food> {
           ? const Value.absent()
           : Value(servingLabel),
       isCustom: Value(isCustom),
+      category: Value(category),
     );
   }
 
@@ -1683,6 +1711,9 @@ class Food extends DataClass implements Insertable<Food> {
       ),
       servingLabel: serializer.fromJson<String?>(json['servingLabel']),
       isCustom: serializer.fromJson<bool>(json['isCustom']),
+      category: $FoodsTable.$convertercategory.fromJson(
+        serializer.fromJson<int>(json['category']),
+      ),
     );
   }
   @override
@@ -1699,6 +1730,9 @@ class Food extends DataClass implements Insertable<Food> {
       'defaultServingGrams': serializer.toJson<double?>(defaultServingGrams),
       'servingLabel': serializer.toJson<String?>(servingLabel),
       'isCustom': serializer.toJson<bool>(isCustom),
+      'category': serializer.toJson<int>(
+        $FoodsTable.$convertercategory.toJson(category),
+      ),
     };
   }
 
@@ -1713,6 +1747,7 @@ class Food extends DataClass implements Insertable<Food> {
     Value<double?> defaultServingGrams = const Value.absent(),
     Value<String?> servingLabel = const Value.absent(),
     bool? isCustom,
+    FoodCategory? category,
   }) => Food(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -1726,6 +1761,7 @@ class Food extends DataClass implements Insertable<Food> {
         : this.defaultServingGrams,
     servingLabel: servingLabel.present ? servingLabel.value : this.servingLabel,
     isCustom: isCustom ?? this.isCustom,
+    category: category ?? this.category,
   );
   Food copyWithCompanion(FoodsCompanion data) {
     return Food(
@@ -1753,6 +1789,7 @@ class Food extends DataClass implements Insertable<Food> {
           ? data.servingLabel.value
           : this.servingLabel,
       isCustom: data.isCustom.present ? data.isCustom.value : this.isCustom,
+      category: data.category.present ? data.category.value : this.category,
     );
   }
 
@@ -1768,7 +1805,8 @@ class Food extends DataClass implements Insertable<Food> {
           ..write('fiberPer100g: $fiberPer100g, ')
           ..write('defaultServingGrams: $defaultServingGrams, ')
           ..write('servingLabel: $servingLabel, ')
-          ..write('isCustom: $isCustom')
+          ..write('isCustom: $isCustom, ')
+          ..write('category: $category')
           ..write(')'))
         .toString();
   }
@@ -1785,6 +1823,7 @@ class Food extends DataClass implements Insertable<Food> {
     defaultServingGrams,
     servingLabel,
     isCustom,
+    category,
   );
   @override
   bool operator ==(Object other) =>
@@ -1799,7 +1838,8 @@ class Food extends DataClass implements Insertable<Food> {
           other.fiberPer100g == this.fiberPer100g &&
           other.defaultServingGrams == this.defaultServingGrams &&
           other.servingLabel == this.servingLabel &&
-          other.isCustom == this.isCustom);
+          other.isCustom == this.isCustom &&
+          other.category == this.category);
 }
 
 class FoodsCompanion extends UpdateCompanion<Food> {
@@ -1813,6 +1853,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
   final Value<double?> defaultServingGrams;
   final Value<String?> servingLabel;
   final Value<bool> isCustom;
+  final Value<FoodCategory> category;
   const FoodsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -1824,6 +1865,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     this.defaultServingGrams = const Value.absent(),
     this.servingLabel = const Value.absent(),
     this.isCustom = const Value.absent(),
+    this.category = const Value.absent(),
   });
   FoodsCompanion.insert({
     this.id = const Value.absent(),
@@ -1836,6 +1878,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     this.defaultServingGrams = const Value.absent(),
     this.servingLabel = const Value.absent(),
     this.isCustom = const Value.absent(),
+    this.category = const Value.absent(),
   }) : name = Value(name),
        kcalPer100g = Value(kcalPer100g),
        proteinPer100g = Value(proteinPer100g),
@@ -1852,6 +1895,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     Expression<double>? defaultServingGrams,
     Expression<String>? servingLabel,
     Expression<bool>? isCustom,
+    Expression<int>? category,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1865,6 +1909,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
         'default_serving_grams': defaultServingGrams,
       if (servingLabel != null) 'serving_label': servingLabel,
       if (isCustom != null) 'is_custom': isCustom,
+      if (category != null) 'category': category,
     });
   }
 
@@ -1879,6 +1924,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     Value<double?>? defaultServingGrams,
     Value<String?>? servingLabel,
     Value<bool>? isCustom,
+    Value<FoodCategory>? category,
   }) {
     return FoodsCompanion(
       id: id ?? this.id,
@@ -1891,6 +1937,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
       defaultServingGrams: defaultServingGrams ?? this.defaultServingGrams,
       servingLabel: servingLabel ?? this.servingLabel,
       isCustom: isCustom ?? this.isCustom,
+      category: category ?? this.category,
     );
   }
 
@@ -1929,6 +1976,11 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     if (isCustom.present) {
       map['is_custom'] = Variable<bool>(isCustom.value);
     }
+    if (category.present) {
+      map['category'] = Variable<int>(
+        $FoodsTable.$convertercategory.toSql(category.value),
+      );
+    }
     return map;
   }
 
@@ -1944,7 +1996,8 @@ class FoodsCompanion extends UpdateCompanion<Food> {
           ..write('fiberPer100g: $fiberPer100g, ')
           ..write('defaultServingGrams: $defaultServingGrams, ')
           ..write('servingLabel: $servingLabel, ')
-          ..write('isCustom: $isCustom')
+          ..write('isCustom: $isCustom, ')
+          ..write('category: $category')
           ..write(')'))
         .toString();
   }
@@ -4871,6 +4924,7 @@ typedef $$FoodsTableCreateCompanionBuilder =
       Value<double?> defaultServingGrams,
       Value<String?> servingLabel,
       Value<bool> isCustom,
+      Value<FoodCategory> category,
     });
 typedef $$FoodsTableUpdateCompanionBuilder =
     FoodsCompanion Function({
@@ -4884,6 +4938,7 @@ typedef $$FoodsTableUpdateCompanionBuilder =
       Value<double?> defaultServingGrams,
       Value<String?> servingLabel,
       Value<bool> isCustom,
+      Value<FoodCategory> category,
     });
 
 class $$FoodsTableFilterComposer extends Composer<_$AppDatabase, $FoodsTable> {
@@ -4942,6 +4997,12 @@ class $$FoodsTableFilterComposer extends Composer<_$AppDatabase, $FoodsTable> {
   ColumnFilters<bool> get isCustom => $composableBuilder(
     column: $table.isCustom,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<FoodCategory, FoodCategory, int>
+  get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 }
 
@@ -5003,6 +5064,11 @@ class $$FoodsTableOrderingComposer
     column: $table.isCustom,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$FoodsTableAnnotationComposer
@@ -5057,6 +5123,9 @@ class $$FoodsTableAnnotationComposer
 
   GeneratedColumn<bool> get isCustom =>
       $composableBuilder(column: $table.isCustom, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<FoodCategory, int> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
 }
 
 class $$FoodsTableTableManager
@@ -5097,6 +5166,7 @@ class $$FoodsTableTableManager
                 Value<double?> defaultServingGrams = const Value.absent(),
                 Value<String?> servingLabel = const Value.absent(),
                 Value<bool> isCustom = const Value.absent(),
+                Value<FoodCategory> category = const Value.absent(),
               }) => FoodsCompanion(
                 id: id,
                 name: name,
@@ -5108,6 +5178,7 @@ class $$FoodsTableTableManager
                 defaultServingGrams: defaultServingGrams,
                 servingLabel: servingLabel,
                 isCustom: isCustom,
+                category: category,
               ),
           createCompanionCallback:
               ({
@@ -5121,6 +5192,7 @@ class $$FoodsTableTableManager
                 Value<double?> defaultServingGrams = const Value.absent(),
                 Value<String?> servingLabel = const Value.absent(),
                 Value<bool> isCustom = const Value.absent(),
+                Value<FoodCategory> category = const Value.absent(),
               }) => FoodsCompanion.insert(
                 id: id,
                 name: name,
@@ -5132,6 +5204,7 @@ class $$FoodsTableTableManager
                 defaultServingGrams: defaultServingGrams,
                 servingLabel: servingLabel,
                 isCustom: isCustom,
+                category: category,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
