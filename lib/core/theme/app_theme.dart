@@ -276,6 +276,12 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(color: accentColor),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: accentColor,
+        foregroundColor: onAccentColor,
+        elevation: 2,
+        extendedTextStyle: display(const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+      ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
           backgroundColor: surfaceRaised,

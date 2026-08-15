@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/fade_slide_in.dart';
 import '../providers/recipes_providers.dart';
 import '../widgets/recipe_card.dart';
@@ -13,13 +14,14 @@ class RecetasScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final recipesAsync = ref.watch(filteredRecipesProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Recetas')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/recetas/nuevo'),
-        icon: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded),
         label: const Text('Crear receta'),
       ),
       body: Padding(
@@ -27,12 +29,25 @@ class RecetasScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
-              decoration: const InputDecoration(
-                hintText: 'Buscar recetas',
-                prefixIcon: Icon(Icons.search),
+            Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                boxShadow: AppTheme.softShadow(context),
               ),
-              onChanged: (value) => ref.read(recipeSearchQueryProvider.notifier).state = value,
+              child: TextField(
+                style: theme.textTheme.bodyLarge,
+                decoration: const InputDecoration(
+                  hintText: 'Buscar recetas',
+                  prefixIcon: Icon(Icons.search_rounded),
+                  filled: false,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                ),
+                onChanged: (value) => ref.read(recipeSearchQueryProvider.notifier).state = value,
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
             const RecipeFilterChips(),
@@ -85,15 +100,48 @@ class _EmptyRecipesState extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.menu_book_outlined, size: 48, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(height: AppSpacing.md),
-          Text('Aún no tienes recetas', style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.lg),
-          ElevatedButton(onPressed: onCreate, child: const Text('Crear mi primera receta')),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 96,
+              height: 96,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.22),
+                    blurRadius: 40,
+                    spreadRadius: -12,
+                  ),
+                ],
+              ),
+              child: Icon(Icons.menu_book_rounded, size: 40, color: theme.colorScheme.primary),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              'Aún no tienes recetas',
+              style: theme.textTheme.titleLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Guarda tus platos favoritos y añádelos al diario en un toque',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            ElevatedButton.icon(
+              onPressed: onCreate,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Crear mi primera receta'),
+            ),
+          ],
+        ),
       ),
     );
   }
