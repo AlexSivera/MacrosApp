@@ -1,25 +1,22 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_spacing.dart';
-import '../../../data/database/enums.dart';
-import 'custom_food_form_sheet.dart';
-import 'food_quantity_sheet.dart';
-import 'food_search_sheet.dart';
-import 'recipe_picker_sheet.dart';
+
+// What the user picked from the add-entry menu. Only the choice is returned
+// here — the caller (whose context outlives this transient sheet) drives the
+// follow-up flow (search, quantity entry, etc). Awaiting a further sheet's
+// result *inside* this sheet's own onTap would leave `context` pointing at
+// an already-popped, unmounted widget by the time that result comes back.
+enum AddEntryAction { food, recipe, customFood }
 
 // The fast add-entry entry point tapped from a meal section's "+ Añadir".
-// "Añadir receta" and "Añadir comida guardada" both open the same recipe
-// picker — a saved meal *is* a Recipe in this app, so there's no separate
-// concept or table for it, just two discoverable labels for one flow.
 class AddEntryOptionsSheet extends StatelessWidget {
-  const AddEntryOptionsSheet({super.key, required this.mealType});
+  const AddEntryOptionsSheet({super.key});
 
-  final MealType mealType;
-
-  static Future<void> show(BuildContext context, {required MealType mealType}) {
-    return showModalBottomSheet(
+  static Future<AddEntryAction?> show(BuildContext context) {
+    return showModalBottomSheet<AddEntryAction>(
       context: context,
-      builder: (context) => AddEntryOptionsSheet(mealType: mealType),
+      builder: (context) => const AddEntryOptionsSheet(),
     );
   }
 
@@ -34,40 +31,22 @@ class AddEntryOptionsSheet extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.restaurant_outlined),
               title: const Text('Añadir alimento'),
-              onTap: () async {
-                Navigator.of(context).pop();
-                final food = await FoodSearchSheet.show(context);
-                if (food != null && context.mounted) {
-                  await FoodQuantitySheet.showAdd(context, food: food, mealType: mealType);
-                }
-              },
+              onTap: () => Navigator.of(context).pop(AddEntryAction.food),
             ),
             ListTile(
               leading: const Icon(Icons.menu_book_outlined),
               title: const Text('Añadir receta'),
-              onTap: () {
-                Navigator.of(context).pop();
-                RecipePickerSheet.show(context, mealType: mealType);
-              },
+              onTap: () => Navigator.of(context).pop(AddEntryAction.recipe),
             ),
             ListTile(
               leading: const Icon(Icons.bookmark_outline),
               title: const Text('Añadir comida guardada'),
-              onTap: () {
-                Navigator.of(context).pop();
-                RecipePickerSheet.show(context, mealType: mealType);
-              },
+              onTap: () => Navigator.of(context).pop(AddEntryAction.recipe),
             ),
             ListTile(
               leading: const Icon(Icons.add_box_outlined),
               title: const Text('Crear alimento personalizado'),
-              onTap: () async {
-                Navigator.of(context).pop();
-                final food = await CustomFoodFormSheet.show(context);
-                if (food != null && context.mounted) {
-                  await FoodQuantitySheet.showAdd(context, food: food, mealType: mealType);
-                }
-              },
+              onTap: () => Navigator.of(context).pop(AddEntryAction.customFood),
             ),
           ],
         ),
