@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_add_button.dart';
 import 'add_ingredient_sheet.dart';
 
 class IngredientBuilderList extends StatelessWidget {
@@ -40,16 +41,12 @@ class IngredientBuilderList extends StatelessWidget {
               ),
             ),
         const SizedBox(height: AppSpacing.sm),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: OutlinedButton.icon(
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Añadir ingrediente'),
-            onPressed: () async {
-              final draft = await AddIngredientSheet.show(context);
-              if (draft != null) onAdd(draft);
-            },
-          ),
+        AppAddButton(
+          label: 'Añadir ingrediente',
+          onPressed: () async {
+            final draft = await AddIngredientSheet.show(context);
+            if (draft != null) onAdd(draft);
+          },
         ),
       ],
     );

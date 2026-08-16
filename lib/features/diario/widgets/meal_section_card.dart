@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/meal_types.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_add_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../data/database/daos/diary_dao.dart';
 import '../../../data/database/enums.dart';
@@ -77,7 +78,7 @@ class MealSectionCard extends StatelessWidget {
               child: Text('Sin registrar', style: theme.textTheme.bodyMedium),
             ),
             const SizedBox(height: AppSpacing.sm),
-            _AddEntryButton(onPressed: () => _addEntry(context, mealType)),
+            AppAddButton(label: 'Añadir', onPressed: () => _addEntry(context, mealType)),
           ] else ...[
             const Divider(height: AppSpacing.lg),
             for (var i = 0; i < entries.length; i++) ...[
@@ -86,7 +87,7 @@ class MealSectionCard extends StatelessWidget {
                 Divider(height: AppSpacing.lg, color: theme.colorScheme.outline.withValues(alpha: 0.5)),
             ],
             const SizedBox(height: AppSpacing.sm),
-            _AddEntryButton(onPressed: () => _addEntry(context, mealType)),
+            AppAddButton(label: 'Añadir', onPressed: () => _addEntry(context, mealType)),
           ],
         ],
       ),
@@ -115,44 +116,5 @@ class MealSectionCard extends StatelessWidget {
           await FoodQuantitySheet.showAdd(context, food: food, mealType: mealType);
         }
     }
-  }
-}
-
-// Compact tonal pill shared by the empty and populated section states, so
-// "Añadir" reads as one consistent affordance across every meal section
-// instead of an OutlinedButton in one state and a TextButton in the other.
-class _AddEntryButton extends StatelessWidget {
-  const _AddEntryButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Material(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-          onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.add_rounded, size: 18, color: theme.colorScheme.primary),
-                const SizedBox(width: AppSpacing.xs),
-                Text(
-                  'Añadir',
-                  style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
