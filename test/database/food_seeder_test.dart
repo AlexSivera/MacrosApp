@@ -43,4 +43,24 @@ void main() {
     final custom = all.firstWhere((f) => f.name == 'Mi batido casero');
     expect(custom.isCustom, isTrue);
   });
+
+  test('re-running sync after a seed value changes updates the existing row in place', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await syncSeedFoods(db);
+    final seedFood = foodSeedData.first;
+    final before = (await db.foodsDao.allByName())[seedFood.name]!;
+    final originalId = before.id;
+
+    // Simulate correcting foodSeedData.first's macros in an app update.
+    await db.foodsDao.updateFood(before.copyWith(kcalPer100g: 999));
+    await syncSeedFoods(db);
+
+    final all = await db.foodsDao.watchFiltered().first;
+    expect(all, hasLength(foodSeedData.length), reason: 'the row should be updated, not duplicated');
+    final after = all.firstWhere((f) => f.name == seedFood.name);
+    expect(after.id, originalId, reason: 'same row, not a new insert');
+    expect(after.kcalPer100g, seedFood.kcalPer100g, reason: 'resynced back to the seed value');
+  });
 }

@@ -11,9 +11,9 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
 
   // Used to diff the bundled seed list against what's already in the DB —
   // food name is the only stable identity the seed rows have.
-  Future<Set<String>> allNames() async {
+  Future<Map<String, Food>> allByName() async {
     final rows = await select(foods).get();
-    return rows.map((r) => r.name).toSet();
+    return {for (final row in rows) row.name: row};
   }
 
   Future<void> insertAll(List<FoodsCompanion> entries) {
