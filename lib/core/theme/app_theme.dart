@@ -206,7 +206,7 @@ class AppTheme {
           foregroundColor: onAccentColor,
           disabledBackgroundColor: surfaceRaised,
           textStyle: display(const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg, horizontal: AppSpacing.xl),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
           elevation: 0,
         ),
