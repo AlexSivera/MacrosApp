@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_add_button.dart';
+import '../../diario/widgets/custom_food_form_sheet.dart';
 import 'add_ingredient_sheet.dart';
 
 class IngredientBuilderList extends StatelessWidget {
@@ -41,14 +42,42 @@ class IngredientBuilderList extends StatelessWidget {
               ),
             ),
         const SizedBox(height: AppSpacing.sm),
-        AppAddButton(
-          label: 'Añadir ingrediente',
-          onPressed: () async {
-            final draft = await AddIngredientSheet.show(context);
-            if (draft != null) onAdd(draft);
-          },
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              AppAddButton(
+                label: 'Añadir ingrediente',
+                onPressed: () async {
+                  final draft = await AddIngredientSheet.show(context);
+                  if (draft != null) onAdd(draft);
+                },
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              AppAddButton(
+                label: 'Crear ingrediente',
+                onPressed: () => _createIngredientsLoop(context),
+              ),
+            ],
+          ),
         ),
       ],
     );
+  }
+
+  // Creating several homemade ingredients in a row (flour, eggs, sugar…)
+  // otherwise means re-opening the food search just to find nothing and dig
+  // out "Crear alimento personalizado" each time. This skips straight to
+  // that form and, after each one is added, reopens it immediately — the
+  // loop only ends when the user backs out of creating a food, which reads
+  // as "I'm done" without needing a separate confirmation step.
+  Future<void> _createIngredientsLoop(BuildContext context) async {
+    while (true) {
+      final food = await CustomFoodFormSheet.show(context);
+      if (food == null || !context.mounted) return;
+      final draft = await AddIngredientSheet.showForFood(context, food);
+      if (draft != null) onAdd(draft);
+      if (!context.mounted) return;
+    }
   }
 }

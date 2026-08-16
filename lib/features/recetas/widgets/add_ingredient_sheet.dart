@@ -24,6 +24,12 @@ class AddIngredientSheet extends StatefulWidget {
   static Future<IngredientDraft?> show(BuildContext context) async {
     final food = await FoodSearchSheet.show(context);
     if (food == null || !context.mounted) return null;
+    return showForFood(context, food);
+  }
+
+  // Skips the search step for a food the caller already has in hand (e.g.
+  // one just created via CustomFoodFormSheet) — straight to quantity entry.
+  static Future<IngredientDraft?> showForFood(BuildContext context, Food food) {
     return showModalBottomSheet<IngredientDraft>(
       context: context,
       isScrollControlled: true,
