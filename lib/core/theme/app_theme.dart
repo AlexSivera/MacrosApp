@@ -38,6 +38,16 @@ class AppTheme {
   static const surfaceRaisedPastel = Color(0xFFFCE4F0);
   static const borderPastel = Color(0xFFF6D3E6);
 
+  // Green palette — sibling to Pastel: another fixed, light-only "skin"
+  // rather than a light/dark pair, this time built around a forest-green
+  // accent on an off-white, mint-tinted surface.
+  static const greenAccent = Color(0xFF2F9E63);
+  static const greenOnAccent = Color(0xFF0B2B18);
+  static const backgroundGreen = Color(0xFFF4FAF5);
+  static const surfaceGreen = Color(0xFFFFFFFF);
+  static const surfaceRaisedGreen = Color(0xFFE3F2E6);
+  static const borderGreen = Color(0xFFD2E8D8);
+
   // Macro-specific tints — used consistently by progress bars, chips and
   // legends so a macro is identifiable by color alone across every screen.
   // Same in both themes: these are identity colors, not surface colors.
@@ -98,6 +108,18 @@ class AppTheme {
         mutedTextColor: const Color(0xFF9B7C93),
         accentColor: pastelAccent,
         onAccentColor: pastelOnAccent,
+      );
+
+  static ThemeData get green => _build(
+        brightness: Brightness.light,
+        background: backgroundGreen,
+        surface: surfaceGreen,
+        surfaceRaised: surfaceRaisedGreen,
+        border: borderGreen,
+        textColor: const Color(0xFF17301F),
+        mutedTextColor: const Color(0xFF6C8574),
+        accentColor: greenAccent,
+        onAccentColor: greenOnAccent,
       );
 
   static ThemeData _build({

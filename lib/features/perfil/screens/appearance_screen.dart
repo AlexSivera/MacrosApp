@@ -25,6 +25,7 @@ const _options = {
     AppTheme.surfaceRaisedLight,
   ),
   AppearanceMode.pastel: _AppearanceOption('Pastel', Icons.favorite_rounded, AppTheme.pastelAccent),
+  AppearanceMode.green: _AppearanceOption('Verde', Icons.eco_rounded, AppTheme.greenAccent),
 };
 
 class AppearanceScreen extends ConsumerWidget {
@@ -86,11 +87,12 @@ class AppearanceScreen extends ConsumerWidget {
                         child: Icon(
                           option.icon,
                           size: 18,
-                          color: mode == AppearanceMode.pastel
-                              ? AppTheme.pastelOnAccent
-                              : (mode == AppearanceMode.dark
-                                  ? Colors.white70
-                                  : Colors.black54),
+                          color: switch (mode) {
+                            AppearanceMode.pastel => AppTheme.pastelOnAccent,
+                            AppearanceMode.green => AppTheme.greenOnAccent,
+                            AppearanceMode.dark => Colors.white70,
+                            _ => Colors.black54,
+                          },
                         ),
                       ),
                       const SizedBox(width: AppSpacing.md),

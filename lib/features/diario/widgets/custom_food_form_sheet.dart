@@ -7,9 +7,10 @@ import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import 'food_category_chips.dart';
 
-// "Crear alimento personalizado" — a minimal form (name + macros per 100g),
-// saved to Foods with isCustom = true, then handed back to the caller so it
-// can flow straight into quantity entry without an extra round trip.
+// "Crear alimento personalizado" — a minimal form (name + macros, entered
+// either per 100g or per serving), saved to Foods with isCustom = true, then
+// handed back to the caller so it can flow straight into quantity entry
+// without an extra round trip.
 class CustomFoodFormSheet extends ConsumerStatefulWidget {
   const CustomFoodFormSheet({super.key});
 
@@ -31,7 +32,14 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
   final _protein = TextEditingController();
   final _carbs = TextEditingController();
   final _fat = TextEditingController();
+  final _servingGrams = TextEditingController();
+  final _servingLabel = TextEditingController();
   FoodCategory _category = FoodCategory.otros;
+  // Most people know a food's nutrition the way it's printed on a label or
+  // in a tracking app they used before: "per serving", not "per 100g". This
+  // toggle lets them enter it that way instead of doing the math themselves
+  // — we convert to per-100g (the storage unit) on submit.
+  bool _perServing = false;
   String? _error;
 
   @override
@@ -41,34 +49,61 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
     _protein.dispose();
     _carbs.dispose();
     _fat.dispose();
+    _servingGrams.dispose();
+    _servingLabel.dispose();
     super.dispose();
   }
 
   double _parse(String text) => double.tryParse(text.replaceAll(',', '.')) ?? 0;
+
+  // Fills in kcal from the three macros (4/4/9 kcal per gram) for foods
+  // whose label lists macros but not calories, or as a quick sanity check.
+  void _calculateKcal() {
+    final kcal = _parse(_protein.text) * 4 + _parse(_carbs.text) * 4 + _parse(_fat.text) * 9;
+    setState(() => _kcal.text = kcal.round().toString());
+  }
 
   Future<void> _submit() async {
     if (_name.text.trim().isEmpty) {
       setState(() => _error = 'Ponle un nombre al alimento.');
       return;
     }
-    final kcal = _parse(_kcal.text);
-    final protein = _parse(_protein.text);
-    final carbs = _parse(_carbs.text);
-    final fat = _parse(_fat.text);
-    if (kcal < 0 || protein < 0 || carbs < 0 || fat < 0) {
+
+    double? servingGrams;
+    if (_perServing) {
+      servingGrams = double.tryParse(_servingGrams.text.replaceAll(',', '.'));
+      if (servingGrams == null || servingGrams <= 0) {
+        setState(() => _error = 'Introduce el tamaño de la ración en gramos.');
+        return;
+      }
+    }
+
+    final enteredKcal = _parse(_kcal.text);
+    final enteredProtein = _parse(_protein.text);
+    final enteredCarbs = _parse(_carbs.text);
+    final enteredFat = _parse(_fat.text);
+    if (enteredKcal < 0 || enteredProtein < 0 || enteredCarbs < 0 || enteredFat < 0) {
       setState(() => _error = 'Los valores no pueden ser negativos.');
       return;
     }
 
+    // Scale from "per serving" up to "per 100g" (storage's fixed unit) —
+    // a no-op factor of 1 when the user entered per-100g values directly.
+    final factor = _perServing ? 100 / servingGrams! : 1.0;
+
     final db = ref.read(appDatabaseProvider);
     final id = await db.foodsDao.insert(FoodsCompanion.insert(
       name: _name.text.trim(),
-      kcalPer100g: kcal,
-      proteinPer100g: protein,
-      carbsPer100g: carbs,
-      fatPer100g: fat,
+      kcalPer100g: enteredKcal * factor,
+      proteinPer100g: enteredProtein * factor,
+      carbsPer100g: enteredCarbs * factor,
+      fatPer100g: enteredFat * factor,
       isCustom: const Value(true),
       category: Value(_category),
+      defaultServingGrams: Value(servingGrams),
+      servingLabel: Value(
+        _perServing && _servingLabel.text.trim().isNotEmpty ? _servingLabel.text.trim() : null,
+      ),
     ));
     final food = await db.foodsDao.getById(id);
     if (mounted) Navigator.of(context).pop(food);
@@ -78,7 +113,7 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: EdgeInsets.only(
           left: AppSpacing.lg,
           right: AppSpacing.lg,
@@ -108,9 +143,54 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
                 if (value != null) setState(() => _category = value);
               },
             ),
-            const SizedBox(height: AppSpacing.md),
-            Text('Valores por 100 g', style: theme.textTheme.labelMedium),
+            const SizedBox(height: AppSpacing.lg),
+            Text('¿Cómo conoces sus valores?', style: theme.textTheme.labelMedium),
             const SizedBox(height: AppSpacing.sm),
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: false, label: Text('Por 100 g')),
+                ButtonSegment(value: true, label: Text('Por ración')),
+              ],
+              selected: {_perServing},
+              onSelectionChanged: (s) => setState(() => _perServing = s.first),
+            ),
+            if (_perServing) ...[
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _servingGrams,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(labelText: 'Tamaño de la ración', suffixText: 'g'),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: TextField(
+                      controller: _servingLabel,
+                      decoration: const InputDecoration(labelText: 'Nombre (opcional)', hintText: '1 huevo'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _perServing ? 'Valores de esa ración' : 'Valores por 100 g',
+                    style: theme.textTheme.labelMedium,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _calculateKcal,
+                  icon: const Icon(Icons.calculate_outlined, size: 16),
+                  label: const Text('Calcular kcal'),
+                ),
+              ],
+            ),
             Row(
               children: [
                 Expanded(

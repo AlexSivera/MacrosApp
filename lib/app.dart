@@ -11,10 +11,19 @@ ThemeMode _toThemeMode(AppearanceMode mode) => switch (mode) {
       AppearanceMode.dark => ThemeMode.dark,
       AppearanceMode.light => ThemeMode.light,
       AppearanceMode.system => ThemeMode.system,
-      // Pastel is a single fixed palette, not a light/dark pair, so it's
-      // pinned to ThemeMode.light below rather than switching with the
-      // system brightness.
-      AppearanceMode.pastel => ThemeMode.light,
+      // Pastel/Green are single fixed palettes, not a light/dark pair, so
+      // they're pinned to ThemeMode.light below rather than switching with
+      // the system brightness.
+      AppearanceMode.pastel || AppearanceMode.green => ThemeMode.light,
+    };
+
+// The fixed-palette skins (Pastel, Green) use the same ThemeData for both
+// the light and dark slots so they never switch with system brightness;
+// null means "not a fixed skin", falling back to the normal light/dark pair.
+ThemeData? _fixedTheme(AppearanceMode mode) => switch (mode) {
+      AppearanceMode.pastel => AppTheme.pastel,
+      AppearanceMode.green => AppTheme.green,
+      _ => null,
     };
 
 class MacrosApp extends ConsumerWidget {
@@ -26,13 +35,13 @@ class MacrosApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appearanceMode =
         ref.watch(userProfileStreamProvider).valueOrNull?.appearanceMode ?? AppearanceMode.dark;
-    final isPastel = appearanceMode == AppearanceMode.pastel;
+    final fixedTheme = _fixedTheme(appearanceMode);
 
     return MaterialApp.router(
       title: 'Kalibra',
       debugShowCheckedModeBanner: false,
-      theme: isPastel ? AppTheme.pastel : AppTheme.light,
-      darkTheme: isPastel ? AppTheme.pastel : AppTheme.dark,
+      theme: fixedTheme ?? AppTheme.light,
+      darkTheme: fixedTheme ?? AppTheme.dark,
       themeMode: _toThemeMode(appearanceMode),
       routerConfig: router,
       locale: const Locale('es'),
