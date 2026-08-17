@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/text_search.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../../services/nutrition_engine/food_macros_calculator.dart';
@@ -92,8 +93,8 @@ List<RecipeCardData> applyRecipeFilter(
   var result = all;
   final trimmedQuery = query.trim();
   if (trimmedQuery.isNotEmpty) {
-    final q = trimmedQuery.toLowerCase();
-    result = result.where((r) => r.recipe.name.toLowerCase().contains(q)).toList();
+    final q = normalizeForSearch(trimmedQuery);
+    result = result.where((r) => normalizeForSearch(r.recipe.name).contains(q)).toList();
   }
   return switch (filter) {
     RecipeFilter.all => result,

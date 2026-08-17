@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../../core/utils/text_search.dart';
 import '../app_database.dart';
 import '../tables/foods_table.dart';
 
@@ -32,22 +33,25 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
   Future<Food?> getById(int id) =>
       (select(foods)..where((f) => f.id.equals(id))).getSingleOrNull();
 
-  // query filters by name (SQL LIKE, only applied — and result-capped — when
-  // non-empty); category filters exactly when given. Either, both, or
-  // neither can be active at once, matching the search sheet's text field +
-  // category chips.
+  // query filters by name, accent-insensitively ('atun' matches 'Atún') and
+  // result-capped, only applied when non-empty; category filters exactly
+  // when given. Either, both, or neither can be active at once, matching
+  // the search sheet's text field + category chips. The accent fold can't
+  // be done as a SQL LIKE (SQLite has no built-in diacritic folding), so the
+  // text match happens in Dart after the category filter narrows things
+  // down in SQL — fine at this catalog's size (a few hundred rows).
   Stream<List<Food>> watchFiltered({String query = '', FoodCategory? category}) {
     final statement = select(foods)..orderBy([(f) => OrderingTerm.asc(f.name)]);
-    final trimmed = query.trim();
-    if (trimmed.isNotEmpty) {
-      final likeQuery = '%$trimmed%';
-      statement
-        ..where((f) => f.name.like(likeQuery))
-        ..limit(50);
-    }
     if (category != null) {
       statement.where((f) => f.category.equalsValue(category));
     }
-    return statement.watch();
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return statement.watch();
+
+    final needle = normalizeForSearch(trimmed);
+    return statement.watch().map(
+          (rows) =>
+              rows.where((f) => normalizeForSearch(f.name).contains(needle)).take(50).toList(),
+        );
   }
 }

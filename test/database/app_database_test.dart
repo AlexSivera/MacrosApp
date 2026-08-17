@@ -32,6 +32,29 @@ void main() {
     expect(results.first.name, 'Pechuga de pollo');
   });
 
+  test('foods: search matches accented names when the query has no accents', () async {
+    await db.foodsDao.insert(FoodsCompanion.insert(
+      name: 'Atún en lata',
+      kcalPer100g: 79,
+      proteinPer100g: 18,
+      carbsPer100g: 0.5,
+      fatPer100g: 0.6,
+    ));
+    await db.foodsDao.insert(FoodsCompanion.insert(
+      name: 'Brócoli',
+      kcalPer100g: 34,
+      proteinPer100g: 2.8,
+      carbsPer100g: 6.6,
+      fatPer100g: 0.4,
+    ));
+
+    final tuna = await db.foodsDao.watchFiltered(query: 'atun').first;
+    expect(tuna.map((f) => f.name), ['Atún en lata']);
+
+    final broccoli = await db.foodsDao.watchFiltered(query: 'brocoli').first;
+    expect(broccoli.map((f) => f.name), ['Brócoli']);
+  });
+
   test('deleting a food not referenced anywhere just removes it', () async {
     final id = await db.foodsDao.insert(FoodsCompanion.insert(
       name: 'Manzana',
