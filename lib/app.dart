@@ -26,13 +26,41 @@ ThemeData? _fixedTheme(AppearanceMode mode) => switch (mode) {
       _ => null,
     };
 
-class MacrosApp extends ConsumerWidget {
-  const MacrosApp({super.key, required this.router});
+class MacrosApp extends ConsumerStatefulWidget {
+  const MacrosApp({super.key, required this.router, this.skippedSeedDeletions = const []});
 
   final GoRouter router;
 
+  // Foods the seed sync wanted to remove (no longer in the bundled catalog)
+  // but kept because they're still used by a recipe — surfaced once on
+  // launch so the user knows to clear them out of that recipe first.
+  final List<String> skippedSeedDeletions;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MacrosApp> createState() => _MacrosAppState();
+}
+
+class _MacrosAppState extends ConsumerState<MacrosApp> {
+  final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.skippedSeedDeletions.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(
+          duration: const Duration(seconds: 10),
+          content: Text(
+            'No se pudieron quitar del catálogo (están en una receta): '
+            '${widget.skippedSeedDeletions.join(', ')}',
+          ),
+        ));
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final appearanceMode =
         ref.watch(userProfileStreamProvider).valueOrNull?.appearanceMode ?? AppearanceMode.dark;
     final fixedTheme = _fixedTheme(appearanceMode);
@@ -40,10 +68,11 @@ class MacrosApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Kalibra',
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: _scaffoldMessengerKey,
       theme: fixedTheme ?? AppTheme.light,
       darkTheme: fixedTheme ?? AppTheme.dark,
       themeMode: _toThemeMode(appearanceMode),
-      routerConfig: router,
+      routerConfig: widget.router,
       locale: const Locale('es'),
       supportedLocales: const [Locale('es')],
       localizationsDelegates: const [

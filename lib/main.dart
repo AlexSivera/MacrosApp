@@ -13,7 +13,7 @@ void main() async {
   await initializeDateFormatting('es');
 
   final db = AppDatabase();
-  await syncSeedFoods(db);
+  final skippedDeletions = await syncSeedFoods(db);
   await db.userProfileDao.ensureDefaultRow();
   final onboardingDone = await db.userProfileDao.isOnboardingCompleted();
 
@@ -21,6 +21,6 @@ void main() async {
 
   runApp(ProviderScope(
     overrides: [appDatabaseProvider.overrideWithValue(db)],
-    child: MacrosApp(router: router),
+    child: MacrosApp(router: router, skippedSeedDeletions: skippedDeletions),
   ));
 }

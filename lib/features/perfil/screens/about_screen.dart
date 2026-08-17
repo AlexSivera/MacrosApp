@@ -43,15 +43,6 @@ class AboutScreen extends StatelessWidget {
               'controlar tu alimentación se convierta en un trabajo.',
               style: theme.textTheme.bodyMedium,
             ),
-            const SizedBox(height: AppSpacing.xl),
-            Text('Datos y licencias', style: theme.textTheme.labelLarge),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'El catálogo de productos envasados incluye datos de Open Food '
-              'Facts (openfoodfacts.org), una base de datos colaborativa '
-              'bajo licencia Open Database License (ODbL).',
-              style: theme.textTheme.bodySmall,
-            ),
           ],
         ),
       ),

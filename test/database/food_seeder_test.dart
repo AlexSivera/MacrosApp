@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:macrosapp/data/database/app_database.dart';
@@ -62,5 +62,85 @@ void main() {
     final after = all.firstWhere((f) => f.name == seedFood.name);
     expect(after.id, originalId, reason: 'same row, not a new insert');
     expect(after.kcalPer100g, seedFood.kcalPer100g, reason: 'resynced back to the seed value');
+  });
+
+  test('a non-custom food no longer in the seed list is deleted on sync', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await syncSeedFoods(db);
+    final staleId = await db.foodsDao.insert(FoodsCompanion.insert(
+      name: 'Producto descatalogado',
+      kcalPer100g: 100,
+      proteinPer100g: 5,
+      carbsPer100g: 10,
+      fatPer100g: 3,
+      isCustom: const Value(false),
+    ));
+
+    final skipped = await syncSeedFoods(db);
+
+    expect(skipped, isEmpty);
+    expect(await db.foodsDao.getById(staleId), isNull);
+  });
+
+  test('a stale food still used by a recipe is kept and reported instead of deleted', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await syncSeedFoods(db);
+    final staleId = await db.foodsDao.insert(FoodsCompanion.insert(
+      name: 'Producto descatalogado en receta',
+      kcalPer100g: 100,
+      proteinPer100g: 5,
+      carbsPer100g: 10,
+      fatPer100g: 3,
+      isCustom: const Value(false),
+    ));
+    final recipeId = await db.recipesDao.insert(RecipesCompanion.insert(name: 'Receta con producto viejo'));
+    await db.recipeIngredientsDao.replaceIngredients(recipeId, [
+      RecipeIngredientsCompanion.insert(recipeId: recipeId, foodId: staleId, grams: 100, orderIndex: 0),
+    ]);
+
+    final skipped = await syncSeedFoods(db);
+
+    expect(skipped, ['Producto descatalogado en receta']);
+    expect(await db.foodsDao.getById(staleId), isNotNull, reason: 'kept because a recipe still references it');
+  });
+
+  test('a stale food logged in the diary is deleted, and the diary entry keeps its snapshot', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await syncSeedFoods(db);
+    final staleId = await db.foodsDao.insert(FoodsCompanion.insert(
+      name: 'Producto descatalogado ya comido',
+      kcalPer100g: 100,
+      proteinPer100g: 5,
+      carbsPer100g: 10,
+      fatPer100g: 3,
+      isCustom: const Value(false),
+    ));
+    final today = DateTime.now();
+    final entryId = await db.diaryDao.logFood(
+      date: today,
+      mealType: MealType.snack,
+      foodId: staleId,
+      quantityGrams: 100,
+      orderIndex: 0,
+      kcal: 100,
+      proteinG: 5,
+      carbsG: 10,
+      fatG: 3,
+    );
+
+    final skipped = await syncSeedFoods(db);
+
+    expect(skipped, isEmpty);
+    expect(await db.foodsDao.getById(staleId), isNull);
+    final entries = await db.diaryDao.watchEntriesForDate(today).first;
+    final entry = entries.firstWhere((e) => e.entry.id == entryId);
+    expect(entry.entry.kcal, 100, reason: 'the snapshotted macros survive the food being deleted');
+    expect(entry.label, 'Alimento eliminado');
   });
 }

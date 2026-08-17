@@ -3,15 +3,24 @@ import 'package:drift/drift.dart';
 import '../database/app_database.dart';
 import 'food_seed_data.dart';
 
-// Imports the bundled food list: entries missing by name are inserted, and
-// entries already present get their nutrition/category updated in place —
-// so correcting a seed value (wrong macros, a rewritten product) actually
-// reaches installs that already synced the old one, not just newly-added
-// names. Runs on every launch (a no-op once nothing's missing or stale).
-// Never touches isCustom rows, even if a user happened to name their own
-// food the same as a seed entry.
-Future<void> syncSeedFoods(AppDatabase db) async {
+// Imports the bundled food list: entries missing by name are inserted,
+// entries already present get their nutrition/category updated in place (so
+// correcting a seed value reaches installs that already synced the old one),
+// and non-custom entries no longer present in the list are deleted (so
+// trimming a product out of foodSeedData actually removes it from installs
+// that already synced it in, not just from fresh installs). Runs on every
+// launch (a no-op once nothing's missing, stale, or removed). Never touches
+// isCustom rows, even if a user happened to name their own food the same as
+// a seed entry.
+//
+// Returns the names of foods that *would* have been deleted but were kept
+// because they're still used by a recipe ingredient — same FK-not-enforced
+// situation as FoodSearchSheet's delete action, checked at the application
+// level rather than trusted to the database. Callers should surface this
+// list to the user so they know to remove the food from those recipes first.
+Future<List<String>> syncSeedFoods(AppDatabase db) async {
   final existing = await db.foodsDao.allByName();
+  final seedNames = foodSeedData.map((seed) => seed.name).toSet();
 
   final toInsert = <FoodsCompanion>[];
   final toUpdate = <Food>[];
@@ -49,6 +58,20 @@ Future<void> syncSeedFoods(AppDatabase db) async {
   for (final food in toUpdate) {
     await db.foodsDao.updateFood(food);
   }
+
+  final skipped = <String>[];
+  for (final food in existing.values) {
+    if (food.isCustom || seedNames.contains(food.name)) continue;
+    final usedInRecipe = await (db.select(db.recipeIngredients)
+          ..where((i) => i.foodId.equals(food.id)))
+        .get();
+    if (usedInRecipe.isNotEmpty) {
+      skipped.add(food.name);
+      continue;
+    }
+    await db.foodsDao.deleteFood(food.id);
+  }
+  return skipped;
 }
 
 bool _matchesSeed(Food current, FoodSeed seed) {
