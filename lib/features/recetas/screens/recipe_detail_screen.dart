@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/legacy_recipe_image.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../diario/widgets/recipe_quantity_sheet.dart';
@@ -44,6 +43,9 @@ class _RecipeDetailBody extends ConsumerWidget {
     final theme = Theme.of(context);
     final db = ref.watch(appDatabaseProvider);
     final macrosAsync = ref.watch(recipePerServingMacrosProvider(recipe));
+    final image = recipe.imageBytes != null
+        ? Image.memory(recipe.imageBytes!, fit: BoxFit.cover)
+        : (recipe.imagePath != null ? legacyFileImage(recipe.imagePath!) : null);
 
     return Scaffold(
       appBar: AppBar(
@@ -66,12 +68,12 @@ class _RecipeDetailBody extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
-          if (recipe.imagePath != null && File(recipe.imagePath!).existsSync())
+          if (image != null)
             ClipRRect(
               borderRadius: BorderRadius.circular(AppRadius.md),
               child: AspectRatio(
                 aspectRatio: 16 / 9,
-                child: Image.file(File(recipe.imagePath!), fit: BoxFit.cover),
+                child: SizedBox.expand(child: image),
               ),
             ),
           const SizedBox(height: AppSpacing.lg),
@@ -168,6 +170,7 @@ class _RecipeDetailBody extends ConsumerWidget {
         final newId = await db.recipesDao.insert(RecipesCompanion.insert(
           name: '${recipe.name} (copia)',
           imagePath: Value(recipe.imagePath),
+          imageBytes: Value(recipe.imageBytes),
           category: Value(recipe.category),
           servings: Value(recipe.servings),
           prepTimeMinutes: Value(recipe.prepTimeMinutes),

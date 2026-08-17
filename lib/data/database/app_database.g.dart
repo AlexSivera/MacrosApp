@@ -2041,6 +2041,17 @@ class $RecipesTable extends Recipes with TableInfo<$RecipesTable, Recipe> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _imageBytesMeta = const VerificationMeta(
+    'imageBytes',
+  );
+  @override
+  late final GeneratedColumn<Uint8List> imageBytes = GeneratedColumn<Uint8List>(
+    'image_bytes',
+    aliasedName,
+    true,
+    type: DriftSqlType.blob,
+    requiredDuringInsert: false,
+  );
   @override
   late final GeneratedColumnWithTypeConverter<RecipeCategory, int> category =
       GeneratedColumn<int>(
@@ -2106,6 +2117,7 @@ class $RecipesTable extends Recipes with TableInfo<$RecipesTable, Recipe> {
     id,
     name,
     imagePath,
+    imageBytes,
     category,
     servings,
     isFavorite,
@@ -2139,6 +2151,12 @@ class $RecipesTable extends Recipes with TableInfo<$RecipesTable, Recipe> {
       context.handle(
         _imagePathMeta,
         imagePath.isAcceptableOrUnknown(data['image_path']!, _imagePathMeta),
+      );
+    }
+    if (data.containsKey('image_bytes')) {
+      context.handle(
+        _imageBytesMeta,
+        imageBytes.isAcceptableOrUnknown(data['image_bytes']!, _imageBytesMeta),
       );
     }
     if (data.containsKey('servings')) {
@@ -2189,6 +2207,10 @@ class $RecipesTable extends Recipes with TableInfo<$RecipesTable, Recipe> {
         DriftSqlType.string,
         data['${effectivePrefix}image_path'],
       ),
+      imageBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}image_bytes'],
+      ),
       category: $RecipesTable.$convertercategory.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.int,
@@ -2227,6 +2249,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
   final int id;
   final String name;
   final String? imagePath;
+  final Uint8List? imageBytes;
   final RecipeCategory category;
   final double servings;
   final bool isFavorite;
@@ -2236,6 +2259,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
     required this.id,
     required this.name,
     this.imagePath,
+    this.imageBytes,
     required this.category,
     required this.servings,
     required this.isFavorite,
@@ -2249,6 +2273,9 @@ class Recipe extends DataClass implements Insertable<Recipe> {
     map['name'] = Variable<String>(name);
     if (!nullToAbsent || imagePath != null) {
       map['image_path'] = Variable<String>(imagePath);
+    }
+    if (!nullToAbsent || imageBytes != null) {
+      map['image_bytes'] = Variable<Uint8List>(imageBytes);
     }
     {
       map['category'] = Variable<int>(
@@ -2271,6 +2298,9 @@ class Recipe extends DataClass implements Insertable<Recipe> {
       imagePath: imagePath == null && nullToAbsent
           ? const Value.absent()
           : Value(imagePath),
+      imageBytes: imageBytes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageBytes),
       category: Value(category),
       servings: Value(servings),
       isFavorite: Value(isFavorite),
@@ -2290,6 +2320,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       imagePath: serializer.fromJson<String?>(json['imagePath']),
+      imageBytes: serializer.fromJson<Uint8List?>(json['imageBytes']),
       category: $RecipesTable.$convertercategory.fromJson(
         serializer.fromJson<int>(json['category']),
       ),
@@ -2306,6 +2337,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
       'imagePath': serializer.toJson<String?>(imagePath),
+      'imageBytes': serializer.toJson<Uint8List?>(imageBytes),
       'category': serializer.toJson<int>(
         $RecipesTable.$convertercategory.toJson(category),
       ),
@@ -2320,6 +2352,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
     int? id,
     String? name,
     Value<String?> imagePath = const Value.absent(),
+    Value<Uint8List?> imageBytes = const Value.absent(),
     RecipeCategory? category,
     double? servings,
     bool? isFavorite,
@@ -2329,6 +2362,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
     id: id ?? this.id,
     name: name ?? this.name,
     imagePath: imagePath.present ? imagePath.value : this.imagePath,
+    imageBytes: imageBytes.present ? imageBytes.value : this.imageBytes,
     category: category ?? this.category,
     servings: servings ?? this.servings,
     isFavorite: isFavorite ?? this.isFavorite,
@@ -2342,6 +2376,9 @@ class Recipe extends DataClass implements Insertable<Recipe> {
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       imagePath: data.imagePath.present ? data.imagePath.value : this.imagePath,
+      imageBytes: data.imageBytes.present
+          ? data.imageBytes.value
+          : this.imageBytes,
       category: data.category.present ? data.category.value : this.category,
       servings: data.servings.present ? data.servings.value : this.servings,
       isFavorite: data.isFavorite.present
@@ -2360,6 +2397,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('imagePath: $imagePath, ')
+          ..write('imageBytes: $imageBytes, ')
           ..write('category: $category, ')
           ..write('servings: $servings, ')
           ..write('isFavorite: $isFavorite, ')
@@ -2374,6 +2412,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
     id,
     name,
     imagePath,
+    $driftBlobEquality.hash(imageBytes),
     category,
     servings,
     isFavorite,
@@ -2387,6 +2426,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
           other.id == this.id &&
           other.name == this.name &&
           other.imagePath == this.imagePath &&
+          $driftBlobEquality.equals(other.imageBytes, this.imageBytes) &&
           other.category == this.category &&
           other.servings == this.servings &&
           other.isFavorite == this.isFavorite &&
@@ -2398,6 +2438,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
   final Value<int> id;
   final Value<String> name;
   final Value<String?> imagePath;
+  final Value<Uint8List?> imageBytes;
   final Value<RecipeCategory> category;
   final Value<double> servings;
   final Value<bool> isFavorite;
@@ -2407,6 +2448,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.imagePath = const Value.absent(),
+    this.imageBytes = const Value.absent(),
     this.category = const Value.absent(),
     this.servings = const Value.absent(),
     this.isFavorite = const Value.absent(),
@@ -2417,6 +2459,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
     this.id = const Value.absent(),
     required String name,
     this.imagePath = const Value.absent(),
+    this.imageBytes = const Value.absent(),
     this.category = const Value.absent(),
     this.servings = const Value.absent(),
     this.isFavorite = const Value.absent(),
@@ -2427,6 +2470,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
     Expression<int>? id,
     Expression<String>? name,
     Expression<String>? imagePath,
+    Expression<Uint8List>? imageBytes,
     Expression<int>? category,
     Expression<double>? servings,
     Expression<bool>? isFavorite,
@@ -2437,6 +2481,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (imagePath != null) 'image_path': imagePath,
+      if (imageBytes != null) 'image_bytes': imageBytes,
       if (category != null) 'category': category,
       if (servings != null) 'servings': servings,
       if (isFavorite != null) 'is_favorite': isFavorite,
@@ -2449,6 +2494,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
     Value<int>? id,
     Value<String>? name,
     Value<String?>? imagePath,
+    Value<Uint8List?>? imageBytes,
     Value<RecipeCategory>? category,
     Value<double>? servings,
     Value<bool>? isFavorite,
@@ -2459,6 +2505,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
       id: id ?? this.id,
       name: name ?? this.name,
       imagePath: imagePath ?? this.imagePath,
+      imageBytes: imageBytes ?? this.imageBytes,
       category: category ?? this.category,
       servings: servings ?? this.servings,
       isFavorite: isFavorite ?? this.isFavorite,
@@ -2478,6 +2525,9 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
     }
     if (imagePath.present) {
       map['image_path'] = Variable<String>(imagePath.value);
+    }
+    if (imageBytes.present) {
+      map['image_bytes'] = Variable<Uint8List>(imageBytes.value);
     }
     if (category.present) {
       map['category'] = Variable<int>(
@@ -2505,6 +2555,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('imagePath: $imagePath, ')
+          ..write('imageBytes: $imageBytes, ')
           ..write('category: $category, ')
           ..write('servings: $servings, ')
           ..write('isFavorite: $isFavorite, ')
@@ -5233,6 +5284,7 @@ typedef $$RecipesTableCreateCompanionBuilder =
       Value<int> id,
       required String name,
       Value<String?> imagePath,
+      Value<Uint8List?> imageBytes,
       Value<RecipeCategory> category,
       Value<double> servings,
       Value<bool> isFavorite,
@@ -5244,6 +5296,7 @@ typedef $$RecipesTableUpdateCompanionBuilder =
       Value<int> id,
       Value<String> name,
       Value<String?> imagePath,
+      Value<Uint8List?> imageBytes,
       Value<RecipeCategory> category,
       Value<double> servings,
       Value<bool> isFavorite,
@@ -5272,6 +5325,11 @@ class $$RecipesTableFilterComposer
 
   ColumnFilters<String> get imagePath => $composableBuilder(
     column: $table.imagePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<Uint8List> get imageBytes => $composableBuilder(
+    column: $table.imageBytes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5326,6 +5384,11 @@ class $$RecipesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<Uint8List> get imageBytes => $composableBuilder(
+    column: $table.imageBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get category => $composableBuilder(
     column: $table.category,
     builder: (column) => ColumnOrderings(column),
@@ -5369,6 +5432,11 @@ class $$RecipesTableAnnotationComposer
 
   GeneratedColumn<String> get imagePath =>
       $composableBuilder(column: $table.imagePath, builder: (column) => column);
+
+  GeneratedColumn<Uint8List> get imageBytes => $composableBuilder(
+    column: $table.imageBytes,
+    builder: (column) => column,
+  );
 
   GeneratedColumnWithTypeConverter<RecipeCategory, int> get category =>
       $composableBuilder(column: $table.category, builder: (column) => column);
@@ -5421,6 +5489,7 @@ class $$RecipesTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String?> imagePath = const Value.absent(),
+                Value<Uint8List?> imageBytes = const Value.absent(),
                 Value<RecipeCategory> category = const Value.absent(),
                 Value<double> servings = const Value.absent(),
                 Value<bool> isFavorite = const Value.absent(),
@@ -5430,6 +5499,7 @@ class $$RecipesTableTableManager
                 id: id,
                 name: name,
                 imagePath: imagePath,
+                imageBytes: imageBytes,
                 category: category,
                 servings: servings,
                 isFavorite: isFavorite,
@@ -5441,6 +5511,7 @@ class $$RecipesTableTableManager
                 Value<int> id = const Value.absent(),
                 required String name,
                 Value<String?> imagePath = const Value.absent(),
+                Value<Uint8List?> imageBytes = const Value.absent(),
                 Value<RecipeCategory> category = const Value.absent(),
                 Value<double> servings = const Value.absent(),
                 Value<bool> isFavorite = const Value.absent(),
@@ -5450,6 +5521,7 @@ class $$RecipesTableTableManager
                 id: id,
                 name: name,
                 imagePath: imagePath,
+                imageBytes: imageBytes,
                 category: category,
                 servings: servings,
                 isFavorite: isFavorite,

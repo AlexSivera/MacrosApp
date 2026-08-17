@@ -1,15 +1,14 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/legacy_recipe_image.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../../services/nutrition_engine/food_macros_calculator.dart';
@@ -34,7 +33,11 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
   final _servings = TextEditingController(text: '1');
   final _prepTime = TextEditingController();
   RecipeCategory _category = RecipeCategory.lunch;
-  String? _imagePath;
+  Uint8List? _imageBytes;
+  // Only set when editing a pre-web recipe whose photo is still a legacy
+  // file path with no imageBytes yet — kept only to preview it and to leave
+  // it untouched on save if the user doesn't replace the photo.
+  String? _legacyImagePath;
   final List<IngredientDraft> _ingredients = [];
   bool _loading = true;
   bool _saving = false;
@@ -55,7 +58,8 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
         _servings.text = _formatNum(recipe.servings);
         _prepTime.text = recipe.prepTimeMinutes?.toString() ?? '';
         _category = recipe.category;
-        _imagePath = recipe.imagePath;
+        _imageBytes = recipe.imageBytes;
+        if (_imageBytes == null) _legacyImagePath = recipe.imagePath;
         final ingredients = await db.recipeIngredientsDao.getForRecipe(recipe.id);
         for (final ingredient in ingredients) {
           final food = await db.foodsDao.getById(ingredient.foodId);
@@ -101,10 +105,13 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
 
     final picked = await ImagePicker().pickImage(source: source, imageQuality: 85);
     if (picked == null) return;
-    final dir = await getApplicationDocumentsDirectory();
-    final fileName = 'recipe_${DateTime.now().microsecondsSinceEpoch}${p.extension(picked.path)}';
-    final saved = await File(picked.path).copy(p.join(dir.path, fileName));
-    if (mounted) setState(() => _imagePath = saved.path);
+    final bytes = await picked.readAsBytes();
+    if (mounted) {
+      setState(() {
+        _imageBytes = bytes;
+        _legacyImagePath = null;
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -137,7 +144,11 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
       final existing = await db.recipesDao.getById(recipeId);
       await db.recipesDao.updateRecipe((existing!.copyWith(
         name: name,
-        imagePath: Value(_imagePath),
+        imageBytes: Value(_imageBytes),
+        // Only ever non-null here if the user didn't replace a legacy
+        // file-path photo this session — otherwise _pickImage cleared it,
+        // so this correctly wipes the stale path once imageBytes takes over.
+        imagePath: Value(_legacyImagePath),
         category: _category,
         servings: servings,
         prepTimeMinutes: Value(prepTime),
@@ -145,7 +156,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
     } else {
       recipeId = await db.recipesDao.insert(RecipesCompanion.insert(
         name: name,
-        imagePath: Value(_imagePath),
+        imageBytes: Value(_imageBytes),
         category: Value(_category),
         servings: Value(servings),
         prepTimeMinutes: Value(prepTime),
@@ -173,6 +184,10 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final imagePreview = _imageBytes != null
+        ? Image.memory(_imageBytes!, fit: BoxFit.cover)
+        : (_legacyImagePath != null ? legacyFileImage(_legacyImagePath!) : null);
+
     final servings = double.tryParse(_servings.text.replaceAll(',', '.'));
     final totals = computeRecipeTotals([for (final i in _ingredients) (
           RecipeIngredient(id: 0, recipeId: 0, foodId: i.food.id, grams: i.grams, orderIndex: 0),
@@ -190,26 +205,23 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
             onTap: _pickImage,
             child: AspectRatio(
               aspectRatio: 16 / 9,
-              child: Container(
-                decoration: BoxDecoration(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                child: Container(
                   color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  image: _imagePath != null
-                      ? DecorationImage(image: FileImage(File(_imagePath!)), fit: BoxFit.cover)
-                      : null,
-                ),
-                child: _imagePath == null
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.add_a_photo_outlined, color: theme.colorScheme.onSurfaceVariant),
-                            const SizedBox(height: AppSpacing.xs),
-                            Text('Añadir imagen', style: theme.textTheme.bodySmall),
-                          ],
+                  child: imagePreview != null
+                      ? SizedBox.expand(child: imagePreview)
+                      : Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add_a_photo_outlined, color: theme.colorScheme.onSurfaceVariant),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text('Añadir imagen', style: theme.textTheme.bodySmall),
+                            ],
+                          ),
                         ),
-                      )
-                    : null,
+                ),
               ),
             ),
           ),

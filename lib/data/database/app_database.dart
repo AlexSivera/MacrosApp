@@ -1,9 +1,5 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import 'package:drift_flutter/drift_flutter.dart';
 
 import 'daos/body_weight_dao.dart';
 import 'daos/burned_calories_dao.dart';
@@ -47,13 +43,16 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
             await m.addColumn(foods, foods.category);
+          }
+          if (from < 3) {
+            await m.addColumn(recipes, recipes.imageBytes);
           }
         },
         beforeOpen: (details) async {
@@ -81,10 +80,17 @@ class AppDatabase extends _$AppDatabase {
   }
 }
 
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'macrosapp.sqlite'));
-    return NativeDatabase.createInBackground(file);
-  });
+// Cross-platform: a real sqlite3 file (via sqlite3_flutter_libs) on
+// Android/iOS/desktop, a wasm sqlite3 database backed by OPFS/IndexedDB
+// (via web/sqlite3.wasm + web/drift_worker.js) on web. `web:` is ignored on
+// native, `native:`'s defaults (path_provider-based file location) are
+// ignored on web.
+QueryExecutor _openConnection() {
+  return driftDatabase(
+    name: 'macrosapp',
+    web: DriftWebOptions(
+      sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+      driftWorker: Uri.parse('drift_worker.js'),
+    ),
+  );
 }

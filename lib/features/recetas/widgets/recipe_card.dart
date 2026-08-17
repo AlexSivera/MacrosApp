@@ -1,10 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/legacy_recipe_image.dart';
 import '../providers/recipes_providers.dart';
 
 class RecipeCard extends StatelessWidget {
@@ -17,7 +16,9 @@ class RecipeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final recipe = data.recipe;
-    final imagePath = recipe.imagePath;
+    final image = recipe.imageBytes != null
+        ? Image.memory(recipe.imageBytes!, fit: BoxFit.cover)
+        : (recipe.imagePath != null ? legacyFileImage(recipe.imagePath!) : null);
 
     return InkWell(
       borderRadius: BorderRadius.circular(AppRadius.md),
@@ -31,8 +32,8 @@ class RecipeCard extends StatelessWidget {
               aspectRatio: 16 / 10,
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.md)),
-                child: imagePath != null && File(imagePath).existsSync()
-                    ? Image.file(File(imagePath), fit: BoxFit.cover)
+                child: image != null
+                    ? SizedBox.expand(child: image)
                     : Container(
                         color: theme.colorScheme.surfaceContainerHighest,
                         child: Icon(

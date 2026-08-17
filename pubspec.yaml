@@ -18,11 +18,12 @@ dependencies:
   # Estado de la app
   flutter_riverpod: ^2.6.1
 
-  # Base de datos local (SQLite)
+  # Base de datos local (SQLite): sqlite3_flutter_libs para nativo,
+  # drift_flutter selecciona ese backend o el de wasm (web) según la
+  # plataforma — ver lib/data/database/app_database.dart.
   drift: ^2.22.1
   sqlite3_flutter_libs: ^0.5.28
-  path_provider: ^2.1.5
-  path: ^1.9.1
+  drift_flutter: ^0.2.8
 
   # Navegación
   go_router: ^14.8.1
@@ -68,6 +69,11 @@ flutter_launcher_icons:
   adaptive_icon_foreground: "assets/icon/icon_foreground.png"
   remove_alpha_ios: true
   min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/icon/icon.png"
+    background_color: "#0A0C0E"
+    theme_color: "#0A0C0E"
 
 flutter_native_splash:
   color: "#0A0C0E"
