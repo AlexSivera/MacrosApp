@@ -7,18 +7,34 @@ import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import 'food_category_chips.dart';
 
-// "Crear alimento personalizado" — a minimal form (name + macros, entered
-// either per 100g or per serving), saved to Foods with isCustom = true, then
-// handed back to the caller so it can flow straight into quantity entry
-// without an extra round trip.
+// "Crear alimento personalizado" / "Editar alimento" — a minimal form (name
+// + macros, entered either per 100g or per serving when creating), saved to
+// Foods with isCustom = true, then handed back to the caller so it can flow
+// straight into quantity entry without an extra round trip.
+//
+// Editing is only offered for isCustom foods (see FoodSearchSheet) — the
+// bundled catalog is re-synced from food_seed_data.dart on every launch
+// (see food_seeder.dart), so an edit made here to a non-custom row would
+// silently revert the next time the app starts.
 class CustomFoodFormSheet extends ConsumerStatefulWidget {
-  const CustomFoodFormSheet({super.key});
+  const CustomFoodFormSheet({super.key, this.food});
+
+  // Non-null means "editing this food" instead of creating a new one.
+  final Food? food;
 
   static Future<Food?> show(BuildContext context) {
     return showModalBottomSheet<Food>(
       context: context,
       isScrollControlled: true,
       builder: (context) => const CustomFoodFormSheet(),
+    );
+  }
+
+  static Future<Food?> showEdit(BuildContext context, {required Food food}) {
+    return showModalBottomSheet<Food>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => CustomFoodFormSheet(food: food),
     );
   }
 
@@ -41,6 +57,27 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
   // — we convert to per-100g (the storage unit) on submit.
   bool _perServing = false;
   String? _error;
+
+  bool get _isEditing => widget.food != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final food = widget.food;
+    if (food == null) return;
+    _name.text = food.name;
+    _category = food.category;
+    _kcal.text = _formatNum(food.kcalPer100g);
+    _protein.text = _formatNum(food.proteinPer100g);
+    _carbs.text = _formatNum(food.carbsPer100g);
+    _fat.text = _formatNum(food.fatPer100g);
+    if (food.defaultServingGrams != null) {
+      _servingGrams.text = _formatNum(food.defaultServingGrams!);
+    }
+    _servingLabel.text = food.servingLabel ?? '';
+  }
+
+  static String _formatNum(double v) => v == v.roundToDouble() ? v.round().toString() : v.toString();
 
   @override
   void dispose() {
@@ -69,8 +106,22 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
       return;
     }
 
+    // Editing always shows (and trusts) the serving fields as optional
+    // metadata, independent of the per-100g/por-ración toggle — which only
+    // exists for the create flow, since an existing food's macros are
+    // already known per-100g and re-deriving that from a serving size on
+    // every edit would just be one more place to introduce rounding drift.
     double? servingGrams;
-    if (_perServing) {
+    if (_isEditing) {
+      final text = _servingGrams.text.trim();
+      if (text.isNotEmpty) {
+        servingGrams = double.tryParse(text.replaceAll(',', '.'));
+        if (servingGrams == null || servingGrams <= 0) {
+          setState(() => _error = 'El tamaño de la ración no es válido.');
+          return;
+        }
+      }
+    } else if (_perServing) {
       servingGrams = double.tryParse(_servingGrams.text.replaceAll(',', '.'));
       if (servingGrams == null || servingGrams <= 0) {
         setState(() => _error = 'Introduce el tamaño de la ración en gramos.');
@@ -88,10 +139,28 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
     }
 
     // Scale from "per serving" up to "per 100g" (storage's fixed unit) —
-    // a no-op factor of 1 when the user entered per-100g values directly.
-    final factor = _perServing ? 100 / servingGrams! : 1.0;
+    // a no-op factor of 1 when the user entered per-100g values directly,
+    // and always 1 when editing (macros there are always per-100g).
+    final factor = (!_isEditing && _perServing) ? 100 / servingGrams! : 1.0;
+    final servingLabel = _servingLabel.text.trim().isEmpty ? null : _servingLabel.text.trim();
 
     final db = ref.read(appDatabaseProvider);
+    if (_isEditing) {
+      final updated = widget.food!.copyWith(
+        name: _name.text.trim(),
+        kcalPer100g: enteredKcal,
+        proteinPer100g: enteredProtein,
+        carbsPer100g: enteredCarbs,
+        fatPer100g: enteredFat,
+        category: _category,
+        defaultServingGrams: Value(servingGrams),
+        servingLabel: Value(servingLabel),
+      );
+      await db.foodsDao.updateFood(updated);
+      if (mounted) Navigator.of(context).pop(updated);
+      return;
+    }
+
     final id = await db.foodsDao.insert(FoodsCompanion.insert(
       name: _name.text.trim(),
       kcalPer100g: enteredKcal * factor,
@@ -101,9 +170,7 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
       isCustom: const Value(true),
       category: Value(_category),
       defaultServingGrams: Value(servingGrams),
-      servingLabel: Value(
-        _perServing && _servingLabel.text.trim().isNotEmpty ? _servingLabel.text.trim() : null,
-      ),
+      servingLabel: Value(_perServing ? servingLabel : null),
     ));
     final food = await db.foodsDao.getById(id);
     if (mounted) Navigator.of(context).pop(food);
@@ -124,7 +191,10 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Crear alimento personalizado', style: theme.textTheme.titleLarge),
+            Text(
+              _isEditing ? 'Editar alimento' : 'Crear alimento personalizado',
+              style: theme.textTheme.titleLarge,
+            ),
             const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _name,
@@ -143,18 +213,20 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
                 if (value != null) setState(() => _category = value);
               },
             ),
-            const SizedBox(height: AppSpacing.lg),
-            Text('¿Cómo conoces sus valores?', style: theme.textTheme.labelMedium),
-            const SizedBox(height: AppSpacing.sm),
-            SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(value: false, label: Text('Por 100 g')),
-                ButtonSegment(value: true, label: Text('Por ración')),
-              ],
-              selected: {_perServing},
-              onSelectionChanged: (s) => setState(() => _perServing = s.first),
-            ),
-            if (_perServing) ...[
+            if (!_isEditing) ...[
+              const SizedBox(height: AppSpacing.lg),
+              Text('¿Cómo conoces sus valores?', style: theme.textTheme.labelMedium),
+              const SizedBox(height: AppSpacing.sm),
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: false, label: Text('Por 100 g')),
+                  ButtonSegment(value: true, label: Text('Por ración')),
+                ],
+                selected: {_perServing},
+                onSelectionChanged: (s) => setState(() => _perServing = s.first),
+              ),
+            ],
+            if (_isEditing || _perServing) ...[
               const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
@@ -162,7 +234,10 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
                     child: TextField(
                       controller: _servingGrams,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'Tamaño de la ración', suffixText: 'g'),
+                      decoration: InputDecoration(
+                        labelText: _isEditing ? 'Tamaño de ración (opcional)' : 'Tamaño de la ración',
+                        suffixText: 'g',
+                      ),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
@@ -235,7 +310,10 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
               Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
             ],
             const SizedBox(height: AppSpacing.lg),
-            ElevatedButton(onPressed: _submit, child: const Text('Crear y continuar')),
+            ElevatedButton(
+              onPressed: _submit,
+              child: Text(_isEditing ? 'Guardar cambios' : 'Crear y continuar'),
+            ),
           ],
         ),
       ),

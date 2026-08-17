@@ -99,7 +99,21 @@ class _FoodResultTile extends StatelessWidget {
         'C ${food.carbsPer100g.round()}g · G ${food.fatPer100g.round()}g  (100g)',
         style: theme.textTheme.bodySmall,
       ),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Only isCustom foods are editable — the bundled catalog is
+          // re-synced from the app on every launch (see food_seeder.dart),
+          // so an edit to one of those rows would just be overwritten.
+          if (food.isCustom)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 20),
+              tooltip: 'Editar alimento',
+              onPressed: () => CustomFoodFormSheet.showEdit(context, food: food),
+            ),
+          const Icon(Icons.chevron_right),
+        ],
+      ),
       onTap: () => Navigator.of(context).pop(food),
     );
   }
