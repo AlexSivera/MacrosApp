@@ -7,7 +7,6 @@ import '../../../core/widgets/app_card.dart';
 import '../../../data/database/daos/diary_dao.dart';
 import '../../../data/database/enums.dart';
 import 'add_entry_options_sheet.dart';
-import 'custom_food_form_sheet.dart';
 import 'diary_entry_tile.dart';
 import 'food_quantity_sheet.dart';
 import 'food_search_sheet.dart';
@@ -110,11 +109,6 @@ class MealSectionCard extends StatelessWidget {
         }
       case AddEntryAction.recipe:
         await RecipePickerSheet.show(context, mealType: mealType);
-      case AddEntryAction.customFood:
-        final food = await CustomFoodFormSheet.show(context);
-        if (food != null && context.mounted) {
-          await FoodQuantitySheet.showAdd(context, food: food, mealType: mealType);
-        }
     }
   }
 }

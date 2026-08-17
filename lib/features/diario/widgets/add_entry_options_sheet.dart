@@ -7,7 +7,12 @@ import '../../../core/theme/app_spacing.dart';
 // follow-up flow (search, quantity entry, etc). Awaiting a further sheet's
 // result *inside* this sheet's own onTap would leave `context` pointing at
 // an already-popped, unmounted widget by the time that result comes back.
-enum AddEntryAction { food, recipe, customFood }
+//
+// No "crear alimento personalizado" entry here — that shortcut duplicated
+// the one already at the bottom of FoodSearchSheet (reached via "Añadir
+// alimento" → buscar → sin resultados), which is where it belongs since you
+// always land there right after confirming a search has nothing to offer.
+enum AddEntryAction { food, recipe }
 
 // The fast add-entry entry point tapped from a meal section's "+ Añadir".
 class AddEntryOptionsSheet extends StatelessWidget {
@@ -42,11 +47,6 @@ class AddEntryOptionsSheet extends StatelessWidget {
               leading: const Icon(Icons.bookmark_outline),
               title: const Text('Añadir comida guardada'),
               onTap: () => Navigator.of(context).pop(AddEntryAction.recipe),
-            ),
-            ListTile(
-              leading: const Icon(Icons.add_box_outlined),
-              title: const Text('Crear alimento personalizado'),
-              onTap: () => Navigator.of(context).pop(AddEntryAction.customFood),
             ),
           ],
         ),
