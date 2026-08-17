@@ -42,6 +42,7 @@ dependencies:
 
   # Selector de imagen para recetas
   image_picker: ^1.1.2
+  file_picker: ^12.0.0
 
 dev_dependencies:
   flutter_test:
