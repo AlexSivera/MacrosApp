@@ -35,7 +35,13 @@ class DiaryDao extends DatabaseAccessor<AppDatabase> with _$DiaryDaoMixin {
           for (final row in rows)
             DiaryEntryDisplay(
               entry: row.readTable(diaryEntries),
-              label: row.readTableOrNull(foods)?.name ?? row.readTableOrNull(recipes)?.name ?? '',
+              // Falls back to a placeholder rather than '' when foodId/
+              // recipeId is null with no matching row — the referenced food
+              // was deleted (see FoodSearchSheet's delete action), but the
+              // entry itself survives with its snapshot macros intact.
+              label: row.readTableOrNull(foods)?.name ??
+                  row.readTableOrNull(recipes)?.name ??
+                  'Alimento eliminado',
             ),
         ]);
   }

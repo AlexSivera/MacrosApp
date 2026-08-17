@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../data/database/app_database.dart';
+import '../../../data/database/database_provider.dart';
 import '../providers/food_search_providers.dart';
 import 'custom_food_form_sheet.dart';
 import 'food_category_chips.dart';
@@ -83,13 +84,13 @@ class FoodSearchSheet extends ConsumerWidget {
   }
 }
 
-class _FoodResultTile extends StatelessWidget {
+class _FoodResultTile extends ConsumerWidget {
   const _FoodResultTile({required this.food});
 
   final Food food;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -102,20 +103,53 @@ class _FoodResultTile extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Only isCustom foods are editable — the bundled catalog is
-          // re-synced from the app on every launch (see food_seeder.dart),
-          // so an edit to one of those rows would just be overwritten.
+          // Only isCustom foods are editable/deletable — the bundled catalog
+          // is re-synced from the app on every launch (see
+          // food_seeder.dart), so touching one of those rows here would
+          // just be overwritten (edit) or reappear (delete) on next launch.
           if (food.isCustom)
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 20),
-              tooltip: 'Editar alimento',
-              onPressed: () => CustomFoodFormSheet.showEdit(context, food: food),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (action) => _handleAction(context, ref, action),
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: 'edit', child: Text('Editar')),
+                PopupMenuItem(value: 'delete', child: Text('Eliminar')),
+              ],
             ),
           const Icon(Icons.chevron_right),
         ],
       ),
       onTap: () => Navigator.of(context).pop(food),
     );
+  }
+
+  Future<void> _handleAction(BuildContext context, WidgetRef ref, String action) async {
+    switch (action) {
+      case 'edit':
+        await CustomFoodFormSheet.showEdit(context, food: food);
+      case 'delete':
+        await _delete(context, ref);
+    }
+  }
+
+  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final db = ref.read(appDatabaseProvider);
+    // A recipe ingredient's foodId has no onDelete action (unlike a diary
+    // entry's, which sets null) — deleting a food still used by a recipe
+    // would hit a real foreign-key-constraint failure, so check first
+    // instead of surfacing that as a raw DB error.
+    final usedInRecipe = await (db.select(db.recipeIngredients)
+          ..where((i) => i.foodId.equals(food.id)))
+        .get();
+    if (usedInRecipe.isNotEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Este alimento se usa en una receta — quítalo de ahí antes de eliminarlo.'),
+        ));
+      }
+      return;
+    }
+    await db.foodsDao.deleteFood(food.id);
   }
 }
 

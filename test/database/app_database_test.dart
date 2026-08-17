@@ -32,6 +32,74 @@ void main() {
     expect(results.first.name, 'Pechuga de pollo');
   });
 
+  test('deleting a food not referenced anywhere just removes it', () async {
+    final id = await db.foodsDao.insert(FoodsCompanion.insert(
+      name: 'Manzana',
+      kcalPer100g: 52,
+      proteinPer100g: 0.3,
+      carbsPer100g: 14,
+      fatPer100g: 0.2,
+    ));
+
+    await db.foodsDao.deleteFood(id);
+
+    expect(await db.foodsDao.getById(id), isNull);
+  });
+
+  test('a food used by a recipe ingredient is detected before deleting it', () async {
+    final foodId = await db.foodsDao.insert(FoodsCompanion.insert(
+      name: 'Arroz',
+      kcalPer100g: 130,
+      proteinPer100g: 2.7,
+      carbsPer100g: 28,
+      fatPer100g: 0.3,
+    ));
+    final recipeId = await db.recipesDao.insert(RecipesCompanion.insert(name: 'Arroz solo'));
+    await db.recipeIngredientsDao.replaceIngredients(recipeId, [
+      RecipeIngredientsCompanion.insert(recipeId: recipeId, foodId: foodId, grams: 100, orderIndex: 0),
+    ]);
+
+    // Despite the `.references(Foods, #id)` on recipe_ingredients.foodId,
+    // this schema's FK constraints aren't reliably enforced at the SQLite
+    // level (same limitation RecipesDao.deleteRecipe's own doc comment
+    // notes for cascade deletes) — deleteFood() below would silently
+    // succeed and orphan the ingredient row rather than throwing. This is
+    // the exact query FoodSearchSheet's delete action runs first so it can
+    // block the delete itself instead of relying on a DB-level guarantee
+    // that doesn't actually hold here.
+    final usages = await (db.select(db.recipeIngredients)..where((i) => i.foodId.equals(foodId))).get();
+    expect(usages, isNotEmpty);
+  });
+
+  test('deleting a logged food keeps the diary entry and its snapshotted macros', () async {
+    final foodId = await db.foodsDao.insert(FoodsCompanion.insert(
+      name: 'Plátano',
+      kcalPer100g: 89,
+      proteinPer100g: 1.1,
+      carbsPer100g: 23,
+      fatPer100g: 0.3,
+    ));
+    final today = DateTime.now();
+    final entryId = await db.diaryDao.logFood(
+      date: today,
+      mealType: MealType.snack,
+      foodId: foodId,
+      quantityGrams: 120,
+      orderIndex: 0,
+      kcal: 107,
+      proteinG: 1.3,
+      carbsG: 27.6,
+      fatG: 0.4,
+    );
+
+    await db.foodsDao.deleteFood(foodId);
+
+    final entries = await db.diaryDao.watchEntriesForDate(today).first;
+    final entry = entries.firstWhere((e) => e.entry.id == entryId);
+    expect(entry.entry.kcal, 107, reason: 'the snapshotted macros must survive the food being deleted');
+    expect(entry.label, 'Alimento eliminado', reason: 'the join to the now-deleted food finds no row');
+  });
+
   test('recipes + ingredients: insert, replace, cascade delete', () async {
     final foodId = await db.foodsDao.insert(FoodsCompanion.insert(
       name: 'Arroz',
