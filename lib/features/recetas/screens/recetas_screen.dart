@@ -50,7 +50,10 @@ class RecetasScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            const RecipeFilterChips(),
+            RecipeFilterChips(
+              selected: ref.watch(recipeFilterProvider),
+              onChanged: (filter) => ref.read(recipeFilterProvider.notifier).state = filter,
+            ),
             const SizedBox(height: AppSpacing.lg),
             Expanded(
               child: recipesAsync.when(

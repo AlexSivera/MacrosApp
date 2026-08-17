@@ -1,28 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../providers/recipes_providers.dart';
 
-extension on RecipeFilter {
-  String get label => switch (this) {
-        RecipeFilter.all => 'Todas',
-        RecipeFilter.breakfast => 'Desayunos',
-        RecipeFilter.lunch => 'Comidas',
-        RecipeFilter.dinner => 'Cenas',
-        RecipeFilter.snack => 'Snacks',
-        RecipeFilter.favorites => 'Favoritas',
-        RecipeFilter.highProtein => 'Alta proteína',
-      };
-}
+// Plain (not Consumer-)widget so it can drive either the Recetas tab's
+// shared recipeFilterProvider or a sheet's own local, independent filter
+// state (see RecipePickerSheet) — a chip row has no business knowing which.
+class RecipeFilterChips extends StatelessWidget {
+  const RecipeFilterChips({super.key, required this.selected, required this.onChanged});
 
-class RecipeFilterChips extends ConsumerWidget {
-  const RecipeFilterChips({super.key});
+  final RecipeFilter selected;
+  final ValueChanged<RecipeFilter> onChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selected = ref.watch(recipeFilterProvider);
-
+  Widget build(BuildContext context) {
     return SizedBox(
       height: 36,
       child: ListView.separated(
@@ -34,7 +25,7 @@ class RecipeFilterChips extends ConsumerWidget {
           return ChoiceChip(
             label: Text(filter.label),
             selected: selected == filter,
-            onSelected: (_) => ref.read(recipeFilterProvider.notifier).state = filter,
+            onSelected: (_) => onChanged(filter),
           );
         },
       ),

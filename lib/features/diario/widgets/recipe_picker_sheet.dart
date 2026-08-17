@@ -10,9 +10,14 @@ import 'recipe_quantity_sheet.dart';
 // "Añadir receta" / "Añadir comida guardada" (the brief treats the two as
 // the same concept — a saved Recipe) from a Diario meal section: search or
 // filter Mis Recetas, tap one, then choose servings via RecipeQuantitySheet.
-// Reuses the same search+filter+data providers as the Recetas tab itself so
-// this quick picker doesn't drift out of sync with it over time.
-class RecipePickerSheet extends ConsumerWidget {
+//
+// Filter state is local to this sheet (not the Recetas tab's shared
+// recipeFilterProvider) for two reasons: it needs to start pre-set to
+// whichever meal section it was opened from, and the Recetas tab stays
+// mounted in the background (StatefulShellRoute.indexedStack keeps every
+// branch alive) — sharing the provider would leak this sheet's filter
+// choice onto the Recetas tab the next time it's opened.
+class RecipePickerSheet extends ConsumerStatefulWidget {
   const RecipePickerSheet({super.key, required this.mealType});
 
   final MealType mealType;
@@ -26,9 +31,17 @@ class RecipePickerSheet extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RecipePickerSheet> createState() => _RecipePickerSheetState();
+}
+
+class _RecipePickerSheetState extends ConsumerState<RecipePickerSheet> {
+  late RecipeFilter _filter = recipeFilterForMealType(widget.mealType);
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final resultsAsync = ref.watch(filteredRecipesProvider);
+    final allAsync = ref.watch(recipesWithMacrosProvider);
 
     return SafeArea(
       child: Padding(
@@ -46,14 +59,18 @@ class RecipePickerSheet extends ConsumerWidget {
                   hintText: 'Buscar en Mis Recetas',
                   prefixIcon: Icon(Icons.search),
                 ),
-                onChanged: (value) => ref.read(recipeSearchQueryProvider.notifier).state = value,
+                onChanged: (value) => setState(() => _query = value),
               ),
               const SizedBox(height: AppSpacing.md),
-              const RecipeFilterChips(),
+              RecipeFilterChips(
+                selected: _filter,
+                onChanged: (filter) => setState(() => _filter = filter),
+              ),
               const SizedBox(height: AppSpacing.md),
               Expanded(
-                child: resultsAsync.when(
-                  data: (recipes) {
+                child: allAsync.when(
+                  data: (all) {
+                    final recipes = applyRecipeFilter(all, filter: _filter, query: _query);
                     if (recipes.isEmpty) {
                       return Center(
                         child: Text(
@@ -77,7 +94,7 @@ class RecipePickerSheet extends ConsumerWidget {
                             await RecipeQuantitySheet.showAdd(
                               context,
                               recipe: data.recipe,
-                              mealType: mealType,
+                              mealType: widget.mealType,
                             );
                           },
                         );
