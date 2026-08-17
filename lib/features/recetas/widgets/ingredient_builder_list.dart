@@ -55,8 +55,8 @@ class IngredientBuilderList extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               AppAddButton(
-                label: 'Crear ingrediente',
-                onPressed: () => _createIngredientsLoop(context),
+                label: 'Crear alimento',
+                onPressed: () => _createFoodsLoop(context),
               ),
             ],
           ),
@@ -65,19 +65,20 @@ class IngredientBuilderList extends StatelessWidget {
     );
   }
 
-  // Creating several homemade ingredients in a row (flour, eggs, sugar…)
-  // otherwise means re-opening the food search just to find nothing and dig
-  // out "Crear alimento personalizado" each time. This skips straight to
-  // that form and, after each one is added, reopens it immediately — the
-  // loop only ends when the user backs out of creating a food, which reads
-  // as "I'm done" without needing a separate confirmation step.
-  Future<void> _createIngredientsLoop(BuildContext context) async {
+  // "Crear alimento" only adds new foods to the catalog — it does NOT add
+  // them to this recipe. Creating a food and deciding how much of it goes
+  // into *this* recipe are two different decisions, so forcing a "cantidad"
+  // prompt immediately after typing in its macros was the wrong step to
+  // force here; the food shows up via "Añadir ingrediente" like any other
+  // once it exists. Reopens the creation form immediately after each save
+  // so creating several homemade ingredients in a row (flour, eggs,
+  // sugar…) doesn't mean re-tapping the button each time — the loop only
+  // ends when the user backs out of the form, which reads as "I'm done"
+  // without needing a separate confirmation step.
+  Future<void> _createFoodsLoop(BuildContext context) async {
     while (true) {
       final food = await CustomFoodFormSheet.show(context);
       if (food == null || !context.mounted) return;
-      final draft = await AddIngredientSheet.showForFood(context, food);
-      if (draft != null) onAdd(draft);
-      if (!context.mounted) return;
     }
   }
 }
