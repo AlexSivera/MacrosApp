@@ -9,7 +9,7 @@ import 'package:macrosapp/data/database/database_provider.dart';
 import 'package:macrosapp/router/app_router.dart';
 
 void main() {
-  testWidgets('App boots to Diario with 4-tab bottom nav', (WidgetTester tester) async {
+  testWidgets('App boots to Diario with 5-tab bottom nav', (WidgetTester tester) async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     await db.userProfileDao.ensureDefaultRow();
 
@@ -36,6 +36,7 @@ void main() {
     expect(find.text('Diario'), findsWidgets);
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('Recetas'), findsWidgets);
+    expect(find.text('Plan'), findsWidgets);
     expect(find.text('Progreso'), findsWidgets);
     expect(find.text('Perfil'), findsWidgets);
 
