@@ -33,7 +33,7 @@ Future<void> _teardown(WidgetTester tester, ProviderContainer container, AppData
 }
 
 void main() {
-  testWidgets('Diario renders the summary card and 5 meal sections once a profile exists',
+  testWidgets('Diario renders the summary card and 6 meal sections once a profile exists',
       (tester) async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     await db.userProfileDao.ensureDefaultRow();
@@ -47,10 +47,11 @@ void main() {
     await _pumpApp(tester, container, buildAppRouter(initialLocation: '/diario'));
 
     expect(find.text('DESAYUNO'), findsOneWidget);
+    expect(find.text('ALMUERZO'), findsOneWidget);
     expect(find.text('COMIDA'), findsOneWidget);
     expect(find.text('MERIENDA'), findsOneWidget);
     expect(find.text('CENA'), findsOneWidget);
-    expect(find.text('SNACK'), findsOneWidget);
+    expect(find.text('EXTRA'), findsOneWidget);
     expect(find.text('Consumidas'), findsOneWidget);
     expect(find.text('Restantes'), findsOneWidget);
     expect(find.text('Quemadas'), findsOneWidget);

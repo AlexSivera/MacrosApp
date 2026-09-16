@@ -71,16 +71,16 @@ extension RecipeFilterLabel on RecipeFilter {
       };
 }
 
-// Diario's meal sections (5: breakfast/lunch/snackMerienda/dinner/snack)
-// don't line up 1:1 with a recipe's own category (4: breakfast/lunch/
-// dinner/snack — recipes have no "merienda" of their own), so
-// snackMerienda maps to the closest existing category rather than getting
-// its own filter value.
+// Diario/Plan's meal sections (6: breakfast/almuerzo/lunch/snackMerienda/
+// dinner/snack) don't line up 1:1 with a recipe's own category (4:
+// breakfast/lunch/dinner/snack — recipes have no "merienda" or "almuerzo"
+// of their own), so both map to the closest existing category rather than
+// getting their own filter value.
 RecipeFilter recipeFilterForMealType(MealType mealType) => switch (mealType) {
       MealType.breakfast => RecipeFilter.breakfast,
       MealType.lunch => RecipeFilter.lunch,
       MealType.dinner => RecipeFilter.dinner,
-      MealType.snack || MealType.snackMerienda => RecipeFilter.snack,
+      MealType.snack || MealType.snackMerienda || MealType.almuerzo => RecipeFilter.snack,
     };
 
 final recipeFilterProvider = StateProvider.autoDispose<RecipeFilter>((ref) => RecipeFilter.all);

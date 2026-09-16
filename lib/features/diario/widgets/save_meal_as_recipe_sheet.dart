@@ -49,7 +49,7 @@ class _SaveMealAsRecipeSheetState extends ConsumerState<SaveMealAsRecipeSheet> {
         MealType.breakfast => RecipeCategory.breakfast,
         MealType.lunch => RecipeCategory.lunch,
         MealType.dinner => RecipeCategory.dinner,
-        MealType.snackMerienda || MealType.snack => RecipeCategory.snack,
+        MealType.snackMerienda || MealType.snack || MealType.almuerzo => RecipeCategory.snack,
       };
 
   Future<void> _submit() async {

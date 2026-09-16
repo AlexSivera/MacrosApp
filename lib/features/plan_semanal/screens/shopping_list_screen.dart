@@ -24,76 +24,104 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final days = ref.watch(selectedWeekDaysProvider);
+    final days = ref.watch(shoppingListWeekDaysProvider);
+    final weekStart = ref.watch(shoppingListWeekStartProvider);
     final sectionsAsync = ref.watch(shoppingListForWeekProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lista de la compra'),
       ),
-      body: sectionsAsync.when(
-        data: (sections) {
-          if (sections.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                child: Text(
-                  'No hay comidas planificadas para esta semana.\n'
-                  'Añade alimentos o recetas en Plan semanal y aparecerán aquí.',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium,
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
+            child: Row(
+              children: [
+                IconButton(
+                  tooltip: 'Semana anterior',
+                  icon: const Icon(Icons.chevron_left_rounded),
+                  onPressed: () => ref.read(shoppingListWeekStartProvider.notifier).state =
+                      weekStart.subtract(const Duration(days: 7)),
                 ),
-              ),
-            );
-          }
-          return ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            children: [
-              Text(
-                'Semana del ${DateFormat('d MMM', 'es').format(days.first)} '
-                'al ${DateFormat('d MMM', 'es').format(days.last)}',
-                style: theme.textTheme.bodyMedium,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              for (final section in sections) ...[
-                AppCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        section.category.label.toUpperCase(),
-                        style: theme.textTheme.labelLarge?.copyWith(letterSpacing: 0.6),
-                      ),
-                      const Divider(height: AppSpacing.lg),
-                      for (var i = 0; i < section.items.length; i++) ...[
-                        _ShoppingListTile(
-                          foodName: section.items[i].food.name,
-                          grams: section.items[i].grams,
-                          checked: _checkedFoodIds.contains(section.items[i].food.id),
-                          onChanged: (checked) => setState(() {
-                            if (checked) {
-                              _checkedFoodIds.add(section.items[i].food.id);
-                            } else {
-                              _checkedFoodIds.remove(section.items[i].food.id);
-                            }
-                          }),
-                        ),
-                        if (i != section.items.length - 1)
-                          Divider(
-                            height: AppSpacing.md,
-                            color: theme.colorScheme.outline.withValues(alpha: 0.5),
-                          ),
-                      ],
-                    ],
+                Expanded(
+                  child: Text(
+                    'Semana del ${DateFormat('d MMM', 'es').format(days.first)} '
+                    'al ${DateFormat('d MMM', 'es').format(days.last)}',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.md),
+                IconButton(
+                  tooltip: 'Semana siguiente',
+                  icon: const Icon(Icons.chevron_right_rounded),
+                  onPressed: () => ref.read(shoppingListWeekStartProvider.notifier).state =
+                      weekStart.add(const Duration(days: 7)),
+                ),
               ],
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Error al calcular la compra: $err')),
+            ),
+          ),
+          Expanded(
+            child: sectionsAsync.when(
+              data: (sections) {
+                if (sections.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.xl),
+                      child: Text(
+                        'No hay comidas planificadas para esta semana.\n'
+                        'Añade alimentos o recetas en Plan semanal y aparecerán aquí.',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                  );
+                }
+                return ListView(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  children: [
+                    for (final section in sections) ...[
+                      AppCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              section.category.label.toUpperCase(),
+                              style: theme.textTheme.labelLarge?.copyWith(letterSpacing: 0.6),
+                            ),
+                            const Divider(height: AppSpacing.lg),
+                            for (var i = 0; i < section.items.length; i++) ...[
+                              _ShoppingListTile(
+                                foodName: section.items[i].food.name,
+                                grams: section.items[i].grams,
+                                checked: _checkedFoodIds.contains(section.items[i].food.id),
+                                onChanged: (checked) => setState(() {
+                                  if (checked) {
+                                    _checkedFoodIds.add(section.items[i].food.id);
+                                  } else {
+                                    _checkedFoodIds.remove(section.items[i].food.id);
+                                  }
+                                }),
+                              ),
+                              if (i != section.items.length - 1)
+                                Divider(
+                                  height: AppSpacing.md,
+                                  color: theme.colorScheme.outline.withValues(alpha: 0.5),
+                                ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
+                  ],
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, _) => Center(child: Text('Error al calcular la compra: $err')),
+            ),
+          ),
+        ],
       ),
     );
   }
