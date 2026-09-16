@@ -35,12 +35,14 @@ enum FoodCategory {
   otros,
 }
 
-// Fixed 5-slot day. `snackMerienda` is the traditional Spanish afternoon
-// snack shown in the Diario's meal sections; `snack` is a second, optional
-// slot offered only from the "Añadir al Diario" meal picker so both of the
-// brief's two meal-list mockups (4 sections vs. 5 picker options) are
-// satisfied without ambiguity.
-enum MealType { breakfast, lunch, snackMerienda, dinner, snack }
+// Fixed 6-slot day, shown as Desayuno/Almuerzo/Comida/Merienda/Cena/Extra
+// (see mealSectionOrder in core/constants/meal_types.dart for that display
+// order). `snackMerienda` is the traditional Spanish afternoon snack;
+// `snack` is the catch-all "Extra" slot for anything outside those five.
+// `almuerzo` was appended last (not inserted alphabetically/by day order)
+// so its stored index never collides with the indices already saved for
+// existing users' diary/plan entries.
+enum MealType { breakfast, lunch, snackMerienda, dinner, snack, almuerzo }
 
 // `device`/`api` are unused today but keep the column meaningful once a
 // wearable/health-API integration is added later, per the brief's request

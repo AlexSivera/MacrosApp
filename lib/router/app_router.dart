@@ -14,6 +14,8 @@ import '../features/perfil/screens/nutrition_goals_screen.dart';
 import '../features/perfil/screens/perfil_screen.dart';
 import '../features/perfil/screens/settings_screen.dart';
 import '../features/perfil/screens/units_screen.dart';
+import '../features/plan_semanal/providers/meal_plan_providers.dart';
+import '../features/plan_semanal/screens/plan_day_screen.dart';
 import '../features/plan_semanal/screens/plan_semanal_screen.dart';
 import '../features/plan_semanal/screens/shopping_list_screen.dart';
 import '../features/progreso/screens/progress_screen.dart';
@@ -71,6 +73,12 @@ GoRouter buildAppRouter({required String initialLocation}) => GoRouter(
                 builder: (context, state) => const PlanSemanalScreen(),
                 routes: [
                   GoRoute(path: 'compra', builder: (context, state) => const ShoppingListScreen()),
+                  GoRoute(
+                    path: 'dia/:fecha',
+                    builder: (context, state) => PlanDayScreen(
+                      date: parsePlanDayPathSegment(state.pathParameters['fecha']!),
+                    ),
+                  ),
                 ],
               ),
             ]),

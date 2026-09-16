@@ -12,34 +12,58 @@ DateTime mondayOf(DateTime date) {
   return normalized.subtract(Duration(days: normalized.weekday - 1));
 }
 
-// The single date driving the whole Plan semanal screen: which week's grid
-// is shown (its Monday) and which day's meal sections are shown below it.
-// Kept as one provider (not a separate "selected week" + "selected day"
-// pair) so navigating weeks and picking a day chip can never disagree about
-// which week is on screen.
-final selectedPlanDateProvider = StateProvider<DateTime>((ref) => normalizeDate(DateTime.now()));
+DateTime sundayOf(DateTime date) {
+  final normalized = normalizeDate(date);
+  return normalized.add(Duration(days: DateTime.daysPerWeek - normalized.weekday));
+}
 
-final selectedWeekDaysProvider = Provider<List<DateTime>>((ref) {
-  final monday = mondayOf(ref.watch(selectedPlanDateProvider));
-  return [for (var i = 0; i < 7; i++) monday.add(Duration(days: i))];
+// yyyy-MM-dd, used as the /plan/dia/:fecha route param.
+String planDayPathSegment(DateTime date) =>
+    '${date.year.toString().padLeft(4, '0')}-'
+    '${date.month.toString().padLeft(2, '0')}-'
+    '${date.day.toString().padLeft(2, '0')}';
+
+DateTime parsePlanDayPathSegment(String segment) {
+  final parts = segment.split('-').map(int.parse).toList();
+  return DateTime(parts[0], parts[1], parts[2]);
+}
+
+// --- Month calendar (Plan semanal's landing screen) -----------------------
+
+// The month currently shown in the calendar grid, anchored to its 1st day.
+final selectedPlanMonthProvider =
+    StateProvider<DateTime>((ref) => DateTime(DateTime.now().year, DateTime.now().month, 1));
+
+// Every day the grid renders: full weeks (Mon-Sun) from the week containing
+// the 1st of the month through the week containing its last day — a
+// Google-Calendar-style grid, so leading/trailing days from adjacent months
+// fill out the last row instead of leaving it ragged.
+final monthGridDaysProvider = Provider<List<DateTime>>((ref) {
+  final month = ref.watch(selectedPlanMonthProvider);
+  final lastDayOfMonth = DateTime(month.year, month.month + 1, 0);
+  final gridStart = mondayOf(month);
+  final gridEnd = sundayOf(lastDayOfMonth);
+  final dayCount = gridEnd.difference(gridStart).inDays + 1;
+  return [for (var i = 0; i < dayCount; i++) gridStart.add(Duration(days: i))];
 });
 
-final mealPlanEntriesForSelectedDateProvider =
+// Backs the grid's "has meals planned" dot — one range query for every
+// visible day rather than one per cell.
+final mealPlanEntriesForMonthGridProvider =
     StreamProvider.autoDispose<List<MealPlanEntryDisplay>>((ref) {
-  final date = ref.watch(selectedPlanDateProvider);
-  return ref.watch(appDatabaseProvider).mealPlanDao.watchEntriesForDate(date);
-});
-
-// Backs the day chips' "has meals planned" dot — one range query for the
-// whole week rather than one per day.
-final mealPlanEntriesForWeekProvider =
-    StreamProvider.autoDispose<List<MealPlanEntryDisplay>>((ref) {
-  final days = ref.watch(selectedWeekDaysProvider);
+  final days = ref.watch(monthGridDaysProvider);
   return ref.watch(appDatabaseProvider).mealPlanDao.watchEntriesInRange(days.first, days.last);
 });
 
-Set<DateTime> datesWithPlanEntries(List<MealPlanEntryDisplay> weekEntries) =>
-    {for (final display in weekEntries) normalizeDate(display.entry.date)};
+Set<DateTime> datesWithPlanEntries(List<MealPlanEntryDisplay> entries) =>
+    {for (final display in entries) normalizeDate(display.entry.date)};
+
+// --- A single day's meal sections (PlanDayScreen) --------------------------
+
+final mealPlanEntriesForDateProvider =
+    StreamProvider.autoDispose.family<List<MealPlanEntryDisplay>, DateTime>((ref, date) {
+  return ref.watch(appDatabaseProvider).mealPlanDao.watchEntriesForDate(date);
+});
 
 Map<MealType, List<MealPlanEntryDisplay>> groupPlanEntriesByMeal(
   List<MealPlanEntryDisplay> entries,
@@ -51,13 +75,23 @@ Map<MealType, List<MealPlanEntryDisplay>> groupPlanEntriesByMeal(
   return grouped;
 }
 
-// Resolves every Food/Recipe/RecipeIngredient the currently visible week's
-// plan entries reference, then hands them to the pure aggregator — the only
+// --- Shopping list (its own week, independent of the calendar month) ------
+
+final shoppingListWeekStartProvider =
+    StateProvider<DateTime>((ref) => mondayOf(DateTime.now()));
+
+final shoppingListWeekDaysProvider = Provider<List<DateTime>>((ref) {
+  final monday = ref.watch(shoppingListWeekStartProvider);
+  return [for (var i = 0; i < 7; i++) monday.add(Duration(days: i))];
+});
+
+// Resolves every Food/Recipe/RecipeIngredient the selected week's plan
+// entries reference, then hands them to the pure aggregator — the only
 // place in the feature that talks to the DB, so aggregateShoppingList stays
 // trivially testable.
 final shoppingListForWeekProvider =
     FutureProvider.autoDispose<List<ShoppingListSection>>((ref) async {
-  final days = ref.watch(selectedWeekDaysProvider);
+  final days = ref.watch(shoppingListWeekDaysProvider);
   final db = ref.watch(appDatabaseProvider);
   final displays = await db.mealPlanDao.watchEntriesInRange(days.first, days.last).first;
   final entries = [for (final display in displays) display.entry];
