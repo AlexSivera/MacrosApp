@@ -5,6 +5,7 @@ import 'daos/body_weight_dao.dart';
 import 'daos/burned_calories_dao.dart';
 import 'daos/diary_dao.dart';
 import 'daos/foods_dao.dart';
+import 'daos/meal_plan_dao.dart';
 import 'daos/recipe_ingredients_dao.dart';
 import 'daos/recipes_dao.dart';
 import 'daos/user_profile_dao.dart';
@@ -13,6 +14,7 @@ import 'tables/body_weight_logs_table.dart';
 import 'tables/burned_calories_table.dart';
 import 'tables/diary_entries_table.dart';
 import 'tables/foods_table.dart';
+import 'tables/meal_plan_entries_table.dart';
 import 'tables/recipe_ingredients_table.dart';
 import 'tables/recipes_table.dart';
 import 'tables/user_profile_table.dart';
@@ -27,6 +29,7 @@ part 'app_database.g.dart';
   Recipes,
   RecipeIngredients,
   DiaryEntries,
+  MealPlanEntries,
   BodyWeightLogs,
   BurnedCalories,
 ], daos: [
@@ -35,6 +38,7 @@ part 'app_database.g.dart';
   RecipesDao,
   RecipeIngredientsDao,
   DiaryDao,
+  MealPlanDao,
   BodyWeightDao,
   BurnedCaloriesDao,
 ])
@@ -43,7 +47,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -53,6 +57,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 3) {
             await m.addColumn(recipes, recipes.imageBytes);
+          }
+          if (from < 4) {
+            await m.createTable(mealPlanEntries);
           }
         },
         beforeOpen: (details) async {
@@ -70,6 +77,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> resetAllData() async {
     await transaction(() async {
       await delete(diaryEntries).go();
+      await delete(mealPlanEntries).go();
       await delete(recipeIngredients).go();
       await delete(recipes).go();
       await delete(burnedCalories).go();
