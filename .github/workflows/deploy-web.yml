@@ -30,7 +30,13 @@ jobs:
       - run: flutter pub get
       # Served at https://<user>.github.io/MacrosApp/ — base-href must match
       # the repo name or every asset/route resolves to the wrong path.
-      - run: flutter build web --release --base-href /MacrosApp/
+      # --pwa-strategy=none skips Flutter's offline-caching service worker:
+      # with it, browsers happily keep serving an old cached build to anyone
+      # who already has the PWA installed, sometimes for weeks. Without it,
+      # every launch fetches index.html fresh and always gets the version
+      # just deployed here — the app's own data (SQLite over IndexedDB) isn't
+      # affected either way, since that never went through the service worker.
+      - run: flutter build web --release --base-href /MacrosApp/ --pwa-strategy=none
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
