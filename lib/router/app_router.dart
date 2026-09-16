@@ -14,6 +14,8 @@ import '../features/perfil/screens/nutrition_goals_screen.dart';
 import '../features/perfil/screens/perfil_screen.dart';
 import '../features/perfil/screens/settings_screen.dart';
 import '../features/perfil/screens/units_screen.dart';
+import '../features/plan_semanal/screens/plan_semanal_screen.dart';
+import '../features/plan_semanal/screens/shopping_list_screen.dart';
 import '../features/progreso/screens/progress_screen.dart';
 import '../features/recetas/screens/recetas_screen.dart';
 import '../features/recetas/screens/recipe_detail_screen.dart';
@@ -23,8 +25,9 @@ import '../features/recetas/screens/recipe_editor_screen.dart';
 // table in sync instead of hard-coding raw ints everywhere.
 const _diarioBranch = 0;
 const _recetasBranch = 1;
-const _progresoBranch = 2;
-const _perfilBranch = 3;
+const _planBranch = 2;
+const _progresoBranch = 3;
+const _perfilBranch = 4;
 
 // Built once in main() with the initial location resolved from whether
 // onboarding has been completed, so a first-time install lands on
@@ -59,6 +62,15 @@ GoRouter buildAppRouter({required String initialLocation}) => GoRouter(
                       recipeId: int.parse(state.pathParameters['id']!),
                     ),
                   ),
+                ],
+              ),
+            ]),
+            StatefulShellBranch(routes: [
+              GoRoute(
+                path: '/plan',
+                builder: (context, state) => const PlanSemanalScreen(),
+                routes: [
+                  GoRoute(path: 'compra', builder: (context, state) => const ShoppingListScreen()),
                 ],
               ),
             ]),
@@ -119,6 +131,7 @@ class _BottomNav extends StatelessWidget {
   static const _items = [
     _NavItem(_diarioBranch, Icons.book_outlined, Icons.book, 'Diario'),
     _NavItem(_recetasBranch, Icons.restaurant_menu_outlined, Icons.restaurant_menu, 'Recetas'),
+    _NavItem(_planBranch, Icons.calendar_month_outlined, Icons.calendar_month, 'Plan'),
     _NavItem(_progresoBranch, Icons.show_chart_outlined, Icons.show_chart, 'Progreso'),
     _NavItem(_perfilBranch, Icons.person_outline, Icons.person, 'Perfil'),
   ];
