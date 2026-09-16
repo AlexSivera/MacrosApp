@@ -4,23 +4,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../data/database/app_database.dart';
-import '../../../data/database/daos/diary_dao.dart';
+import '../../../data/database/daos/meal_plan_dao.dart';
 import '../../../data/database/database_provider.dart';
 
-// "Guardar como receta" — bundles everything logged in one meal into a new
-// Recipe. Food entries map straight to a RecipeIngredient. Entries that are
-// themselves a logged recipe are expanded to their own ingredients, scaled
-// by (loggedServings / originalServings), so the new recipe is always
-// built from real Foods rather than nesting a recipe inside a recipe.
+// "Guardar como receta" — bundles everything in one meal section (Diario or
+// Plan, both back onto MealPlanEntries now) into a new Recipe. Food entries
+// map straight to a RecipeIngredient. Entries that are themselves a
+// recipe are expanded to their own ingredients, scaled by (its servings /
+// the original recipe's own servings), so the new recipe is always built
+// from real Foods rather than nesting a recipe inside a recipe.
 class SaveMealAsRecipeSheet extends ConsumerStatefulWidget {
   const SaveMealAsRecipeSheet({super.key, required this.entries, required this.mealType});
 
-  final List<DiaryEntryDisplay> entries;
+  final List<MealPlanEntryDisplay> entries;
   final MealType mealType;
 
   static Future<void> show(
     BuildContext context, {
-    required List<DiaryEntryDisplay> entries,
+    required List<MealPlanEntryDisplay> entries,
     required MealType mealType,
   }) {
     return showModalBottomSheet(

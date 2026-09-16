@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../../services/nutrition_engine/food_macros_calculator.dart';
+import '../../../services/nutrition_engine/meal_plan_macros_calculator.dart';
 
 enum ProgressRange { sevenDays, thirtyDays, threeMonths, sixMonths, oneYear }
 
@@ -57,11 +58,9 @@ final averageMacrosForRangeProvider = StreamProvider.autoDispose<AverageMacros>(
   final range = ref.watch(progressRangeProvider);
   final db = ref.watch(appDatabaseProvider);
   final start = _startOfRange(range);
-  return db.diaryDao.watchEntriesInRange(start, DateTime.now()).map((entries) {
-    final total = entries.fold(
-      FoodMacros.zero,
-      (sum, e) => sum + FoodMacros(kcal: e.kcal, proteinG: e.proteinG, carbsG: e.carbsG, fatG: e.fatG),
-    );
+  return db.mealPlanDao.watchEntriesInRange(start, DateTime.now()).asyncMap((displays) async {
+    final macros = await Future.wait(displays.map((d) => resolveEntryMacros(db, d.entry)));
+    final total = macros.fold(FoodMacros.zero, (sum, m) => sum + m);
     final dayCount = range.days;
     return AverageMacros(perDay: total / dayCount.toDouble(), dayCount: dayCount);
   });

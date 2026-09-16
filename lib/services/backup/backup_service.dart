@@ -22,15 +22,16 @@ Future<String> exportBackup(AppDatabase db) async {
   final profile = await db.userProfileDao.getProfile();
   final recipes = await db.select(db.recipes).get();
   final ingredients = await db.select(db.recipeIngredients).get();
-  final diaryEntries = await db.select(db.diaryEntries).get();
+  final mealPlanEntries = await db.select(db.mealPlanEntries).get();
   final weightLogs = await db.select(db.bodyWeightLogs).get();
   final burnedCalories = await db.select(db.burnedCalories).get();
 
-  // Every food actually referenced by a diary entry or a recipe ingredient,
-  // plus every custom food even if unused so far — not the bundled catalog,
-  // which import resolves by name against whatever's already on that device.
+  // Every food actually referenced by a Diario/Plan entry or a recipe
+  // ingredient, plus every custom food even if unused so far — not the
+  // bundled catalog, which import resolves by name against whatever's
+  // already on that device.
   final referencedFoodIds = <int>{
-    for (final entry in diaryEntries)
+    for (final entry in mealPlanEntries)
       if (entry.foodId != null) entry.foodId!,
     for (final ingredient in ingredients) ingredient.foodId,
   };
@@ -47,7 +48,7 @@ Future<String> exportBackup(AppDatabase db) async {
     'foods': [for (final f in foods) f.toJson()],
     'recipes': [for (final r in recipes) r.toJson()],
     'recipeIngredients': [for (final i in ingredients) i.toJson()],
-    'diaryEntries': [for (final e in diaryEntries) e.toJson()],
+    'mealPlanEntries': [for (final e in mealPlanEntries) e.toJson()],
     'bodyWeightLogs': [for (final w in weightLogs) w.toJson()],
     'burnedCalories': [for (final b in burnedCalories) b.toJson()],
   };
@@ -58,14 +59,14 @@ class BackupSummary {
   const BackupSummary({
     required this.foods,
     required this.recipes,
-    required this.diaryEntries,
+    required this.mealPlanEntries,
     required this.bodyWeightLogs,
     required this.burnedCalories,
   });
 
   final int foods;
   final int recipes;
-  final int diaryEntries;
+  final int mealPlanEntries;
   final int bodyWeightLogs;
   final int burnedCalories;
 }
@@ -140,13 +141,19 @@ Future<BackupSummary> importBackup(AppDatabase db, String jsonString) async {
           ));
     }
 
-    for (final raw in (data['diaryEntries'] as List).cast<Map<String, dynamic>>()) {
-      final entry = DiaryEntry.fromJson(raw);
+    // Falls back to the pre-merge 'diaryEntries' key so a backup exported
+    // before the Diario/Plan unification can still be restored — the two
+    // shapes share every field MealPlanEntry.fromJson actually reads
+    // (id/date/mealType/foodId/recipeId/quantityGrams/servings/orderIndex),
+    // it just ignores the old snapshot macro columns as unknown JSON keys.
+    final mealPlanEntriesJson = (data['mealPlanEntries'] ?? data['diaryEntries']) as List;
+    for (final raw in mealPlanEntriesJson.cast<Map<String, dynamic>>()) {
+      final entry = MealPlanEntry.fromJson(raw);
       final mappedFoodId = entry.foodId != null ? foodIdMap[entry.foodId] : null;
       final mappedRecipeId = entry.recipeId != null ? recipeIdMap[entry.recipeId] : null;
       if (entry.foodId != null && mappedFoodId == null) continue;
       if (entry.recipeId != null && mappedRecipeId == null) continue;
-      await db.into(db.diaryEntries).insert(entry.toCompanion(true).copyWith(
+      await db.into(db.mealPlanEntries).insert(entry.toCompanion(true).copyWith(
             id: const Value.absent(),
             foodId: Value(mappedFoodId),
             recipeId: Value(mappedRecipeId),
@@ -166,7 +173,7 @@ Future<BackupSummary> importBackup(AppDatabase db, String jsonString) async {
     return BackupSummary(
       foods: foodIdMap.length,
       recipes: recipeIdMap.length,
-      diaryEntries: (data['diaryEntries'] as List).length,
+      mealPlanEntries: mealPlanEntriesJson.length,
       bodyWeightLogs: (data['bodyWeightLogs'] as List).length,
       burnedCalories: (data['burnedCalories'] as List).length,
     );

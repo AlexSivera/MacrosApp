@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/daos/meal_plan_dao.dart';
 import '../../../data/database/database_provider.dart';
+import '../../../services/nutrition_engine/food_macros_calculator.dart';
+import '../../../services/nutrition_engine/meal_plan_macros_calculator.dart';
 import '../../../services/shopping_list/shopping_list_calculator.dart';
 
 DateTime normalizeDate(DateTime date) => DateTime(date.year, date.month, date.day);
@@ -73,6 +75,46 @@ Map<MealType, List<MealPlanEntryDisplay>> groupPlanEntriesByMeal(
     grouped[entry.entry.mealType]!.add(entry);
   }
   return grouped;
+}
+
+// --- Live macros (neither the Diario nor the Plan snapshot them anymore) --
+
+// Per-entry macros, shown on its tile — a Drift data class has proper value
+// equality/hashCode (see recipePerServingMacrosProvider's identical use of a
+// Recipe as a family key), so MealPlanEntry is a safe, idiomatic family key.
+// Deliberately depends only on appDatabaseProvider and point Future queries
+// (foodsDao.getById/recipesDao.getById) — never on another provider's own
+// watched Drift stream. Chaining onto a StreamProvider.family's `.future`
+// here previously hung widget tests: if that parent gets autoDisposed (e.g.
+// because the day changed and nothing watches yesterday's entries anymore)
+// before its stream delivers a value, the `.future` this depended on never
+// resolves, and the `await` above it hangs forever — pump() has no real
+// clock to advance and never surfaces that as a timeout on its own.
+final entryMacrosProvider = FutureProvider.autoDispose.family<FoodMacros, MealPlanEntry>(
+  (ref, entry) => resolveEntryMacros(ref.watch(appDatabaseProvider), entry),
+);
+
+// Sums a list of entries' live macros — used for a meal section's kcal pill
+// and the Diario's day total alike. Returns null while any entry's macros
+// are still loading, so callers can show a placeholder instead of a
+// misleadingly-low partial sum.
+//
+// Takes the `watch` function itself (i.e. call as `sumEntryMacros(ref.watch,
+// entries)`) rather than a WidgetRef/Ref, so it works the same from a
+// ConsumerWidget's WidgetRef and a Provider's Ref — the two don't share a
+// common base type in riverpod, but both expose an identically-shaped
+// `watch<T>(ProviderListenable<T>)`.
+FoodMacros? sumEntryMacros(
+  T Function<T>(ProviderListenable<T>) watch,
+  List<MealPlanEntryDisplay> entries,
+) {
+  var total = FoodMacros.zero;
+  for (final display in entries) {
+    final macros = watch(entryMacrosProvider(display.entry)).valueOrNull;
+    if (macros == null) return null;
+    total = total + macros;
+  }
+  return total;
 }
 
 // --- Shopping list (its own week, independent of the calendar month) ------

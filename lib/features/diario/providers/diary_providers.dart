@@ -1,15 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/database/app_database.dart';
-import '../../../data/database/daos/diary_dao.dart';
+import '../../../data/database/daos/meal_plan_dao.dart';
 import '../../../data/database/database_provider.dart';
 import '../../../services/nutrition_engine/diary_summary_calculator.dart';
 import '../../../services/nutrition_engine/food_macros_calculator.dart';
 import '../../../services/nutrition_engine/macro_targets_calculator.dart';
 import '../../../services/nutrition_engine/tdee_calculator.dart';
+import '../../plan_semanal/providers/meal_plan_providers.dart';
 
 // The day currently shown in the Diario — normalized to midnight so it can
-// be compared directly against DiaryEntries.date.
+// be compared directly against MealPlanEntries.date. The Diario is just the
+// Plan's entries for this one day (see meal_plan_entries_table.dart), so
+// everything else (which entries, their macros) is read straight from
+// meal_plan_providers.dart.
 final selectedDiaryDateProvider = StateProvider<DateTime>((ref) {
   final now = DateTime.now();
   return DateTime(now.year, now.month, now.day);
@@ -19,9 +23,21 @@ final userProfileStreamProvider = StreamProvider<UserProfileData?>((ref) {
   return ref.watch(appDatabaseProvider).userProfileDao.watchProfile();
 });
 
-final diaryEntriesForSelectedDateProvider = StreamProvider<List<DiaryEntryDisplay>>((ref) {
+// Deliberately NOT meal_plan_providers.dart's mealPlanEntriesForDateProvider
+// (a .family.autoDispose provider): that's fine for PlanDayScreen, whose
+// date is fixed for the screen's whole lifetime (it's a route param), but
+// the Diario keeps one screen mounted while selectedDiaryDateProvider
+// changes underneath it every time the user taps a day arrow. Churning a
+// family provider's instances like that — disposing today's, creating
+// yesterday's, over and over — was observed to hang widget tests outright:
+// something in cancelling one of Drift's watched-query subscriptions while
+// an near-identical one spins up in the same frame never resolves under
+// pump()'s virtual clock. A single non-family StreamProvider that just
+// re-subscribes internally when the watched date changes (the pre-merge
+// DiaryDao design) doesn't have that failure mode.
+final diaryEntriesForSelectedDateProvider = StreamProvider<List<MealPlanEntryDisplay>>((ref) {
   final date = ref.watch(selectedDiaryDateProvider);
-  return ref.watch(appDatabaseProvider).diaryDao.watchEntriesForDate(date);
+  return ref.watch(appDatabaseProvider).mealPlanDao.watchEntriesForDate(date);
 });
 
 final burnedCaloriesForSelectedDateProvider = StreamProvider<List<BurnedCalory>>((ref) {
@@ -119,19 +135,10 @@ final _latestWeightStreamProvider = StreamProvider<BodyWeightLog?>((ref) {
 
 final diarySummaryProvider = Provider<DiarySummary>((ref) {
   final entries = ref.watch(diaryEntriesForSelectedDateProvider).valueOrNull ?? [];
+  final consumed = sumEntryMacros(ref.watch, entries) ?? FoodMacros.zero;
   final burned = ref.watch(burnedCaloriesForSelectedDateProvider).valueOrNull ?? [];
   final targets = ref.watch(resolvedTargetsProvider);
 
-  final consumed = entries.fold(
-    FoodMacros.zero,
-    (sum, e) => sum +
-        FoodMacros(
-          kcal: e.entry.kcal,
-          proteinG: e.entry.proteinG,
-          carbsG: e.entry.carbsG,
-          fatG: e.entry.fatG,
-        ),
-  );
   final burnedKcal = burned.fold(0.0, (sum, b) => sum + b.kcal);
 
   return DiarySummary(
@@ -146,13 +153,3 @@ final diarySummaryProvider = Provider<DiarySummary>((ref) {
     ),
   );
 });
-
-// Groups the day's entries by meal, in the fixed 5-slot order the Diario
-// renders sections in.
-Map<MealType, List<DiaryEntryDisplay>> groupEntriesByMeal(List<DiaryEntryDisplay> entries) {
-  final grouped = {for (final meal in MealType.values) meal: <DiaryEntryDisplay>[]};
-  for (final entry in entries) {
-    grouped[entry.entry.mealType]!.add(entry);
-  }
-  return grouped;
-}

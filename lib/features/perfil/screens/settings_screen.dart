@@ -91,7 +91,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final summary = await importBackup(ref.read(appDatabaseProvider), utf8.decode(bytes));
       if (mounted) {
         _showMessage(
-          'Importado: ${summary.recipes} recetas, ${summary.diaryEntries} registros del diario, '
+          'Importado: ${summary.recipes} recetas, ${summary.mealPlanEntries} comidas registradas/planificadas, '
           '${summary.bodyWeightLogs} pesos, ${summary.burnedCalories} calorías quemadas.',
         );
       }

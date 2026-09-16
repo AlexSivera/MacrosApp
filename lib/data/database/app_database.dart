@@ -3,7 +3,6 @@ import 'package:drift_flutter/drift_flutter.dart';
 
 import 'daos/body_weight_dao.dart';
 import 'daos/burned_calories_dao.dart';
-import 'daos/diary_dao.dart';
 import 'daos/foods_dao.dart';
 import 'daos/meal_plan_dao.dart';
 import 'daos/recipe_ingredients_dao.dart';
@@ -12,7 +11,6 @@ import 'daos/user_profile_dao.dart';
 import 'enums.dart';
 import 'tables/body_weight_logs_table.dart';
 import 'tables/burned_calories_table.dart';
-import 'tables/diary_entries_table.dart';
 import 'tables/foods_table.dart';
 import 'tables/meal_plan_entries_table.dart';
 import 'tables/recipe_ingredients_table.dart';
@@ -28,7 +26,6 @@ part 'app_database.g.dart';
   Foods,
   Recipes,
   RecipeIngredients,
-  DiaryEntries,
   MealPlanEntries,
   BodyWeightLogs,
   BurnedCalories,
@@ -37,7 +34,6 @@ part 'app_database.g.dart';
   FoodsDao,
   RecipesDao,
   RecipeIngredientsDao,
-  DiaryDao,
   MealPlanDao,
   BodyWeightDao,
   BurnedCaloriesDao,
@@ -47,7 +43,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -60,6 +56,22 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 4) {
             await m.createTable(mealPlanEntries);
+          }
+          if (from < 5) {
+            // The Diario and Plan semanal used to be two separate tables —
+            // DiaryEntries snapshotted its macros at log time, MealPlanEntries
+            // always recomputed them live. Now the Diario is just "the Plan's
+            // entries for today (or a past day)", so there's one table left:
+            // copy every still-existing diary row into it (raw SQL, since the
+            // DiaryEntries Dart table class is gone — this reads the old
+            // on-disk schema, not a generated one) and drop the old table.
+            await customStatement('''
+              INSERT INTO meal_plan_entries
+                (date, meal_type, food_id, recipe_id, quantity_grams, servings, order_index)
+              SELECT date, meal_type, food_id, recipe_id, quantity_grams, servings, order_index
+              FROM diary_entries;
+            ''');
+            await m.deleteTable('diary_entries');
           }
         },
         beforeOpen: (details) async {
@@ -76,7 +88,6 @@ class AppDatabase extends _$AppDatabase {
   // be undone).
   Future<void> resetAllData() async {
     await transaction(() async {
-      await delete(diaryEntries).go();
       await delete(mealPlanEntries).go();
       await delete(recipeIngredients).go();
       await delete(recipes).go();

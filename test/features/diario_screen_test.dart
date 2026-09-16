@@ -55,7 +55,7 @@ void main() {
     expect(find.text('Consumidas'), findsOneWidget);
     expect(find.text('Restantes'), findsOneWidget);
     expect(find.text('Quemadas'), findsOneWidget);
-    expect(find.textContaining('Sin registrar'), findsWidgets);
+    expect(find.textContaining('Nada planeado'), findsWidgets);
 
     await _teardown(tester, container, db);
   });
@@ -76,22 +76,19 @@ void main() {
       fatPer100g: 3.6,
     ));
     final today = DateTime.now();
-    await db.diaryDao.logFood(
+    await db.mealPlanDao.addFood(
       date: DateTime(today.year, today.month, today.day),
       mealType: MealType.lunch,
       foodId: foodId,
       quantityGrams: 200,
       orderIndex: 0,
-      kcal: 330,
-      proteinG: 62,
-      carbsG: 0,
-      fatG: 7.2,
     );
     final container = ProviderContainer(overrides: [appDatabaseProvider.overrideWithValue(db)]);
 
     await _pumpApp(tester, container, buildAppRouter(initialLocation: '/diario'));
+    await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('330'), findsOneWidget); // Consumidas
+    expect(find.text('330'), findsOneWidget); // Consumidas: 200g at 165kcal/100g, resolved live
     expect(find.textContaining('Pechuga de pollo'), findsOneWidget);
     expect(find.textContaining('200 g'), findsOneWidget);
 

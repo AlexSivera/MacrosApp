@@ -32,16 +32,12 @@ void main() {
         orderIndex: 0,
       ),
     ]);
-    await db.diaryDao.logFood(
+    await db.mealPlanDao.addFood(
       date: DateTime(2026, 8, 1),
       mealType: MealType.breakfast,
       foodId: customFoodId,
       quantityGrams: 100,
       orderIndex: 0,
-      kcal: 120,
-      proteinG: 8,
-      carbsG: 15,
-      fatG: 2,
     );
     await db.bodyWeightDao.insertLog(BodyWeightLogsCompanion.insert(
       date: DateTime(2026, 8, 1),
@@ -55,7 +51,7 @@ void main() {
 
     expect(await db.userProfileDao.getProfile(), isNull);
     expect(await db.recipesDao.watchAll().first, isEmpty);
-    expect(await db.diaryDao.watchEntriesForDate(DateTime(2026, 8, 1)).first, isEmpty);
+    expect(await db.mealPlanDao.watchEntriesForDate(DateTime(2026, 8, 1)).first, isEmpty);
     expect(await db.bodyWeightDao.watchLatest().first, isNull);
 
     final foodsAfter = await db.foodsDao.watchFiltered().first;

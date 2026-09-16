@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/meal_types.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -8,16 +9,18 @@ import '../../../data/database/daos/meal_plan_dao.dart';
 import '../../../data/database/enums.dart';
 import '../../diario/widgets/add_entry_options_sheet.dart';
 import '../../diario/widgets/food_search_sheet.dart';
+import '../../diario/widgets/save_meal_as_recipe_sheet.dart';
+import '../providers/meal_plan_providers.dart';
 import 'plan_entry_tile.dart';
 import 'plan_food_quantity_sheet.dart';
 import 'plan_recipe_picker_sheet.dart';
 
-// The Plan semanal analogue of the Diario's MealSectionCard: same layout and
-// add-entry flow, but for a given (date, mealType) slot in MealPlanEntries
-// instead of the current day's DiaryEntries. AddEntryOptionsSheet and
-// FoodSearchSheet are reused as-is from the Diario feature — neither writes
-// to DiaryDao, they just return a choice/a Food for the caller to act on.
-class PlanMealSectionCard extends StatelessWidget {
+// The one meal-section card shared by the Diario and the Plan: both are just
+// a (date, mealType) slot in MealPlanEntries now (see meal_plan_entries_table
+// .dart's doc comment on why the two features share a single table). Reused
+// across both feature folders, same as AddEntryOptionsSheet/FoodSearchSheet
+// already were.
+class PlanMealSectionCard extends ConsumerWidget {
   const PlanMealSectionCard({
     super.key,
     required this.date,
@@ -30,9 +33,10 @@ class PlanMealSectionCard extends StatelessWidget {
   final List<MealPlanEntryDisplay> entries;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isEmpty = entries.isEmpty;
+    final totalMacros = sumEntryMacros(ref.watch, entries);
 
     return AppCard(
       child: Column(
@@ -58,6 +62,26 @@ class PlanMealSectionCard extends StatelessWidget {
                   style: theme.textTheme.labelLarge?.copyWith(letterSpacing: 0.6),
                 ),
               ),
+              if (!isEmpty) ...[
+                if (totalMacros != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                    child: Text('${totalMacros.kcal.round()} kcal', style: theme.textTheme.labelLarge),
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.bookmark_add_outlined, size: 20),
+                  tooltip: 'Guardar como receta',
+                  onPressed: () => SaveMealAsRecipeSheet.show(
+                    context,
+                    entries: entries,
+                    mealType: mealType,
+                  ),
+                ),
+              ],
             ],
           ),
           if (isEmpty) ...[

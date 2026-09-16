@@ -8,7 +8,8 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/legacy_recipe_image.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
-import '../../diario/widgets/recipe_quantity_sheet.dart';
+import '../../diario/providers/diary_providers.dart';
+import '../../plan_semanal/widgets/plan_recipe_quantity_sheet.dart';
 import '../providers/recipes_providers.dart';
 
 class RecipeDetailScreen extends ConsumerWidget {
@@ -153,7 +154,11 @@ class _RecipeDetailBody extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.xxl),
           ElevatedButton(
-            onPressed: () => RecipeQuantitySheet.showAdd(context, recipe: recipe),
+            onPressed: () => PlanRecipeQuantitySheet.showAdd(
+              context,
+              recipe: recipe,
+              date: ref.read(selectedDiaryDateProvider),
+            ),
             child: const Text('Añadir al Diario'),
           ),
         ],
