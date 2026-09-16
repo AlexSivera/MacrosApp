@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:macrosapp/data/database/app_database.dart';
+import 'package:macrosapp/services/nutrition_engine/meal_plan_macros_calculator.dart';
 
 void main() {
   late AppDatabase db;
@@ -56,7 +57,7 @@ void main() {
     expect(latest!.weightKg, 79);
   });
 
-  test('diary entries in range sum correctly for an average-macros calculation', () async {
+  test('diary/plan entries in range sum correctly for an average-macros calculation', () async {
     final foodId = await db.foodsDao.insert(FoodsCompanion.insert(
       name: 'Avena',
       kcalPer100g: 389,
@@ -65,21 +66,19 @@ void main() {
       fatPer100g: 7,
     ));
     for (final day in [1, 2, 3]) {
-      await db.diaryDao.logFood(
+      await db.mealPlanDao.addFood(
         date: DateTime(2026, 8, day),
         mealType: MealType.breakfast,
         foodId: foodId,
         quantityGrams: 100,
         orderIndex: 0,
-        kcal: 389,
-        proteinG: 17,
-        carbsG: 66,
-        fatG: 7,
       );
     }
-    final entries = await db.diaryDao.watchEntriesInRange(DateTime(2026, 8, 1), DateTime(2026, 8, 7)).first;
-    expect(entries, hasLength(3));
-    final totalKcal = entries.fold(0.0, (sum, e) => sum + e.kcal);
+    final displays =
+        await db.mealPlanDao.watchEntriesInRange(DateTime(2026, 8, 1), DateTime(2026, 8, 7)).first;
+    expect(displays, hasLength(3));
+    final macros = await Future.wait(displays.map((d) => resolveEntryMacros(db, d.entry)));
+    final totalKcal = macros.fold(0.0, (sum, m) => sum + m.kcal);
     expect(totalKcal, closeTo(1167, 0.01));
     // Averaged over the full 7-day range (not just the 3 tracked days).
     expect(totalKcal / 7, closeTo(166.7, 0.1));

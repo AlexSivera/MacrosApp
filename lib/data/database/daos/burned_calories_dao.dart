@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../app_database.dart';
 import '../tables/burned_calories_table.dart';
-import 'diary_dao.dart' show DiaryDao;
+import 'meal_plan_dao.dart' show MealPlanDao;
 
 part 'burned_calories_dao.g.dart';
 
@@ -12,7 +12,7 @@ class BurnedCaloriesDao extends DatabaseAccessor<AppDatabase>
   BurnedCaloriesDao(super.db);
 
   Stream<List<BurnedCalory>> watchForDate(DateTime date) {
-    final day = DiaryDao.normalizeDate(date);
+    final day = MealPlanDao.normalizeDate(date);
     return (select(burnedCalories)..where((b) => b.date.equals(day))).watch();
   }
 
@@ -24,7 +24,7 @@ class BurnedCaloriesDao extends DatabaseAccessor<AppDatabase>
   // replaces that day's previous device entry instead of accumulating
   // duplicates, while leaving any manual entries for the same day untouched.
   Future<void> upsertDeviceEntryForDate(DateTime date, double kcal, {String? label}) async {
-    final day = DiaryDao.normalizeDate(date);
+    final day = MealPlanDao.normalizeDate(date);
     await transaction(() async {
       await (delete(burnedCalories)
             ..where((b) => b.date.equals(day) & b.source.equalsValue(BurnedCalorieSource.device)))

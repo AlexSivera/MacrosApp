@@ -94,7 +94,7 @@ void main() {
     expect(usages, isNotEmpty);
   });
 
-  test('deleting a logged food keeps the diary entry and its snapshotted macros', () async {
+  test('deleting a logged food keeps the entry but resolves its label/macros as gone', () async {
     final foodId = await db.foodsDao.insert(FoodsCompanion.insert(
       name: 'Plátano',
       kcalPer100g: 89,
@@ -103,23 +103,19 @@ void main() {
       fatPer100g: 0.3,
     ));
     final today = DateTime.now();
-    final entryId = await db.diaryDao.logFood(
+    final entryId = await db.mealPlanDao.addFood(
       date: today,
       mealType: MealType.snack,
       foodId: foodId,
       quantityGrams: 120,
       orderIndex: 0,
-      kcal: 107,
-      proteinG: 1.3,
-      carbsG: 27.6,
-      fatG: 0.4,
     );
 
     await db.foodsDao.deleteFood(foodId);
 
-    final entries = await db.diaryDao.watchEntriesForDate(today).first;
+    final entries = await db.mealPlanDao.watchEntriesForDate(today).first;
     final entry = entries.firstWhere((e) => e.entry.id == entryId);
-    expect(entry.entry.kcal, 107, reason: 'the snapshotted macros must survive the food being deleted');
+    expect(entry.entry.quantityGrams, 120, reason: 'the entry row itself survives');
     expect(entry.label, 'Alimento eliminado', reason: 'the join to the now-deleted food finds no row');
   });
 
@@ -145,7 +141,7 @@ void main() {
     expect(afterDelete, isEmpty);
   });
 
-  test('diary entries: log food, watch by date, delete', () async {
+  test('diary/plan entries: log food, watch by date, delete', () async {
     final foodId = await db.foodsDao.insert(FoodsCompanion.insert(
       name: 'Huevo',
       kcalPer100g: 155,
@@ -154,25 +150,21 @@ void main() {
       fatPer100g: 11,
     ));
     final date = DateTime(2026, 8, 13);
-    final entryId = await db.diaryDao.logFood(
+    final entryId = await db.mealPlanDao.addFood(
       date: date,
       mealType: MealType.breakfast,
       foodId: foodId,
       quantityGrams: 100,
       orderIndex: 0,
-      kcal: 155,
-      proteinG: 13,
-      carbsG: 1.1,
-      fatG: 11,
     );
 
-    final entries = await db.diaryDao.watchEntriesForDate(date).first;
+    final entries = await db.mealPlanDao.watchEntriesForDate(date).first;
     expect(entries, hasLength(1));
     expect(entries.first.label, 'Huevo');
-    expect(entries.first.entry.kcal, 155);
+    expect(entries.first.entry.quantityGrams, 100);
 
-    await db.diaryDao.deleteEntry(entryId);
-    expect(await db.diaryDao.watchEntriesForDate(date).first, isEmpty);
+    await db.mealPlanDao.deleteEntry(entryId);
+    expect(await db.mealPlanDao.watchEntriesForDate(date).first, isEmpty);
   });
 
   test('body weight logs: insert + latest', () async {

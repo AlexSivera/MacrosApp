@@ -10,11 +10,12 @@ import '../../../core/widgets/fade_slide_in.dart';
 import '../../../core/widgets/shimmer_box.dart';
 import '../../../data/database/database_provider.dart';
 import '../../../services/health_connect/health_connect_service.dart';
+import '../../plan_semanal/providers/meal_plan_providers.dart';
+import '../../plan_semanal/widgets/plan_meal_section_card.dart';
 import '../providers/diary_providers.dart';
 import '../widgets/calorie_summary_card.dart';
 import '../widgets/date_selector_bar.dart';
 import '../widgets/detalles_sheet.dart';
-import '../widgets/meal_section_card.dart';
 
 class DiarioScreen extends ConsumerStatefulWidget {
   const DiarioScreen({super.key});
@@ -87,9 +88,9 @@ class _DiarioScreenState extends ConsumerState<DiarioScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedDate = ref.watch(selectedDiaryDateProvider);
     final entriesAsync = ref.watch(diaryEntriesForSelectedDateProvider);
     final summary = ref.watch(diarySummaryProvider);
-    final selectedDate = ref.watch(selectedDiaryDateProvider);
 
     // "Goal reached" = within a tight band of the target, not just barely
     // over 0% — reaching 95-105% of target reads as "on plan today" without
@@ -134,12 +135,16 @@ class _DiarioScreenState extends ConsumerState<DiarioScreen> {
                 const SizedBox(height: AppSpacing.xl),
                 entriesAsync.when(
                   data: (entries) {
-                    final grouped = groupEntriesByMeal(entries);
+                    final grouped = groupPlanEntriesByMeal(entries);
                     return Column(
                       children: [
                         for (final meal in mealSectionOrder) ...[
                           FadeSlideIn(
-                            child: MealSectionCard(mealType: meal, entries: grouped[meal]!),
+                            child: PlanMealSectionCard(
+                              date: selectedDate,
+                              mealType: meal,
+                              entries: grouped[meal]!,
+                            ),
                           ),
                           const SizedBox(height: AppSpacing.md),
                         ],
@@ -169,7 +174,7 @@ class _MealSectionsSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < mealSectionOrder.length; i++)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.md),
             child: Container(

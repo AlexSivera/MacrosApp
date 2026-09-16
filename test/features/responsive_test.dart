@@ -62,16 +62,12 @@ void main() {
         fatPer100g: 3.6,
       ));
       final today = DateTime.now();
-      await db.diaryDao.logFood(
+      await db.mealPlanDao.addFood(
         date: DateTime(today.year, today.month, today.day),
         mealType: MealType.lunch,
         foodId: foodId,
         quantityGrams: 200,
         orderIndex: 0,
-        kcal: 330,
-        proteinG: 62,
-        carbsG: 0,
-        fatG: 7.2,
       );
       final container = ProviderContainer(overrides: [appDatabaseProvider.overrideWithValue(db)]);
 

@@ -37,27 +37,19 @@ void main() {
     ]);
 
     final today = DateTime(2026, 1, 1);
-    await source.diaryDao.logFood(
+    await source.mealPlanDao.addFood(
       date: today,
       mealType: MealType.breakfast,
       foodId: seededFoodId,
       quantityGrams: 150,
       orderIndex: 0,
-      kcal: 78,
-      proteinG: 0.5,
-      carbsG: 21,
-      fatG: 0.3,
     );
-    await source.diaryDao.logRecipe(
+    await source.mealPlanDao.addRecipe(
       date: today,
       mealType: MealType.lunch,
       recipeId: recipeId,
       servings: 1,
       orderIndex: 0,
-      kcal: 240,
-      proteinG: 16,
-      carbsG: 30,
-      fatG: 4,
     );
     await source.bodyWeightDao.insertLog(
       BodyWeightLogsCompanion.insert(date: today, weightKg: 79.5),
@@ -90,7 +82,7 @@ void main() {
     final summary = await importBackup(target, json);
 
     expect(summary.recipes, 1);
-    expect(summary.diaryEntries, 2);
+    expect(summary.mealPlanEntries, 2);
     expect(summary.bodyWeightLogs, 1);
     expect(summary.burnedCalories, 1);
 
@@ -102,12 +94,12 @@ void main() {
     expect(restoredCustom, isNotNull);
     expect(restoredCustom!.kcalPer100g, 120);
 
-    final entries = await target.diaryDao.watchEntriesForDate(today).first;
+    final entries = await target.mealPlanDao.watchEntriesForDate(today).first;
     expect(entries, hasLength(2));
     final foodEntry = entries.firstWhere((e) => e.entry.foodId != null);
     expect(foodEntry.label, 'Manzana', reason: 'must resolve to the target DB\'s own Manzana row');
     expect(foodEntry.entry.foodId, targetManzanaId);
-    expect(foodEntry.entry.kcal, 78);
+    expect(foodEntry.entry.quantityGrams, 150);
 
     final recipeEntry = entries.firstWhere((e) => e.entry.recipeId != null);
     expect(recipeEntry.label, 'Receta de prueba');

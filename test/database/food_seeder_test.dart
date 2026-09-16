@@ -108,7 +108,7 @@ void main() {
     expect(await db.foodsDao.getById(staleId), isNotNull, reason: 'kept because a recipe still references it');
   });
 
-  test('a stale food logged in the diary is deleted, and the diary entry keeps its snapshot', () async {
+  test('a stale food logged in the diary is deleted, and the entry row survives it', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
 
@@ -122,25 +122,21 @@ void main() {
       isCustom: const Value(false),
     ));
     final today = DateTime.now();
-    final entryId = await db.diaryDao.logFood(
+    final entryId = await db.mealPlanDao.addFood(
       date: today,
       mealType: MealType.snack,
       foodId: staleId,
       quantityGrams: 100,
       orderIndex: 0,
-      kcal: 100,
-      proteinG: 5,
-      carbsG: 10,
-      fatG: 3,
     );
 
     final skipped = await syncSeedFoods(db);
 
     expect(skipped, isEmpty);
     expect(await db.foodsDao.getById(staleId), isNull);
-    final entries = await db.diaryDao.watchEntriesForDate(today).first;
+    final entries = await db.mealPlanDao.watchEntriesForDate(today).first;
     final entry = entries.firstWhere((e) => e.entry.id == entryId);
-    expect(entry.entry.kcal, 100, reason: 'the snapshotted macros survive the food being deleted');
+    expect(entry.entry.quantityGrams, 100, reason: 'the entry row survives the food being deleted');
     expect(entry.label, 'Alimento eliminado');
   });
 }

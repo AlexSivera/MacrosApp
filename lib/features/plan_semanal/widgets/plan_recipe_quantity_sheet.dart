@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/meal_types.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../../services/nutrition_engine/recipe_macros_calculator.dart';
 
-// Servings-entry step for a recipe planned on a given day — the Plan
-// semanal analogue of RecipeQuantitySheet, writing to MealPlanDao.
+// Servings-entry step for a recipe, on a given day — used by both the Plan
+// (mealType always known, from the section tapped) and the recipe detail
+// screen's "Añadir al Diario" (mealType unknown, picked here via dropdown).
 class PlanRecipeQuantitySheet extends ConsumerStatefulWidget {
   const PlanRecipeQuantitySheet({
     super.key,
@@ -26,7 +28,7 @@ class PlanRecipeQuantitySheet extends ConsumerStatefulWidget {
     BuildContext context, {
     required Recipe recipe,
     required DateTime date,
-    required MealType mealType,
+    MealType? mealType,
   }) {
     return showModalBottomSheet(
       context: context,
@@ -53,6 +55,7 @@ class PlanRecipeQuantitySheet extends ConsumerStatefulWidget {
 
 class _PlanRecipeQuantitySheetState extends ConsumerState<PlanRecipeQuantitySheet> {
   late final TextEditingController _controller;
+  late MealType _mealType;
   String? _error;
 
   @override
@@ -60,6 +63,7 @@ class _PlanRecipeQuantitySheetState extends ConsumerState<PlanRecipeQuantityShee
     super.initState();
     final initial = widget.entry?.servings ?? 1.0;
     _controller = TextEditingController(text: _formatServings(initial));
+    _mealType = widget.mealType ?? widget.entry?.mealType ?? MealType.lunch;
   }
 
   static String _formatServings(double s) =>
@@ -84,10 +88,10 @@ class _PlanRecipeQuantitySheetState extends ConsumerState<PlanRecipeQuantityShee
     if (widget.entry != null) {
       await db.mealPlanDao.updateEntryQuantity(widget.entry!.id, servings: servings);
     } else {
-      final orderIndex = await db.mealPlanDao.nextOrderIndex(widget.date!, widget.mealType!);
+      final orderIndex = await db.mealPlanDao.nextOrderIndex(widget.date!, _mealType);
       await db.mealPlanDao.addRecipe(
         date: widget.date!,
-        mealType: widget.mealType!,
+        mealType: _mealType,
         recipeId: widget.recipe.id,
         servings: servings,
         orderIndex: orderIndex,
@@ -148,9 +152,21 @@ class _PlanRecipeQuantitySheetState extends ConsumerState<PlanRecipeQuantityShee
                   children: [
                     Text(widget.recipe.name, style: theme.textTheme.titleLarge),
                     const SizedBox(height: AppSpacing.md),
+                    if (widget.mealType == null && widget.entry == null) ...[
+                      DropdownButtonFormField<MealType>(
+                        initialValue: _mealType,
+                        decoration: const InputDecoration(labelText: 'Comida'),
+                        items: [
+                          for (final meal in mealSectionOrder)
+                            DropdownMenuItem(value: meal, child: Text(meal.label)),
+                        ],
+                        onChanged: (v) => setState(() => _mealType = v ?? _mealType),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
                     TextField(
                       controller: _controller,
-                      autofocus: true,
+                      autofocus: widget.mealType != null || widget.entry != null,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(labelText: 'Raciones', errorText: _error),
                       onChanged: (_) => setState(() => _error = null),

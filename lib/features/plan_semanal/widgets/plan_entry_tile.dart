@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../data/database/daos/meal_plan_dao.dart';
 import '../../../data/database/database_provider.dart';
+import '../providers/meal_plan_providers.dart';
 import 'plan_food_quantity_sheet.dart';
 import 'plan_move_entry_sheet.dart';
 import 'plan_recipe_quantity_sheet.dart';
@@ -32,6 +33,7 @@ class PlanEntryTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final subtitle = _subtitle();
+    final macrosAsync = ref.watch(entryMacrosProvider(display.entry));
 
     return Material(
       color: Colors.transparent,
@@ -59,6 +61,17 @@ class PlanEntryTile extends ConsumerWidget {
                   ],
                 ),
               ),
+              if (macrosAsync.valueOrNull case final macros?) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text('${macros.kcal.round()} kcal', style: theme.textTheme.labelLarge),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert),
                 onSelected: (action) => _handleAction(context, ref, action),
