@@ -129,10 +129,10 @@ class PlanMonthGrid extends ConsumerWidget {
     );
   }
 
-  // Baseline of 3 (just the day number) plus one per meal line in that
-  // week's busiest day, so a week with more planned meals gets a taller
-  // row instead of every week splitting the screen evenly regardless of
-  // content.
+  // Baseline of 3 (just the day number) plus 3 per meal planned in that
+  // week's busiest day — a meal preview is a label line plus its food name
+  // wrapped over up to 2 lines (see _DayCell), not a single truncated
+  // line, so it needs 3x the room a one-liner would.
   static int _weekFlex(
     Iterable<DateTime> weekDays,
     Map<DateTime, List<MealPlanEntryDisplay>> entriesByDay,
@@ -143,7 +143,7 @@ class PlanMonthGrid extends ConsumerWidget {
           groupPlanEntriesByMeal(entriesByDay[day] ?? const []).values.where((v) => v.isNotEmpty).length;
       if (mealsPlanned > maxMealLines) maxMealLines = mealsPlanned;
     }
-    return 3 + maxMealLines;
+    return 3 + maxMealLines * 3;
   }
 }
 
@@ -171,13 +171,15 @@ class _DayCell extends StatelessWidget {
         : theme.colorScheme.onSurface;
 
     final entriesByMeal = groupPlanEntriesByMeal(entries);
-    // One row per meal that has something planned that day: its icon (a
-    // word like "Desayuno" would eat the whole column width on its own,
-    // leaving nothing for the food name) plus its food/recipe names.
+    // A block per meal that has something planned that day: its label
+    // ("Comida") on its own line, then the food/recipe name(s) wrapped
+    // onto their own line(s) below — never truncated with "…", so a name
+    // that doesn't fit ("macarrones con tomate") just breaks onto a
+    // second line ("macarrones" / "con tomate") instead.
     final previews = [
       for (final meal in mealSectionOrder)
         if (entriesByMeal[meal]!.isNotEmpty)
-          (icon: meal.icon, names: entriesByMeal[meal]!.map((e) => e.label).join(', ')),
+          (label: meal.label, names: entriesByMeal[meal]!.map((e) => e.label).join(', ')),
     ];
 
     return Padding(
@@ -238,36 +240,46 @@ class _DayCell extends StatelessWidget {
 class _MealPreviewLine extends StatelessWidget {
   const _MealPreviewLine({required this.preview, required this.dimmed});
 
-  final ({IconData icon, String names}) preview;
+  final ({String label, String names}) preview;
   final bool dimmed;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final labelColor = dimmed
+        ? theme.colorScheme.primary.withValues(alpha: 0.4)
+        : theme.colorScheme.primary;
+    final nameColor = dimmed
+        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)
+        : theme.colorScheme.onSurfaceVariant;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
-      child: Row(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            preview.icon,
-            size: 11,
-            color: dimmed
-                ? theme.colorScheme.primary.withValues(alpha: 0.4)
-                : theme.colorScheme.primary,
+          Text(
+            preview.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              height: 1.1,
+              color: labelColor,
+            ),
           ),
-          const SizedBox(width: 2),
-          Expanded(
-            child: Text(
-              preview.names,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelSmall?.copyWith(
-                fontSize: 10.5,
-                height: 1.15,
-                color: dimmed
-                    ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)
-                    : theme.colorScheme.onSurfaceVariant,
-              ),
+          Text(
+            preview.names,
+            // Wraps onto a 2nd line instead of truncating with "…" — a
+            // name that still doesn't fit in 2 lines is the rare
+            // exception where an ellipsis is the least-bad fallback.
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontSize: 10,
+              height: 1.1,
+              color: nameColor,
             ),
           ),
         ],
