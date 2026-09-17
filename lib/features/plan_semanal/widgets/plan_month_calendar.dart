@@ -94,20 +94,19 @@ class PlanMonthGrid extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
-        // Expanded, not shrink-wrapped: the grid fills the rest of the
-        // screen instead of sizing to its content and leaving empty space
-        // below it. Each week is itself an Expanded Row so the available
-        // height is shared out row by row — weeks with more planned meals
-        // get proportionally more of it, rather than every week getting an
-        // identical slice regardless of content.
+        // Expanded + scrollable: each week's Row sizes to its own tallest
+        // day cell (full food names can wrap over several lines — see
+        // _DayCell — so a week's height isn't predictable up front), and
+        // the whole grid scrolls on months where that adds up to more than
+        // the screen's height instead of forcing a size that would either
+        // clip a long name or leave empty space on lighter months.
         Expanded(
-          child: Column(
-            children: [
-              for (var weekStart = 0; weekStart < days.length; weekStart += 7)
-                Expanded(
-                  flex: _weekFlex(days.skip(weekStart).take(7), entriesByDay),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                for (var weekStart = 0; weekStart < days.length; weekStart += 7)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       for (final day in days.skip(weekStart).take(7))
                         Expanded(
@@ -121,29 +120,12 @@ class PlanMonthGrid extends ConsumerWidget {
                         ),
                     ],
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
     );
-  }
-
-  // Baseline of 3 (just the day number) plus 3 per meal planned in that
-  // week's busiest day — a meal preview is a label line plus its food name
-  // wrapped over up to 2 lines (see _DayCell), not a single truncated
-  // line, so it needs 3x the room a one-liner would.
-  static int _weekFlex(
-    Iterable<DateTime> weekDays,
-    Map<DateTime, List<MealPlanEntryDisplay>> entriesByDay,
-  ) {
-    var maxMealLines = 0;
-    for (final day in weekDays) {
-      final mealsPlanned =
-          groupPlanEntriesByMeal(entriesByDay[day] ?? const []).values.where((v) => v.isNotEmpty).length;
-      if (mealsPlanned > maxMealLines) maxMealLines = mealsPlanned;
-    }
-    return 3 + maxMealLines * 3;
   }
 }
 
@@ -191,12 +173,12 @@ class _DayCell extends StatelessWidget {
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-            // mainAxisSize.max: the cell fills the full height the parent
-            // Row's flex handed it (see PlanMonthGrid._weekFlex), instead
-            // of shrinking to its own content and leaving the rest of that
-            // row's height empty.
+            // mainAxisSize.min: the cell (and the week Row it sits in)
+            // sizes to fit however many lines the food names actually
+            // need, instead of being handed a fixed height that would
+            // force truncating them.
             child: Column(
-              mainAxisSize: MainAxisSize.max,
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
@@ -216,17 +198,7 @@ class _DayCell extends StatelessWidget {
                 ),
                 if (previews.isNotEmpty) ...[
                   const SizedBox(height: 3),
-                  // A non-scrolling ListView rather than a plain Column of
-                  // preview lines: if a day ever has more meals than its
-                  // week's tallest day did when computing _weekFlex, this
-                  // clips the overflow instead of overflowing the row.
-                  Expanded(
-                    child: ListView(
-                      padding: EdgeInsets.zero,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [for (final preview in previews) _MealPreviewLine(preview: preview, dimmed: dimmed)],
-                    ),
-                  ),
+                  for (final preview in previews) _MealPreviewLine(preview: preview, dimmed: dimmed),
                 ],
               ],
             ),
@@ -270,12 +242,9 @@ class _MealPreviewLine extends StatelessWidget {
             ),
           ),
           Text(
+            // No maxLines/ellipsis: the full name always shows, wrapping
+            // over as many lines as it needs rather than ever truncating.
             preview.names,
-            // Wraps onto a 2nd line instead of truncating with "…" — a
-            // name that still doesn't fit in 2 lines is the rare
-            // exception where an ellipsis is the least-bad fallback.
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
             style: theme.textTheme.labelSmall?.copyWith(
               fontSize: 10,
               height: 1.1,
