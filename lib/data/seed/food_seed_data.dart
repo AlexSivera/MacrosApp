@@ -87,22 +87,22 @@ const foodSeedData = <FoodSeed>[
 
   // Frutas
   FoodSeed(category: FoodCategory.fruta, name: 'Fresas', kcalPer100g: 32, proteinPer100g: 0.7, carbsPer100g: 7.7, fatPer100g: 0.3, fiberPer100g: 2.0),
-  FoodSeed(category: FoodCategory.fruta, name: 'Kiwi', kcalPer100g: 61, proteinPer100g: 1.1, carbsPer100g: 14.7, fatPer100g: 0.5, fiberPer100g: 3.0),
+  FoodSeed(category: FoodCategory.fruta, name: 'Kiwi', kcalPer100g: 61, proteinPer100g: 1.1, carbsPer100g: 14.7, fatPer100g: 0.5, fiberPer100g: 3.0, defaultServingGrams: 85, servingLabel: '1 kiwi ≈ 85g'),
   FoodSeed(category: FoodCategory.fruta, name: 'Manzana', kcalPer100g: 52, proteinPer100g: 0.3, carbsPer100g: 14, fatPer100g: 0.2, fiberPer100g: 2.4, defaultServingGrams: 150, servingLabel: '1 manzana ≈ 150g'),
-  FoodSeed(category: FoodCategory.fruta, name: 'Melocotón', kcalPer100g: 39, proteinPer100g: 0.9, carbsPer100g: 9.5, fatPer100g: 0.2, fiberPer100g: 1.5),
+  FoodSeed(category: FoodCategory.fruta, name: 'Melocotón', kcalPer100g: 39, proteinPer100g: 0.9, carbsPer100g: 9.5, fatPer100g: 0.2, fiberPer100g: 1.5, defaultServingGrams: 150, servingLabel: '1 melocotón ≈ 150g'),
   FoodSeed(category: FoodCategory.fruta, name: 'Melón', kcalPer100g: 34, proteinPer100g: 0.6, carbsPer100g: 8, fatPer100g: 0.2, fiberPer100g: 0.9),
-  FoodSeed(category: FoodCategory.fruta, name: 'Pera', kcalPer100g: 57, proteinPer100g: 0.4, carbsPer100g: 15, fatPer100g: 0.1, fiberPer100g: 3.1),
+  FoodSeed(category: FoodCategory.fruta, name: 'Pera', kcalPer100g: 57, proteinPer100g: 0.4, carbsPer100g: 15, fatPer100g: 0.1, fiberPer100g: 3.1, defaultServingGrams: 180, servingLabel: '1 pera ≈ 180g'),
   FoodSeed(category: FoodCategory.fruta, name: 'Plátano', kcalPer100g: 89, proteinPer100g: 1.1, carbsPer100g: 22.8, fatPer100g: 0.3, fiberPer100g: 2.6, defaultServingGrams: 120, servingLabel: '1 plátano ≈ 120g'),
   FoodSeed(category: FoodCategory.fruta, name: 'Sandía', kcalPer100g: 30, proteinPer100g: 0.6, carbsPer100g: 7.6, fatPer100g: 0.2, fiberPer100g: 0.4),
   FoodSeed(category: FoodCategory.fruta, name: 'Uvas', kcalPer100g: 69, proteinPer100g: 0.7, carbsPer100g: 18.1, fatPer100g: 0.2, fiberPer100g: 0.9),
   FoodSeed(category: FoodCategory.fruta, name: 'Mix de frutos rojos congelados', kcalPer100g: 40, proteinPer100g: 0.9, carbsPer100g: 6.4, fatPer100g: 0),
-  FoodSeed(category: FoodCategory.fruta, name: 'Naranja', kcalPer100g: 47, proteinPer100g: 0.9, carbsPer100g: 11.8, fatPer100g: 0.1, fiberPer100g: 2.4),
-  FoodSeed(category: FoodCategory.fruta, name: 'Mandarina', kcalPer100g: 53, proteinPer100g: 0.8, carbsPer100g: 13.3, fatPer100g: 0.3, fiberPer100g: 1.8),
+  FoodSeed(category: FoodCategory.fruta, name: 'Naranja', kcalPer100g: 47, proteinPer100g: 0.9, carbsPer100g: 11.8, fatPer100g: 0.1, fiberPer100g: 2.4, defaultServingGrams: 200, servingLabel: '1 naranja ≈ 200g'),
+  FoodSeed(category: FoodCategory.fruta, name: 'Mandarina', kcalPer100g: 53, proteinPer100g: 0.8, carbsPer100g: 13.3, fatPer100g: 0.3, fiberPer100g: 1.8, defaultServingGrams: 80, servingLabel: '1 mandarina ≈ 80g'),
   FoodSeed(category: FoodCategory.fruta, name: 'Limón', kcalPer100g: 29, proteinPer100g: 1.1, carbsPer100g: 9.3, fatPer100g: 0.3, fiberPer100g: 2.8),
   FoodSeed(category: FoodCategory.fruta, name: 'Lima', kcalPer100g: 30, proteinPer100g: 0.7, carbsPer100g: 10.5, fatPer100g: 0.2, fiberPer100g: 2.8),
   FoodSeed(category: FoodCategory.fruta, name: 'Pomelo', kcalPer100g: 42, proteinPer100g: 0.8, carbsPer100g: 10.7, fatPer100g: 0.2, fiberPer100g: 1.6),
   FoodSeed(category: FoodCategory.fruta, name: 'Piña', kcalPer100g: 50, proteinPer100g: 0.5, carbsPer100g: 13.1, fatPer100g: 0.1, fiberPer100g: 1.4),
-  FoodSeed(category: FoodCategory.fruta, name: 'Aguacate', kcalPer100g: 160, proteinPer100g: 2, carbsPer100g: 8.5, fatPer100g: 14.7, fiberPer100g: 6.7),
+  FoodSeed(category: FoodCategory.fruta, name: 'Aguacate', kcalPer100g: 160, proteinPer100g: 2, carbsPer100g: 8.5, fatPer100g: 14.7, fiberPer100g: 6.7, defaultServingGrams: 200, servingLabel: '1 aguacate ≈ 200g'),
   FoodSeed(category: FoodCategory.fruta, name: 'Cereza', kcalPer100g: 63, proteinPer100g: 1.1, carbsPer100g: 16, fatPer100g: 0.2, fiberPer100g: 2.1),
   FoodSeed(category: FoodCategory.fruta, name: 'Ciruela', kcalPer100g: 46, proteinPer100g: 0.7, carbsPer100g: 11.4, fatPer100g: 0.3, fiberPer100g: 1.4),
   FoodSeed(category: FoodCategory.fruta, name: 'Albaricoque', kcalPer100g: 48, proteinPer100g: 1.4, carbsPer100g: 11.1, fatPer100g: 0.4, fiberPer100g: 2.0),
@@ -420,7 +420,7 @@ const foodSeedData = <FoodSeed>[
   FoodSeed(category: FoodCategory.lacteo, name: 'Queso fresco de Burgos 0%', kcalPer100g: 67, proteinPer100g: 12, carbsPer100g: 3.9, fatPer100g: 0.4),
 
   // Huevos
-  FoodSeed(category: FoodCategory.huevo, name: 'Huevo', kcalPer100g: 150, proteinPer100g: 12.5, carbsPer100g: 0.5, fatPer100g: 11.1),
+  FoodSeed(category: FoodCategory.huevo, name: 'Huevo', kcalPer100g: 150, proteinPer100g: 12.5, carbsPer100g: 0.5, fatPer100g: 11.1, defaultServingGrams: 50, servingLabel: '1 huevo ≈ 50g'),
   FoodSeed(category: FoodCategory.huevo, name: 'Claras de huevo', kcalPer100g: 42, proteinPer100g: 11, carbsPer100g: 0.5, fatPer100g: 0.5),
 
   // Proteínas vegetales
