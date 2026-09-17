@@ -65,7 +65,7 @@ extension RecipeFilterLabel on RecipeFilter {
         RecipeFilter.breakfast => 'Desayunos',
         RecipeFilter.lunch => 'Comidas',
         RecipeFilter.dinner => 'Cenas',
-        RecipeFilter.snack => 'Snacks',
+        RecipeFilter.snack => 'Extras',
         RecipeFilter.favorites => 'Favoritas',
         RecipeFilter.highProtein => 'Alta proteína',
       };
