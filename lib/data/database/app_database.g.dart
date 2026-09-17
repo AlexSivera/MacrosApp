@@ -4129,6 +4129,582 @@ class BurnedCaloriesCompanion extends UpdateCompanion<BurnedCalory> {
   }
 }
 
+class $ShoppingListManualItemsTable extends ShoppingListManualItems
+    with TableInfo<$ShoppingListManualItemsTable, ShoppingListManualItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ShoppingListManualItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _weekStartMeta = const VerificationMeta(
+    'weekStart',
+  );
+  @override
+  late final GeneratedColumn<DateTime> weekStart = GeneratedColumn<DateTime>(
+    'week_start',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _checkedMeta = const VerificationMeta(
+    'checked',
+  );
+  @override
+  late final GeneratedColumn<bool> checked = GeneratedColumn<bool>(
+    'checked',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("checked" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _orderIndexMeta = const VerificationMeta(
+    'orderIndex',
+  );
+  @override
+  late final GeneratedColumn<int> orderIndex = GeneratedColumn<int>(
+    'order_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    weekStart,
+    name,
+    checked,
+    orderIndex,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'shopping_list_manual_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ShoppingListManualItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('week_start')) {
+      context.handle(
+        _weekStartMeta,
+        weekStart.isAcceptableOrUnknown(data['week_start']!, _weekStartMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_weekStartMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('checked')) {
+      context.handle(
+        _checkedMeta,
+        checked.isAcceptableOrUnknown(data['checked']!, _checkedMeta),
+      );
+    }
+    if (data.containsKey('order_index')) {
+      context.handle(
+        _orderIndexMeta,
+        orderIndex.isAcceptableOrUnknown(data['order_index']!, _orderIndexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_orderIndexMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ShoppingListManualItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ShoppingListManualItem(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      weekStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}week_start'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      checked: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}checked'],
+      )!,
+      orderIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}order_index'],
+      )!,
+    );
+  }
+
+  @override
+  $ShoppingListManualItemsTable createAlias(String alias) {
+    return $ShoppingListManualItemsTable(attachedDatabase, alias);
+  }
+}
+
+class ShoppingListManualItem extends DataClass
+    implements Insertable<ShoppingListManualItem> {
+  final int id;
+  final DateTime weekStart;
+  final String name;
+  final bool checked;
+  final int orderIndex;
+  const ShoppingListManualItem({
+    required this.id,
+    required this.weekStart,
+    required this.name,
+    required this.checked,
+    required this.orderIndex,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['week_start'] = Variable<DateTime>(weekStart);
+    map['name'] = Variable<String>(name);
+    map['checked'] = Variable<bool>(checked);
+    map['order_index'] = Variable<int>(orderIndex);
+    return map;
+  }
+
+  ShoppingListManualItemsCompanion toCompanion(bool nullToAbsent) {
+    return ShoppingListManualItemsCompanion(
+      id: Value(id),
+      weekStart: Value(weekStart),
+      name: Value(name),
+      checked: Value(checked),
+      orderIndex: Value(orderIndex),
+    );
+  }
+
+  factory ShoppingListManualItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ShoppingListManualItem(
+      id: serializer.fromJson<int>(json['id']),
+      weekStart: serializer.fromJson<DateTime>(json['weekStart']),
+      name: serializer.fromJson<String>(json['name']),
+      checked: serializer.fromJson<bool>(json['checked']),
+      orderIndex: serializer.fromJson<int>(json['orderIndex']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'weekStart': serializer.toJson<DateTime>(weekStart),
+      'name': serializer.toJson<String>(name),
+      'checked': serializer.toJson<bool>(checked),
+      'orderIndex': serializer.toJson<int>(orderIndex),
+    };
+  }
+
+  ShoppingListManualItem copyWith({
+    int? id,
+    DateTime? weekStart,
+    String? name,
+    bool? checked,
+    int? orderIndex,
+  }) => ShoppingListManualItem(
+    id: id ?? this.id,
+    weekStart: weekStart ?? this.weekStart,
+    name: name ?? this.name,
+    checked: checked ?? this.checked,
+    orderIndex: orderIndex ?? this.orderIndex,
+  );
+  ShoppingListManualItem copyWithCompanion(
+    ShoppingListManualItemsCompanion data,
+  ) {
+    return ShoppingListManualItem(
+      id: data.id.present ? data.id.value : this.id,
+      weekStart: data.weekStart.present ? data.weekStart.value : this.weekStart,
+      name: data.name.present ? data.name.value : this.name,
+      checked: data.checked.present ? data.checked.value : this.checked,
+      orderIndex: data.orderIndex.present
+          ? data.orderIndex.value
+          : this.orderIndex,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ShoppingListManualItem(')
+          ..write('id: $id, ')
+          ..write('weekStart: $weekStart, ')
+          ..write('name: $name, ')
+          ..write('checked: $checked, ')
+          ..write('orderIndex: $orderIndex')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, weekStart, name, checked, orderIndex);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ShoppingListManualItem &&
+          other.id == this.id &&
+          other.weekStart == this.weekStart &&
+          other.name == this.name &&
+          other.checked == this.checked &&
+          other.orderIndex == this.orderIndex);
+}
+
+class ShoppingListManualItemsCompanion
+    extends UpdateCompanion<ShoppingListManualItem> {
+  final Value<int> id;
+  final Value<DateTime> weekStart;
+  final Value<String> name;
+  final Value<bool> checked;
+  final Value<int> orderIndex;
+  const ShoppingListManualItemsCompanion({
+    this.id = const Value.absent(),
+    this.weekStart = const Value.absent(),
+    this.name = const Value.absent(),
+    this.checked = const Value.absent(),
+    this.orderIndex = const Value.absent(),
+  });
+  ShoppingListManualItemsCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime weekStart,
+    required String name,
+    this.checked = const Value.absent(),
+    required int orderIndex,
+  }) : weekStart = Value(weekStart),
+       name = Value(name),
+       orderIndex = Value(orderIndex);
+  static Insertable<ShoppingListManualItem> custom({
+    Expression<int>? id,
+    Expression<DateTime>? weekStart,
+    Expression<String>? name,
+    Expression<bool>? checked,
+    Expression<int>? orderIndex,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (weekStart != null) 'week_start': weekStart,
+      if (name != null) 'name': name,
+      if (checked != null) 'checked': checked,
+      if (orderIndex != null) 'order_index': orderIndex,
+    });
+  }
+
+  ShoppingListManualItemsCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime>? weekStart,
+    Value<String>? name,
+    Value<bool>? checked,
+    Value<int>? orderIndex,
+  }) {
+    return ShoppingListManualItemsCompanion(
+      id: id ?? this.id,
+      weekStart: weekStart ?? this.weekStart,
+      name: name ?? this.name,
+      checked: checked ?? this.checked,
+      orderIndex: orderIndex ?? this.orderIndex,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (weekStart.present) {
+      map['week_start'] = Variable<DateTime>(weekStart.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (checked.present) {
+      map['checked'] = Variable<bool>(checked.value);
+    }
+    if (orderIndex.present) {
+      map['order_index'] = Variable<int>(orderIndex.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ShoppingListManualItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('weekStart: $weekStart, ')
+          ..write('name: $name, ')
+          ..write('checked: $checked, ')
+          ..write('orderIndex: $orderIndex')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ShoppingListWeekModesTable extends ShoppingListWeekModes
+    with TableInfo<$ShoppingListWeekModesTable, ShoppingListWeekMode> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ShoppingListWeekModesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _weekStartMeta = const VerificationMeta(
+    'weekStart',
+  );
+  @override
+  late final GeneratedColumn<DateTime> weekStart = GeneratedColumn<DateTime>(
+    'week_start',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _manualMeta = const VerificationMeta('manual');
+  @override
+  late final GeneratedColumn<bool> manual = GeneratedColumn<bool>(
+    'manual',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("manual" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [weekStart, manual];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'shopping_list_week_modes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ShoppingListWeekMode> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('week_start')) {
+      context.handle(
+        _weekStartMeta,
+        weekStart.isAcceptableOrUnknown(data['week_start']!, _weekStartMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_weekStartMeta);
+    }
+    if (data.containsKey('manual')) {
+      context.handle(
+        _manualMeta,
+        manual.isAcceptableOrUnknown(data['manual']!, _manualMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {weekStart};
+  @override
+  ShoppingListWeekMode map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ShoppingListWeekMode(
+      weekStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}week_start'],
+      )!,
+      manual: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}manual'],
+      )!,
+    );
+  }
+
+  @override
+  $ShoppingListWeekModesTable createAlias(String alias) {
+    return $ShoppingListWeekModesTable(attachedDatabase, alias);
+  }
+}
+
+class ShoppingListWeekMode extends DataClass
+    implements Insertable<ShoppingListWeekMode> {
+  final DateTime weekStart;
+  final bool manual;
+  const ShoppingListWeekMode({required this.weekStart, required this.manual});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['week_start'] = Variable<DateTime>(weekStart);
+    map['manual'] = Variable<bool>(manual);
+    return map;
+  }
+
+  ShoppingListWeekModesCompanion toCompanion(bool nullToAbsent) {
+    return ShoppingListWeekModesCompanion(
+      weekStart: Value(weekStart),
+      manual: Value(manual),
+    );
+  }
+
+  factory ShoppingListWeekMode.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ShoppingListWeekMode(
+      weekStart: serializer.fromJson<DateTime>(json['weekStart']),
+      manual: serializer.fromJson<bool>(json['manual']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'weekStart': serializer.toJson<DateTime>(weekStart),
+      'manual': serializer.toJson<bool>(manual),
+    };
+  }
+
+  ShoppingListWeekMode copyWith({DateTime? weekStart, bool? manual}) =>
+      ShoppingListWeekMode(
+        weekStart: weekStart ?? this.weekStart,
+        manual: manual ?? this.manual,
+      );
+  ShoppingListWeekMode copyWithCompanion(ShoppingListWeekModesCompanion data) {
+    return ShoppingListWeekMode(
+      weekStart: data.weekStart.present ? data.weekStart.value : this.weekStart,
+      manual: data.manual.present ? data.manual.value : this.manual,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ShoppingListWeekMode(')
+          ..write('weekStart: $weekStart, ')
+          ..write('manual: $manual')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(weekStart, manual);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ShoppingListWeekMode &&
+          other.weekStart == this.weekStart &&
+          other.manual == this.manual);
+}
+
+class ShoppingListWeekModesCompanion
+    extends UpdateCompanion<ShoppingListWeekMode> {
+  final Value<DateTime> weekStart;
+  final Value<bool> manual;
+  final Value<int> rowid;
+  const ShoppingListWeekModesCompanion({
+    this.weekStart = const Value.absent(),
+    this.manual = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ShoppingListWeekModesCompanion.insert({
+    required DateTime weekStart,
+    this.manual = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : weekStart = Value(weekStart);
+  static Insertable<ShoppingListWeekMode> custom({
+    Expression<DateTime>? weekStart,
+    Expression<bool>? manual,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (weekStart != null) 'week_start': weekStart,
+      if (manual != null) 'manual': manual,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ShoppingListWeekModesCompanion copyWith({
+    Value<DateTime>? weekStart,
+    Value<bool>? manual,
+    Value<int>? rowid,
+  }) {
+    return ShoppingListWeekModesCompanion(
+      weekStart: weekStart ?? this.weekStart,
+      manual: manual ?? this.manual,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (weekStart.present) {
+      map['week_start'] = Variable<DateTime>(weekStart.value);
+    }
+    if (manual.present) {
+      map['manual'] = Variable<bool>(manual.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ShoppingListWeekModesCompanion(')
+          ..write('weekStart: $weekStart, ')
+          ..write('manual: $manual, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4142,6 +4718,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $BodyWeightLogsTable bodyWeightLogs = $BodyWeightLogsTable(this);
   late final $BurnedCaloriesTable burnedCalories = $BurnedCaloriesTable(this);
+  late final $ShoppingListManualItemsTable shoppingListManualItems =
+      $ShoppingListManualItemsTable(this);
+  late final $ShoppingListWeekModesTable shoppingListWeekModes =
+      $ShoppingListWeekModesTable(this);
   late final UserProfileDao userProfileDao = UserProfileDao(
     this as AppDatabase,
   );
@@ -4153,6 +4733,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final MealPlanDao mealPlanDao = MealPlanDao(this as AppDatabase);
   late final BodyWeightDao bodyWeightDao = BodyWeightDao(this as AppDatabase);
   late final BurnedCaloriesDao burnedCaloriesDao = BurnedCaloriesDao(
+    this as AppDatabase,
+  );
+  late final ShoppingListDao shoppingListDao = ShoppingListDao(
     this as AppDatabase,
   );
   @override
@@ -4167,6 +4750,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     mealPlanEntries,
     bodyWeightLogs,
     burnedCalories,
+    shoppingListManualItems,
+    shoppingListWeekModes,
   ];
 }
 
@@ -6180,6 +6765,383 @@ typedef $$BurnedCaloriesTableProcessedTableManager =
       BurnedCalory,
       PrefetchHooks Function()
     >;
+typedef $$ShoppingListManualItemsTableCreateCompanionBuilder =
+    ShoppingListManualItemsCompanion Function({
+      Value<int> id,
+      required DateTime weekStart,
+      required String name,
+      Value<bool> checked,
+      required int orderIndex,
+    });
+typedef $$ShoppingListManualItemsTableUpdateCompanionBuilder =
+    ShoppingListManualItemsCompanion Function({
+      Value<int> id,
+      Value<DateTime> weekStart,
+      Value<String> name,
+      Value<bool> checked,
+      Value<int> orderIndex,
+    });
+
+class $$ShoppingListManualItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $ShoppingListManualItemsTable> {
+  $$ShoppingListManualItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get weekStart => $composableBuilder(
+    column: $table.weekStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get checked => $composableBuilder(
+    column: $table.checked,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ShoppingListManualItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ShoppingListManualItemsTable> {
+  $$ShoppingListManualItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get weekStart => $composableBuilder(
+    column: $table.weekStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get checked => $composableBuilder(
+    column: $table.checked,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ShoppingListManualItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ShoppingListManualItemsTable> {
+  $$ShoppingListManualItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get weekStart =>
+      $composableBuilder(column: $table.weekStart, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<bool> get checked =>
+      $composableBuilder(column: $table.checked, builder: (column) => column);
+
+  GeneratedColumn<int> get orderIndex => $composableBuilder(
+    column: $table.orderIndex,
+    builder: (column) => column,
+  );
+}
+
+class $$ShoppingListManualItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ShoppingListManualItemsTable,
+          ShoppingListManualItem,
+          $$ShoppingListManualItemsTableFilterComposer,
+          $$ShoppingListManualItemsTableOrderingComposer,
+          $$ShoppingListManualItemsTableAnnotationComposer,
+          $$ShoppingListManualItemsTableCreateCompanionBuilder,
+          $$ShoppingListManualItemsTableUpdateCompanionBuilder,
+          (
+            ShoppingListManualItem,
+            BaseReferences<
+              _$AppDatabase,
+              $ShoppingListManualItemsTable,
+              ShoppingListManualItem
+            >,
+          ),
+          ShoppingListManualItem,
+          PrefetchHooks Function()
+        > {
+  $$ShoppingListManualItemsTableTableManager(
+    _$AppDatabase db,
+    $ShoppingListManualItemsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ShoppingListManualItemsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ShoppingListManualItemsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ShoppingListManualItemsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> weekStart = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<bool> checked = const Value.absent(),
+                Value<int> orderIndex = const Value.absent(),
+              }) => ShoppingListManualItemsCompanion(
+                id: id,
+                weekStart: weekStart,
+                name: name,
+                checked: checked,
+                orderIndex: orderIndex,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required DateTime weekStart,
+                required String name,
+                Value<bool> checked = const Value.absent(),
+                required int orderIndex,
+              }) => ShoppingListManualItemsCompanion.insert(
+                id: id,
+                weekStart: weekStart,
+                name: name,
+                checked: checked,
+                orderIndex: orderIndex,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ShoppingListManualItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ShoppingListManualItemsTable,
+      ShoppingListManualItem,
+      $$ShoppingListManualItemsTableFilterComposer,
+      $$ShoppingListManualItemsTableOrderingComposer,
+      $$ShoppingListManualItemsTableAnnotationComposer,
+      $$ShoppingListManualItemsTableCreateCompanionBuilder,
+      $$ShoppingListManualItemsTableUpdateCompanionBuilder,
+      (
+        ShoppingListManualItem,
+        BaseReferences<
+          _$AppDatabase,
+          $ShoppingListManualItemsTable,
+          ShoppingListManualItem
+        >,
+      ),
+      ShoppingListManualItem,
+      PrefetchHooks Function()
+    >;
+typedef $$ShoppingListWeekModesTableCreateCompanionBuilder =
+    ShoppingListWeekModesCompanion Function({
+      required DateTime weekStart,
+      Value<bool> manual,
+      Value<int> rowid,
+    });
+typedef $$ShoppingListWeekModesTableUpdateCompanionBuilder =
+    ShoppingListWeekModesCompanion Function({
+      Value<DateTime> weekStart,
+      Value<bool> manual,
+      Value<int> rowid,
+    });
+
+class $$ShoppingListWeekModesTableFilterComposer
+    extends Composer<_$AppDatabase, $ShoppingListWeekModesTable> {
+  $$ShoppingListWeekModesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<DateTime> get weekStart => $composableBuilder(
+    column: $table.weekStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get manual => $composableBuilder(
+    column: $table.manual,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ShoppingListWeekModesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ShoppingListWeekModesTable> {
+  $$ShoppingListWeekModesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<DateTime> get weekStart => $composableBuilder(
+    column: $table.weekStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get manual => $composableBuilder(
+    column: $table.manual,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ShoppingListWeekModesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ShoppingListWeekModesTable> {
+  $$ShoppingListWeekModesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<DateTime> get weekStart =>
+      $composableBuilder(column: $table.weekStart, builder: (column) => column);
+
+  GeneratedColumn<bool> get manual =>
+      $composableBuilder(column: $table.manual, builder: (column) => column);
+}
+
+class $$ShoppingListWeekModesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ShoppingListWeekModesTable,
+          ShoppingListWeekMode,
+          $$ShoppingListWeekModesTableFilterComposer,
+          $$ShoppingListWeekModesTableOrderingComposer,
+          $$ShoppingListWeekModesTableAnnotationComposer,
+          $$ShoppingListWeekModesTableCreateCompanionBuilder,
+          $$ShoppingListWeekModesTableUpdateCompanionBuilder,
+          (
+            ShoppingListWeekMode,
+            BaseReferences<
+              _$AppDatabase,
+              $ShoppingListWeekModesTable,
+              ShoppingListWeekMode
+            >,
+          ),
+          ShoppingListWeekMode,
+          PrefetchHooks Function()
+        > {
+  $$ShoppingListWeekModesTableTableManager(
+    _$AppDatabase db,
+    $ShoppingListWeekModesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ShoppingListWeekModesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ShoppingListWeekModesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ShoppingListWeekModesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<DateTime> weekStart = const Value.absent(),
+                Value<bool> manual = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ShoppingListWeekModesCompanion(
+                weekStart: weekStart,
+                manual: manual,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required DateTime weekStart,
+                Value<bool> manual = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ShoppingListWeekModesCompanion.insert(
+                weekStart: weekStart,
+                manual: manual,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ShoppingListWeekModesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ShoppingListWeekModesTable,
+      ShoppingListWeekMode,
+      $$ShoppingListWeekModesTableFilterComposer,
+      $$ShoppingListWeekModesTableOrderingComposer,
+      $$ShoppingListWeekModesTableAnnotationComposer,
+      $$ShoppingListWeekModesTableCreateCompanionBuilder,
+      $$ShoppingListWeekModesTableUpdateCompanionBuilder,
+      (
+        ShoppingListWeekMode,
+        BaseReferences<
+          _$AppDatabase,
+          $ShoppingListWeekModesTable,
+          ShoppingListWeekMode
+        >,
+      ),
+      ShoppingListWeekMode,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6198,4 +7160,11 @@ class $AppDatabaseManager {
       $$BodyWeightLogsTableTableManager(_db, _db.bodyWeightLogs);
   $$BurnedCaloriesTableTableManager get burnedCalories =>
       $$BurnedCaloriesTableTableManager(_db, _db.burnedCalories);
+  $$ShoppingListManualItemsTableTableManager get shoppingListManualItems =>
+      $$ShoppingListManualItemsTableTableManager(
+        _db,
+        _db.shoppingListManualItems,
+      );
+  $$ShoppingListWeekModesTableTableManager get shoppingListWeekModes =>
+      $$ShoppingListWeekModesTableTableManager(_db, _db.shoppingListWeekModes);
 }
