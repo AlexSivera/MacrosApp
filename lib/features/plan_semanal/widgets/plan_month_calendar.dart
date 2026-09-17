@@ -144,12 +144,13 @@ class _DayCell extends StatelessWidget {
         : theme.colorScheme.onSurface;
 
     final entriesByMeal = groupPlanEntriesByMeal(entries);
-    // "Comida/pollo/arroz" — meal label then its food/recipe names, one line
-    // per meal that actually has something planned that day.
+    // One row per meal that has something planned that day: its icon (a
+    // word like "Desayuno" would eat the whole column width on its own,
+    // leaving nothing for the food name) plus its food/recipe names.
     final previews = [
       for (final meal in mealSectionOrder)
         if (entriesByMeal[meal]!.isNotEmpty)
-          '${meal.label}/${entriesByMeal[meal]!.map((e) => e.label).join('/')}',
+          (icon: meal.icon, names: entriesByMeal[meal]!.map((e) => e.label).join(', ')),
     ];
 
     return Padding(
@@ -184,17 +185,37 @@ class _DayCell extends StatelessWidget {
                 for (final preview in previews)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 1),
-                    child: Text(
-                      preview,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontSize: 7.5,
-                        height: 1.2,
-                        color: dimmed
-                            ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)
-                            : theme.colorScheme.onSurfaceVariant,
+                    // Fills the cell's full width regardless of the parent
+                    // Column being center-aligned (for the day-number
+                    // circle) — a loose constraint here would otherwise
+                    // shrink-wrap the Row to its content instead.
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: Row(
+                        children: [
+                          Icon(
+                            preview.icon,
+                            size: 8,
+                            color: dimmed
+                                ? theme.colorScheme.primary.withValues(alpha: 0.4)
+                                : theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 1),
+                          Expanded(
+                            child: Text(
+                              preview.names,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontSize: 7.5,
+                                height: 1.2,
+                                color: dimmed
+                                    ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)
+                                    : theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
