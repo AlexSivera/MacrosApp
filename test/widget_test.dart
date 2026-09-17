@@ -37,7 +37,7 @@ void main() {
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('Recetas'), findsWidgets);
     expect(find.text('Plan'), findsWidgets);
-    expect(find.text('Progreso'), findsWidgets);
+    expect(find.text('Listas'), findsWidgets);
     expect(find.text('Perfil'), findsWidgets);
 
     await tester.runAsync(() async {

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_motion.dart';
 import '../features/diario/screens/diario_screen.dart';
+import '../features/listas/screens/custom_list_detail_screen.dart';
+import '../features/listas/screens/listas_screen.dart';
 import '../features/onboarding/screens/onboarding_screen.dart';
 import '../features/perfil/screens/about_screen.dart';
 import '../features/perfil/screens/appearance_screen.dart';
@@ -28,7 +30,7 @@ import '../features/recetas/screens/recipe_editor_screen.dart';
 const _diarioBranch = 0;
 const _recetasBranch = 1;
 const _planBranch = 2;
-const _progresoBranch = 3;
+const _listasBranch = 3;
 const _perfilBranch = 4;
 
 // Built once in main() with the initial location resolved from whether
@@ -72,7 +74,6 @@ GoRouter buildAppRouter({required String initialLocation}) => GoRouter(
                 path: '/plan',
                 builder: (context, state) => const PlanSemanalScreen(),
                 routes: [
-                  GoRoute(path: 'compra', builder: (context, state) => const ShoppingListScreen()),
                   GoRoute(
                     path: 'dia/:fecha',
                     builder: (context, state) => PlanDayScreen(
@@ -83,7 +84,18 @@ GoRouter buildAppRouter({required String initialLocation}) => GoRouter(
               ),
             ]),
             StatefulShellBranch(routes: [
-              GoRoute(path: '/progreso', builder: (context, state) => const ProgressScreen()),
+              GoRoute(
+                path: '/listas',
+                builder: (context, state) => const ListasScreen(),
+                routes: [
+                  GoRoute(path: 'compra', builder: (context, state) => const ShoppingListScreen()),
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) =>
+                        CustomListDetailScreen(listId: int.parse(state.pathParameters['id']!)),
+                  ),
+                ],
+              ),
             ]),
             StatefulShellBranch(routes: [
               GoRoute(
@@ -96,6 +108,7 @@ GoRouter buildAppRouter({required String initialLocation}) => GoRouter(
                     path: 'objetivos-nutricionales',
                     builder: (context, state) => const NutritionGoalsScreen(),
                   ),
+                  GoRoute(path: 'progreso', builder: (context, state) => const ProgressScreen()),
                   GoRoute(path: 'unidades', builder: (context, state) => const UnitsScreen()),
                   GoRoute(
                     path: 'notificaciones',
@@ -140,7 +153,7 @@ class _BottomNav extends StatelessWidget {
     _NavItem(_diarioBranch, Icons.book_outlined, Icons.book, 'Diario'),
     _NavItem(_recetasBranch, Icons.restaurant_menu_outlined, Icons.restaurant_menu, 'Recetas'),
     _NavItem(_planBranch, Icons.calendar_month_outlined, Icons.calendar_month, 'Plan'),
-    _NavItem(_progresoBranch, Icons.show_chart_outlined, Icons.show_chart, 'Progreso'),
+    _NavItem(_listasBranch, Icons.checklist_outlined, Icons.checklist, 'Listas'),
     _NavItem(_perfilBranch, Icons.person_outline, Icons.person, 'Perfil'),
   ];
 

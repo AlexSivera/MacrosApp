@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
-import '../../../data/database/app_database.dart';
+import '../../../core/widgets/editable_checklist.dart';
 import '../../../data/database/database_provider.dart';
 import '../../diario/widgets/food_category_chips.dart';
 import '../providers/meal_plan_providers.dart';
@@ -167,145 +167,29 @@ class _AutomaticShoppingListState extends ConsumerState<_AutomaticShoppingList> 
   }
 }
 
-class _ManualShoppingList extends ConsumerStatefulWidget {
+class _ManualShoppingList extends ConsumerWidget {
   const _ManualShoppingList();
 
   @override
-  ConsumerState<_ManualShoppingList> createState() => _ManualShoppingListState();
-}
-
-class _ManualShoppingListState extends ConsumerState<_ManualShoppingList> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _addItem() {
-    final name = _controller.text.trim();
-    if (name.isEmpty) return;
-    final weekStart = ref.read(shoppingListWeekStartProvider);
-    ref.read(appDatabaseProvider).shoppingListDao.addManualItem(weekStart, name);
-    _controller.clear();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget build(BuildContext context, WidgetRef ref) {
     final itemsAsync = ref.watch(shoppingListManualItemsProvider);
+    final weekStart = ref.watch(shoppingListWeekStartProvider);
     final db = ref.read(appDatabaseProvider);
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  decoration: const InputDecoration(hintText: 'p. ej. pan, tomates...'),
-                  onSubmitted: (_) => _addItem(),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              IconButton(icon: const Icon(Icons.add_circle_rounded), onPressed: _addItem),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Expanded(
-          child: itemsAsync.when(
-            data: (items) {
-              if (items.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.xl),
-                    child: Text(
-                      'Añade a mano lo que necesites comprar esta semana.',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ),
-                );
-              }
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  0,
-                  AppSpacing.lg,
-                  AppSpacing.lg,
-                ),
-                children: [
-                  AppCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (var i = 0; i < items.length; i++) ...[
-                          _ManualItemTile(
-                            item: items[i],
-                            onToggle: (checked) =>
-                                db.shoppingListDao.updateManualItem(items[i].id, checked: checked),
-                            onDelete: () => db.shoppingListDao.deleteManualItem(items[i].id),
-                          ),
-                          if (i != items.length - 1)
-                            Divider(
-                              height: AppSpacing.md,
-                              color: theme.colorScheme.outline.withValues(alpha: 0.5),
-                            ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Center(child: Text('Error al cargar la lista: $err')),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ManualItemTile extends StatelessWidget {
-  const _ManualItemTile({required this.item, required this.onToggle, required this.onDelete});
-
-  final ShoppingListManualItem item;
-  final ValueChanged<bool> onToggle;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: () => onToggle(!item.checked),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(
-          children: [
-            Checkbox(value: item.checked, onChanged: (v) => onToggle(v ?? false)),
-            const SizedBox(width: AppSpacing.xs),
-            Expanded(
-              child: Text(
-                item.name,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  decoration: item.checked ? TextDecoration.lineThrough : null,
-                  color: item.checked ? theme.colorScheme.onSurfaceVariant : null,
-                ),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.close_rounded),
-              iconSize: 20,
-              onPressed: onDelete,
-            ),
-          ],
-        ),
+    return itemsAsync.when(
+      data: (items) => EditableChecklist(
+        items: [
+          for (final item in items)
+            ChecklistItemData(id: item.id, name: item.name, checked: item.checked),
+        ],
+        hintText: 'p. ej. pan, tomates...',
+        emptyText: 'Añade a mano lo que necesites comprar esta semana.',
+        onAdd: (name) => db.shoppingListDao.addManualItem(weekStart, name),
+        onToggle: (id, checked) => db.shoppingListDao.updateManualItem(id, checked: checked),
+        onDelete: db.shoppingListDao.deleteManualItem,
       ),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(child: Text('Error al cargar la lista: $err')),
     );
   }
 }

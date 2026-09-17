@@ -3,6 +3,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 
 import 'daos/body_weight_dao.dart';
 import 'daos/burned_calories_dao.dart';
+import 'daos/custom_lists_dao.dart';
 import 'daos/foods_dao.dart';
 import 'daos/meal_plan_dao.dart';
 import 'daos/recipe_ingredients_dao.dart';
@@ -12,6 +13,8 @@ import 'daos/user_profile_dao.dart';
 import 'enums.dart';
 import 'tables/body_weight_logs_table.dart';
 import 'tables/burned_calories_table.dart';
+import 'tables/custom_list_items_table.dart';
+import 'tables/custom_lists_table.dart';
 import 'tables/foods_table.dart';
 import 'tables/meal_plan_entries_table.dart';
 import 'tables/recipe_ingredients_table.dart';
@@ -33,6 +36,8 @@ part 'app_database.g.dart';
   BurnedCalories,
   ShoppingListManualItems,
   ShoppingListWeekModes,
+  CustomLists,
+  CustomListItems,
 ], daos: [
   UserProfileDao,
   FoodsDao,
@@ -42,13 +47,14 @@ part 'app_database.g.dart';
   BodyWeightDao,
   BurnedCaloriesDao,
   ShoppingListDao,
+  CustomListsDao,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -82,6 +88,10 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(shoppingListManualItems);
             await m.createTable(shoppingListWeekModes);
           }
+          if (from < 7) {
+            await m.createTable(customLists);
+            await m.createTable(customListItems);
+          }
         },
         beforeOpen: (details) async {
           // Required for onDelete: KeyAction.cascade/setNull to actually take
@@ -100,6 +110,8 @@ class AppDatabase extends _$AppDatabase {
       await delete(mealPlanEntries).go();
       await delete(shoppingListManualItems).go();
       await delete(shoppingListWeekModes).go();
+      await delete(customListItems).go();
+      await delete(customLists).go();
       await delete(recipeIngredients).go();
       await delete(recipes).go();
       await delete(burnedCalories).go();

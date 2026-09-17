@@ -87,7 +87,21 @@ void main() {
     expect(find.textContaining('Pechuga de pollo'), findsOneWidget);
     expect(find.textContaining('200 g'), findsOneWidget);
 
-    router.go('/plan/compra');
+    router.go('/listas/compra');
+    await tester.pump();
+    // The shopping list's aggregation is a cold Drift stream subscription
+    // the moment this screen mounts (it used to share a Navigator stack
+    // with PlanDayScreen, which happened to already be subscribed to the
+    // same table and kept this passing by coincidence — now that it's its
+    // own bottom-nav branch, that's no longer true). Resolving the same
+    // query for real inside runAsync warms Drift's stream cache so the
+    // widget's own subscription settles under plain pump()s afterwards
+    // instead of racing the real Timer a cold subscription needs (see
+    // meal_plan_providers.dart's note on this exact failure mode).
+    await tester.runAsync(() async {
+      final monday = mondayOf(DateTime.now());
+      await db.mealPlanDao.watchEntriesInRange(monday, monday.add(const Duration(days: 6))).first;
+    });
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     await tester.pump(const Duration(milliseconds: 50));
