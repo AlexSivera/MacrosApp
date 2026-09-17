@@ -7,7 +7,9 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/fade_slide_in.dart';
 import '../../../core/widgets/shimmer_box.dart';
+import '../../diario/widgets/calorie_summary_card.dart';
 import '../providers/meal_plan_providers.dart';
+import '../providers/plan_day_summary_provider.dart';
 import '../widgets/plan_meal_section_card.dart';
 
 // Reached by tapping a day in the Plan semanal month grid — the 6 meal
@@ -20,6 +22,7 @@ class PlanDayScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entriesAsync = ref.watch(mealPlanEntriesForDateProvider(date));
+    final summary = ref.watch(planDaySummaryProvider(date));
 
     return Scaffold(
       appBar: AppBar(
@@ -28,6 +31,8 @@ class PlanDayScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
+          CalorieSummaryCard(summary: summary),
+          const SizedBox(height: AppSpacing.md),
           entriesAsync.when(
             data: (entries) {
               final grouped = groupPlanEntriesByMeal(entries);
