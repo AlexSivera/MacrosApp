@@ -60,17 +60,24 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
         _category = recipe.category;
         _imageBytes = recipe.imageBytes;
         if (_imageBytes == null) _legacyImagePath = recipe.imagePath;
-        final ingredients = await db.recipeIngredientsDao.getForRecipe(recipe.id);
+        final ingredients = await db.recipeIngredientsDao.getForRecipe(
+          recipe.id,
+        );
         for (final ingredient in ingredients) {
           final food = await db.foodsDao.getById(ingredient.foodId);
-          if (food != null) _ingredients.add(IngredientDraft(food: food, grams: ingredient.grams));
+          if (food != null) {
+            _ingredients.add(
+              IngredientDraft(food: food, grams: ingredient.grams),
+            );
+          }
         }
       }
     }
     if (mounted) setState(() => _loading = false);
   }
 
-  static String _formatNum(double v) => v == v.roundToDouble() ? v.round().toString() : v.toString();
+  static String _formatNum(double v) =>
+      v == v.roundToDouble() ? v.round().toString() : v.toString();
 
   @override
   void dispose() {
@@ -103,7 +110,10 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
     );
     if (source == null) return;
 
-    final picked = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      imageQuality: 85,
+    );
     if (picked == null) return;
     final bytes = await picked.readAsBytes();
     if (mounted) {
@@ -112,6 +122,53 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
         _legacyImagePath = null;
       });
     }
+  }
+
+  Future<void> _persistRecipe({
+    required String name,
+    required double servings,
+    required int? prepTime,
+  }) async {
+    final db = ref.read(appDatabaseProvider);
+    int recipeId;
+    if (widget.recipeId != null) {
+      recipeId = widget.recipeId!;
+      final existing = await db.recipesDao.getById(recipeId);
+      await db.recipesDao.updateRecipe(
+        (existing!.copyWith(
+          name: name,
+          imageBytes: Value(_imageBytes),
+          // Only ever non-null here if the user didn't replace a legacy
+          // file-path photo this session — otherwise _pickImage cleared it,
+          // so this correctly wipes the stale path once imageBytes takes over.
+          imagePath: Value(_legacyImagePath),
+          category: _category,
+          servings: servings,
+          prepTimeMinutes: Value(prepTime),
+        )),
+      );
+    } else {
+      recipeId = await db.recipesDao.insert(
+        RecipesCompanion.insert(
+          name: name,
+          imageBytes: Value(_imageBytes),
+          category: Value(_category),
+          servings: Value(servings),
+          prepTimeMinutes: Value(prepTime),
+        ),
+      );
+    }
+
+    var orderIndex = 0;
+    await db.recipeIngredientsDao.replaceIngredients(recipeId, [
+      for (final ingredient in _ingredients)
+        RecipeIngredientsCompanion.insert(
+          recipeId: recipeId,
+          foodId: ingredient.food.id,
+          grams: ingredient.grams,
+          orderIndex: orderIndex++,
+        ),
+    ]);
   }
 
   Future<void> _submit() async {
@@ -136,45 +193,35 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
       _error = null;
     });
 
-    final db = ref.read(appDatabaseProvider);
-    final prepTime = int.tryParse(_prepTime.text);
-    int recipeId;
-    if (widget.recipeId != null) {
-      recipeId = widget.recipeId!;
-      final existing = await db.recipesDao.getById(recipeId);
-      await db.recipesDao.updateRecipe((existing!.copyWith(
-        name: name,
-        imageBytes: Value(_imageBytes),
-        // Only ever non-null here if the user didn't replace a legacy
-        // file-path photo this session — otherwise _pickImage cleared it,
-        // so this correctly wipes the stale path once imageBytes takes over.
-        imagePath: Value(_legacyImagePath),
-        category: _category,
-        servings: servings,
-        prepTimeMinutes: Value(prepTime),
-      )));
-    } else {
-      recipeId = await db.recipesDao.insert(RecipesCompanion.insert(
-        name: name,
-        imageBytes: Value(_imageBytes),
-        category: Value(_category),
-        servings: Value(servings),
-        prepTimeMinutes: Value(prepTime),
-      ));
-    }
-
-    var orderIndex = 0;
-    await db.recipeIngredientsDao.replaceIngredients(recipeId, [
-      for (final ingredient in _ingredients)
-        RecipeIngredientsCompanion.insert(
-          recipeId: recipeId,
-          foodId: ingredient.food.id,
-          grams: ingredient.grams,
-          orderIndex: orderIndex++,
-        ),
-    ]);
+    await _persistRecipe(
+      name: name,
+      servings: servings,
+      prepTime: int.tryParse(_prepTime.text),
+    );
 
     if (mounted) context.pop();
+  }
+
+  // Backing out with ingredients already added shouldn't throw that work
+  // away — falls back to a placeholder name/1 ración instead of blocking on
+  // the same validation _submit enforces, since there's no error UI to show
+  // mid-navigation. Only reachable when _ingredients is non-empty (see the
+  // PopScope's canPop below), so there's always something worth keeping.
+  Future<void> _saveDraftOnBack() async {
+    final name = _name.text.trim().isEmpty
+        ? 'Receta sin nombre'
+        : _name.text.trim();
+    final enteredServings = double.tryParse(
+      _servings.text.replaceAll(',', '.'),
+    );
+    final servings = (enteredServings != null && enteredServings > 0)
+        ? enteredServings
+        : 1.0;
+    await _persistRecipe(
+      name: name,
+      servings: servings,
+      prepTime: int.tryParse(_prepTime.text),
+    );
   }
 
   @override
@@ -186,125 +233,179 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
 
     final imagePreview = _imageBytes != null
         ? Image.memory(_imageBytes!, fit: BoxFit.cover)
-        : (_legacyImagePath != null ? legacyFileImage(_legacyImagePath!) : null);
+        : (_legacyImagePath != null
+              ? legacyFileImage(_legacyImagePath!)
+              : null);
 
     final servings = double.tryParse(_servings.text.replaceAll(',', '.'));
-    final totals = computeRecipeTotals([for (final i in _ingredients) (
-          RecipeIngredient(id: 0, recipeId: 0, foodId: i.food.id, grams: i.grams, orderIndex: 0),
+    final totals = computeRecipeTotals([
+      for (final i in _ingredients)
+        (
+          RecipeIngredient(
+            id: 0,
+            recipeId: 0,
+            foodId: i.food.id,
+            grams: i.grams,
+            orderIndex: 0,
+          ),
           i.food,
-        )]);
-    final perServing =
-        servings != null && servings > 0 ? computePerServing(totals, servings) : FoodMacros.zero;
+        ),
+    ]);
+    final perServing = servings != null && servings > 0
+        ? computePerServing(totals, servings)
+        : FoodMacros.zero;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.recipeId != null ? 'Editar receta' : 'Nueva receta')),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        children: [
-          GestureDetector(
-            onTap: _pickImage,
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                child: Container(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  child: imagePreview != null
-                      ? SizedBox.expand(child: imagePreview)
-                      : Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.add_a_photo_outlined, color: theme.colorScheme.onSurfaceVariant),
-                              const SizedBox(height: AppSpacing.xs),
-                              Text('Añadir imagen', style: theme.textTheme.bodySmall),
-                            ],
+    return PopScope(
+      // While _saving is true this is the submit button's own pop already
+      // going through — let it fall through untouched instead of racing a
+      // second save against it. Otherwise, once there's at least one
+      // ingredient, back (app bar arrow or system gesture) saves a draft
+      // instead of silently discarding it.
+      canPop: _ingredients.isEmpty || _saving,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _saveDraftOnBack();
+        if (context.mounted) Navigator.of(context).pop();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            widget.recipeId != null ? 'Editar receta' : 'Nueva receta',
+          ),
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          children: [
+            GestureDetector(
+              onTap: _pickImage,
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  child: Container(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    child: imagePreview != null
+                        ? SizedBox.expand(child: imagePreview)
+                        : Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.add_a_photo_outlined,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(height: AppSpacing.xs),
+                                Text(
+                                  'Añadir imagen',
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          TextField(
-            controller: _name,
-            decoration: const InputDecoration(labelText: 'Nombre'),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<RecipeCategory>(
-                  initialValue: _category,
-                  decoration: const InputDecoration(labelText: 'Categoría'),
-                  items: const [
-                    DropdownMenuItem(value: RecipeCategory.breakfast, child: Text('Desayuno')),
-                    DropdownMenuItem(value: RecipeCategory.lunch, child: Text('Comida')),
-                    DropdownMenuItem(value: RecipeCategory.dinner, child: Text('Cena')),
-                    DropdownMenuItem(value: RecipeCategory.snack, child: Text('Snack')),
-                  ],
-                  onChanged: (v) => setState(() => _category = v ?? _category),
+            const SizedBox(height: AppSpacing.lg),
+            TextField(
+              controller: _name,
+              decoration: const InputDecoration(labelText: 'Nombre'),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<RecipeCategory>(
+                    initialValue: _category,
+                    decoration: const InputDecoration(labelText: 'Categoría'),
+                    items: const [
+                      DropdownMenuItem(
+                        value: RecipeCategory.breakfast,
+                        child: Text('Desayuno'),
+                      ),
+                      DropdownMenuItem(
+                        value: RecipeCategory.lunch,
+                        child: Text('Comida'),
+                      ),
+                      DropdownMenuItem(
+                        value: RecipeCategory.dinner,
+                        child: Text('Cena'),
+                      ),
+                      DropdownMenuItem(
+                        value: RecipeCategory.snack,
+                        child: Text('Snack'),
+                      ),
+                    ],
+                    onChanged: (v) =>
+                        setState(() => _category = v ?? _category),
+                  ),
                 ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: TextField(
+                    controller: _prepTime,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Minutos'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: _servings,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
               ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: TextField(
-                  controller: _prepTime,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Minutos'),
+              decoration: const InputDecoration(labelText: 'Raciones'),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            IngredientBuilderList(
+              ingredients: _ingredients,
+              onAdd: (draft) => setState(() => _ingredients.add(draft)),
+              onRemove: (index) => setState(() => _ingredients.removeAt(index)),
+            ),
+            if (_ingredients.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.xl),
+              AppCard(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Receta completa', style: theme.textTheme.labelMedium),
+                    Text(
+                      '${totals.kcal.round()} kcal · P${totals.proteinG.round()} '
+                      'C${totals.carbsG.round()} G${totals.fatG.round()}',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text('Por ración', style: theme.textTheme.labelMedium),
+                    Text(
+                      '${perServing.kcal.round()} kcal · P${perServing.proteinG.round()} '
+                      'C${perServing.carbsG.round()} G${perServing.fatG.round()}',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ],
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: _servings,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'Raciones'),
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          IngredientBuilderList(
-            ingredients: _ingredients,
-            onAdd: (draft) => setState(() => _ingredients.add(draft)),
-            onRemove: (index) => setState(() => _ingredients.removeAt(index)),
-          ),
-          if (_ingredients.isNotEmpty) ...[
+            if (_error != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
+            ],
             const SizedBox(height: AppSpacing.xl),
-            AppCard(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Receta completa', style: theme.textTheme.labelMedium),
-                  Text(
-                    '${totals.kcal.round()} kcal · P${totals.proteinG.round()} '
-                    'C${totals.carbsG.round()} G${totals.fatG.round()}',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text('Por ración', style: theme.textTheme.labelMedium),
-                  Text(
-                    '${perServing.kcal.round()} kcal · P${perServing.proteinG.round()} '
-                    'C${perServing.carbsG.round()} G${perServing.fatG.round()}',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ],
-              ),
+            ElevatedButton(
+              onPressed: _saving ? null : _submit,
+              child: _saving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Guardar receta'),
             ),
           ],
-          if (_error != null) ...[
-            const SizedBox(height: AppSpacing.md),
-            Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
-          ],
-          const SizedBox(height: AppSpacing.xl),
-          ElevatedButton(
-            onPressed: _saving ? null : _submit,
-            child: _saving
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Guardar receta'),
-          ),
-        ],
+        ),
       ),
     );
   }
