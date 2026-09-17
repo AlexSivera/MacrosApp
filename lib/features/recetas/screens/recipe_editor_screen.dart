@@ -333,7 +333,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
                       ),
                       DropdownMenuItem(
                         value: RecipeCategory.snack,
-                        child: Text('Snack'),
+                        child: Text('Extra'),
                       ),
                     ],
                     onChanged: (v) =>
