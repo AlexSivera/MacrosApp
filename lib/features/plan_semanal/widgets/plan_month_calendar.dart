@@ -94,29 +94,56 @@ class PlanMonthGrid extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
-        // A Column of weekly Rows, rather than a GridView, so each week's
-        // row height auto-sizes to its own tallest day cell — the reference
-        // design has visibly taller rows for weeks with more planned meals,
-        // which a GridView's SliverGridDelegateWithFixedCrossAxisCount can't
-        // do (it forces one uniform cell size across the whole grid).
-        for (var weekStart = 0; weekStart < days.length; weekStart += 7)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        // Expanded, not shrink-wrapped: the grid fills the rest of the
+        // screen instead of sizing to its content and leaving empty space
+        // below it. Each week is itself an Expanded Row so the available
+        // height is shared out row by row — weeks with more planned meals
+        // get proportionally more of it, rather than every week getting an
+        // identical slice regardless of content.
+        Expanded(
+          child: Column(
             children: [
-              for (final day in days.skip(weekStart).take(7))
+              for (var weekStart = 0; weekStart < days.length; weekStart += 7)
                 Expanded(
-                  child: _DayCell(
-                    day: day,
-                    isCurrentMonth: day.month == month.month,
-                    isToday: day == today,
-                    entries: entriesByDay[day] ?? const [],
-                    onTap: () => onDayTap(day),
+                  flex: _weekFlex(days.skip(weekStart).take(7), entriesByDay),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final day in days.skip(weekStart).take(7))
+                        Expanded(
+                          child: _DayCell(
+                            day: day,
+                            isCurrentMonth: day.month == month.month,
+                            isToday: day == today,
+                            entries: entriesByDay[day] ?? const [],
+                            onTap: () => onDayTap(day),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
             ],
           ),
+        ),
       ],
     );
+  }
+
+  // Baseline of 3 (just the day number) plus one per meal line in that
+  // week's busiest day, so a week with more planned meals gets a taller
+  // row instead of every week splitting the screen evenly regardless of
+  // content.
+  static int _weekFlex(
+    Iterable<DateTime> weekDays,
+    Map<DateTime, List<MealPlanEntryDisplay>> entriesByDay,
+  ) {
+    var maxMealLines = 0;
+    for (final day in weekDays) {
+      final mealsPlanned =
+          groupPlanEntriesByMeal(entriesByDay[day] ?? const []).values.where((v) => v.isNotEmpty).length;
+      if (mealsPlanned > maxMealLines) maxMealLines = mealsPlanned;
+    }
+    return 3 + maxMealLines;
   }
 }
 
@@ -161,68 +188,89 @@ class _DayCell extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.sm),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+            // mainAxisSize.max: the cell fills the full height the parent
+            // Row's flex handed it (see PlanMonthGrid._weekFlex), instead
+            // of shrinking to its own content and leaving the rest of that
+            // row's height empty.
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: MainAxisSize.max,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
-                  width: 20,
-                  height: 20,
+                  width: 26,
+                  height: 26,
                   alignment: Alignment.center,
                   decoration: isToday
                       ? BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle)
                       : null,
                   child: Text(
                     '${day.day}',
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.titleSmall?.copyWith(
                       color: isToday ? theme.colorScheme.onPrimary : foreground,
                       fontWeight: isToday ? FontWeight.bold : null,
                     ),
                   ),
                 ),
-                if (previews.isNotEmpty) const SizedBox(height: 2),
-                for (final preview in previews)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 1),
-                    // Fills the cell's full width regardless of the parent
-                    // Column being center-aligned (for the day-number
-                    // circle) — a loose constraint here would otherwise
-                    // shrink-wrap the Row to its content instead.
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: Row(
-                        children: [
-                          Icon(
-                            preview.icon,
-                            size: 8,
-                            color: dimmed
-                                ? theme.colorScheme.primary.withValues(alpha: 0.4)
-                                : theme.colorScheme.primary,
-                          ),
-                          const SizedBox(width: 1),
-                          Expanded(
-                            child: Text(
-                              preview.names,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                fontSize: 7.5,
-                                height: 1.2,
-                                color: dimmed
-                                    ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)
-                                    : theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                if (previews.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  // A non-scrolling ListView rather than a plain Column of
+                  // preview lines: if a day ever has more meals than its
+                  // week's tallest day did when computing _weekFlex, this
+                  // clips the overflow instead of overflowing the row.
+                  Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.zero,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [for (final preview in previews) _MealPreviewLine(preview: preview, dimmed: dimmed)],
                     ),
                   ),
+                ],
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MealPreviewLine extends StatelessWidget {
+  const _MealPreviewLine({required this.preview, required this.dimmed});
+
+  final ({IconData icon, String names}) preview;
+  final bool dimmed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        children: [
+          Icon(
+            preview.icon,
+            size: 11,
+            color: dimmed
+                ? theme.colorScheme.primary.withValues(alpha: 0.4)
+                : theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 2),
+          Expanded(
+            child: Text(
+              preview.names,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontSize: 10.5,
+                height: 1.15,
+                color: dimmed
+                    ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
