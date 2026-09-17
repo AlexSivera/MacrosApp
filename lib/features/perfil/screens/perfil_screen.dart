@@ -35,6 +35,7 @@ class PerfilScreen extends ConsumerWidget {
                   'Objetivos nutricionales',
                   '/perfil/objetivos-nutricionales',
                 ),
+                _SettingsItem(Icons.show_chart_outlined, 'Progreso', '/perfil/progreso'),
               ]),
               const SizedBox(height: AppSpacing.lg),
               _SettingsSection(items: [

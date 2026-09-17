@@ -20,7 +20,7 @@ class PlanSemanalScreen extends StatelessWidget {
           TextButton.icon(
             icon: const Icon(Icons.shopping_cart_outlined),
             label: const Text('Compra'),
-            onPressed: () => context.push('/plan/compra'),
+            onPressed: () => context.push('/listas/compra'),
           ),
         ],
       ),

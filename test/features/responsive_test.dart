@@ -111,7 +111,7 @@ void main() {
       ));
       final container = ProviderContainer(overrides: [appDatabaseProvider.overrideWithValue(db)]);
 
-      await _pumpAt(tester, container, buildAppRouter(initialLocation: '/progreso'), size);
+      await _pumpAt(tester, container, buildAppRouter(initialLocation: '/perfil/progreso'), size);
 
       expect(tester.takeException(), isNull);
       await _teardown(tester, container, db);

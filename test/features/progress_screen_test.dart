@@ -31,7 +31,7 @@ void main() {
     await db.userProfileDao.ensureDefaultRow();
     final container = ProviderContainer(overrides: [appDatabaseProvider.overrideWithValue(db)]);
 
-    await _pumpApp(tester, container, buildAppRouter(initialLocation: '/progreso'));
+    await _pumpApp(tester, container, buildAppRouter(initialLocation: '/perfil/progreso'));
 
     expect(find.textContaining('Registra tu peso'), findsOneWidget);
 
@@ -51,7 +51,7 @@ void main() {
     ));
     final container = ProviderContainer(overrides: [appDatabaseProvider.overrideWithValue(db)]);
 
-    await _pumpApp(tester, container, buildAppRouter(initialLocation: '/progreso'));
+    await _pumpApp(tester, container, buildAppRouter(initialLocation: '/perfil/progreso'));
 
     expect(find.textContaining('79.0'), findsOneWidget); // current
     expect(find.textContaining('82.0'), findsWidgets); // starting
