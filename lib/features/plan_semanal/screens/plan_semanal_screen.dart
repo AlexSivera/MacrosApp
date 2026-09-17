@@ -24,15 +24,22 @@ class PlanSemanalScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView(
+      // A Column with the grid Expanded, not a ListView, so the calendar
+      // fills the whole screen instead of shrink-wrapping to its content
+      // and leaving the rest of the screen empty below it.
+      body: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
-        children: [
-          const PlanMonthHeader(),
-          const SizedBox(height: AppSpacing.lg),
-          PlanMonthGrid(
-            onDayTap: (day) => context.push('/plan/dia/${planDayPathSegment(day)}'),
-          ),
-        ],
+        child: Column(
+          children: [
+            const PlanMonthHeader(),
+            const SizedBox(height: AppSpacing.lg),
+            Expanded(
+              child: PlanMonthGrid(
+                onDayTap: (day) => context.push('/plan/dia/${planDayPathSegment(day)}'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
