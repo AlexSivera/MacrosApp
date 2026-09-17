@@ -131,8 +131,17 @@ final shoppingListWeekDaysProvider = Provider<List<DateTime>>((ref) {
 // entries reference, then hands them to the pure aggregator — the only
 // place in the feature that talks to the DB, so aggregateShoppingList stays
 // trivially testable.
+//
+// Deliberately not `.autoDispose`: ShoppingListScreen swaps this provider's
+// only consumer out of the tree whenever the week is switched to manual
+// mode, and swaps it back on return. Disposing on that swap would force a
+// cold restart of `watchEntriesInRange(...).first` on every toggle back —
+// Drift delivers a stream's very first value via a real Timer, which is a
+// no-op delay in the real app but doesn't exist under flutter_test's
+// fake-async pump() (see the meal_plan/diary hang-bug notes elsewhere in
+// this file), so autoDispose here also made the toggle flaky under test.
 final shoppingListForWeekProvider =
-    FutureProvider.autoDispose<List<ShoppingListSection>>((ref) async {
+    FutureProvider<List<ShoppingListSection>>((ref) async {
   final days = ref.watch(shoppingListWeekDaysProvider);
   final db = ref.watch(appDatabaseProvider);
   final displays = await db.mealPlanDao.watchEntriesInRange(days.first, days.last).first;
@@ -161,4 +170,29 @@ final shoppingListForWeekProvider =
     ingredientsByRecipeId: ingredientsByRecipeId,
   );
   return groupShoppingListByCategory(items);
+});
+
+// --- Manual mode (per-week: automatic aggregation, or a free-text list) ---
+
+// Plain (non-family) StreamProvider watching shoppingListWeekStartProvider
+// itself, not a `.family` keyed by it — the same fix as
+// diaryEntriesForSelectedDateProvider: shoppingListWeekStartProvider changes
+// while ShoppingListScreen stays mounted (prev/next week buttons), and a
+// `.family.autoDispose` provider churns a new instance per key in that
+// situation, which can leave a first subscription's Future waiting forever
+// under widget tests' fake_async clock (see that provider's own comment for
+// the full failure mode).
+//
+// Not `.autoDispose` either, for the same reason as shoppingListForWeekProvider
+// above: toggling the mode segmented button swaps this provider's consumer
+// out of the tree and back, and a cold restart on every toggle is exactly
+// the same real-Timer-vs-fake-clock trap.
+final shoppingListModeProvider = StreamProvider<bool>((ref) {
+  final weekStart = ref.watch(shoppingListWeekStartProvider);
+  return ref.watch(appDatabaseProvider).shoppingListDao.watchMode(weekStart);
+});
+
+final shoppingListManualItemsProvider = StreamProvider<List<ShoppingListManualItem>>((ref) {
+  final weekStart = ref.watch(shoppingListWeekStartProvider);
+  return ref.watch(appDatabaseProvider).shoppingListDao.watchManualItems(weekStart);
 });
