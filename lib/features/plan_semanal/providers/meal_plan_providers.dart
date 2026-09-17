@@ -49,7 +49,7 @@ final monthGridDaysProvider = Provider<List<DateTime>>((ref) {
   return [for (var i = 0; i < dayCount; i++) gridStart.add(Duration(days: i))];
 });
 
-// Backs the grid's "has meals planned" dot — one range query for every
+// Backs the grid's per-day meal previews — one range query for every
 // visible day rather than one per cell.
 final mealPlanEntriesForMonthGridProvider =
     StreamProvider.autoDispose<List<MealPlanEntryDisplay>>((ref) {
@@ -57,8 +57,15 @@ final mealPlanEntriesForMonthGridProvider =
   return ref.watch(appDatabaseProvider).mealPlanDao.watchEntriesInRange(days.first, days.last);
 });
 
-Set<DateTime> datesWithPlanEntries(List<MealPlanEntryDisplay> entries) =>
-    {for (final display in entries) normalizeDate(display.entry.date)};
+Map<DateTime, List<MealPlanEntryDisplay>> groupPlanEntriesByDay(
+  List<MealPlanEntryDisplay> entries,
+) {
+  final grouped = <DateTime, List<MealPlanEntryDisplay>>{};
+  for (final display in entries) {
+    (grouped[normalizeDate(display.entry.date)] ??= []).add(display);
+  }
+  return grouped;
+}
 
 // --- A single day's meal sections (PlanDayScreen) --------------------------
 

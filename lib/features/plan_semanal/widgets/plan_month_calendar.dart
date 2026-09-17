@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/constants/meal_types.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../data/database/daos/meal_plan_dao.dart';
 import '../providers/meal_plan_providers.dart';
 
 // Month header: name + year, with prev/next-month arrows and a jump-to-date
@@ -76,7 +78,7 @@ class PlanMonthGrid extends ConsumerWidget {
     final month = ref.watch(selectedPlanMonthProvider);
     final days = ref.watch(monthGridDaysProvider);
     final entries = ref.watch(mealPlanEntriesForMonthGridProvider).valueOrNull ?? [];
-    final plannedDates = datesWithPlanEntries(entries);
+    final entriesByDay = groupPlanEntriesByDay(entries);
     final today = normalizeDate(DateTime.now());
 
     return Column(
@@ -92,25 +94,27 @@ class PlanMonthGrid extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: days.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 7,
-            childAspectRatio: 0.85,
+        // A Column of weekly Rows, rather than a GridView, so each week's
+        // row height auto-sizes to its own tallest day cell — the reference
+        // design has visibly taller rows for weeks with more planned meals,
+        // which a GridView's SliverGridDelegateWithFixedCrossAxisCount can't
+        // do (it forces one uniform cell size across the whole grid).
+        for (var weekStart = 0; weekStart < days.length; weekStart += 7)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final day in days.skip(weekStart).take(7))
+                Expanded(
+                  child: _DayCell(
+                    day: day,
+                    isCurrentMonth: day.month == month.month,
+                    isToday: day == today,
+                    entries: entriesByDay[day] ?? const [],
+                    onTap: () => onDayTap(day),
+                  ),
+                ),
+            ],
           ),
-          itemBuilder: (context, index) {
-            final day = days[index];
-            return _DayCell(
-              day: day,
-              isCurrentMonth: day.month == month.month,
-              isToday: day == today,
-              hasEntries: plannedDates.contains(day),
-              onTap: () => onDayTap(day),
-            );
-          },
-        ),
       ],
     );
   }
@@ -121,14 +125,14 @@ class _DayCell extends StatelessWidget {
     required this.day,
     required this.isCurrentMonth,
     required this.isToday,
-    required this.hasEntries,
+    required this.entries,
     required this.onTap,
   });
 
   final DateTime day;
   final bool isCurrentMonth;
   final bool isToday;
-  final bool hasEntries;
+  final List<MealPlanEntryDisplay> entries;
   final VoidCallback onTap;
 
   @override
@@ -139,37 +143,61 @@ class _DayCell extends StatelessWidget {
         ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)
         : theme.colorScheme.onSurface;
 
+    final entriesByMeal = groupPlanEntriesByMeal(entries);
+    // "Comida/pollo/arroz" — meal label then its food/recipe names, one line
+    // per meal that actually has something planned that day.
+    final previews = [
+      for (final meal in mealSectionOrder)
+        if (entriesByMeal[meal]!.isNotEmpty)
+          '${meal.label}/${entriesByMeal[meal]!.map((e) => e.label).join('/')}',
+    ];
+
     return Padding(
-      padding: const EdgeInsets.all(2),
+      padding: const EdgeInsets.all(1),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadius.sm),
           onTap: onTap,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-              border: isToday ? Border.all(color: theme.colorScheme.primary, width: 1.5) : null,
-            ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 3),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text('${day.day}', style: theme.textTheme.bodyLarge?.copyWith(color: foreground)),
-                const SizedBox(height: 3),
-                SizedBox(
-                  height: 6,
-                  width: 6,
-                  child: hasEntries
-                      ? DecoratedBox(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: dimmed
-                                ? theme.colorScheme.primary.withValues(alpha: 0.4)
-                                : theme.colorScheme.primary,
-                          ),
-                        )
+                Container(
+                  width: 20,
+                  height: 20,
+                  alignment: Alignment.center,
+                  decoration: isToday
+                      ? BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle)
                       : null,
+                  child: Text(
+                    '${day.day}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: isToday ? theme.colorScheme.onPrimary : foreground,
+                      fontWeight: isToday ? FontWeight.bold : null,
+                    ),
+                  ),
                 ),
+                if (previews.isNotEmpty) const SizedBox(height: 2),
+                for (final preview in previews)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 1),
+                    child: Text(
+                      preview,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontSize: 7.5,
+                        height: 1.2,
+                        color: dimmed
+                            ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
