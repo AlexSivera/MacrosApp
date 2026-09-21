@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../providers/meal_plan_providers.dart';
 import '../widgets/plan_month_calendar.dart';
+import '../widgets/plan_week_view.dart';
 
-// The Plan semanal tab's landing screen: a month calendar. Tapping a day
-// pushes PlanDayScreen for that date — this screen carries no "selected
-// day" state of its own beyond which month is on screen.
-class PlanSemanalScreen extends StatelessWidget {
+// The Plan semanal tab's landing screen: a month calendar by default, or a
+// full-width week list — the month grid's cells are too small to read what
+// a whole week looks like at a glance, so the toggle trades "whole month"
+// for "this week, in enough detail to actually plan it". Tapping a day in
+// either view pushes PlanDayScreen for that date.
+class PlanSemanalScreen extends ConsumerWidget {
   const PlanSemanalScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final viewMode = ref.watch(planViewModeProvider);
+    void onDayTap(DateTime day) => context.push('/plan/dia/${planDayPathSegment(day)}');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Plan semanal'),
@@ -24,20 +31,34 @@ class PlanSemanalScreen extends StatelessWidget {
           ),
         ],
       ),
-      // A Column with the grid Expanded, not a ListView, so the calendar
-      // fills the whole screen instead of shrink-wrapping to its content
-      // and leaving the rest of the screen empty below it.
+      // A Column with the grid/list Expanded, not a ListView wrapping
+      // everything, so the month view still fills the whole screen instead
+      // of shrink-wrapping to its content and leaving empty space below it.
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           children: [
-            const PlanMonthHeader(),
-            const SizedBox(height: AppSpacing.lg),
-            Expanded(
-              child: PlanMonthGrid(
-                onDayTap: (day) => context.push('/plan/dia/${planDayPathSegment(day)}'),
+            Center(
+              child: SegmentedButton<PlanViewMode>(
+                segments: const [
+                  ButtonSegment(value: PlanViewMode.month, label: Text('Mes'), icon: Icon(Icons.calendar_month_outlined)),
+                  ButtonSegment(value: PlanViewMode.week, label: Text('Semana'), icon: Icon(Icons.view_week_outlined)),
+                ],
+                selected: {viewMode},
+                onSelectionChanged: (selection) =>
+                    ref.read(planViewModeProvider.notifier).state = selection.first,
               ),
             ),
+            const SizedBox(height: AppSpacing.lg),
+            if (viewMode == PlanViewMode.month) ...[
+              const PlanMonthHeader(),
+              const SizedBox(height: AppSpacing.lg),
+              Expanded(child: PlanMonthGrid(onDayTap: onDayTap)),
+            ] else ...[
+              const PlanWeekHeader(),
+              const SizedBox(height: AppSpacing.lg),
+              Expanded(child: PlanWeekView(onDayTap: onDayTap)),
+            ],
           ],
         ),
       ),

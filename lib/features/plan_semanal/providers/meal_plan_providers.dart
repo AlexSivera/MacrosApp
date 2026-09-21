@@ -67,6 +67,28 @@ Map<DateTime, List<MealPlanEntryDisplay>> groupPlanEntriesByDay(
   return grouped;
 }
 
+// --- Week view (Plan semanal's alternate, more spacious landing view) -----
+
+enum PlanViewMode { month, week }
+
+// Which of the two landing layouts is showing — the month grid is compact
+// but every cell is tiny, so a full-width week list gives more room to
+// actually read what's planned that week.
+final planViewModeProvider = StateProvider<PlanViewMode>((ref) => PlanViewMode.month);
+
+final selectedPlanWeekStartProvider = StateProvider<DateTime>((ref) => mondayOf(DateTime.now()));
+
+final planWeekDaysProvider = Provider<List<DateTime>>((ref) {
+  final monday = ref.watch(selectedPlanWeekStartProvider);
+  return [for (var i = 0; i < 7; i++) monday.add(Duration(days: i))];
+});
+
+final mealPlanEntriesForWeekViewProvider =
+    StreamProvider.autoDispose<List<MealPlanEntryDisplay>>((ref) {
+  final days = ref.watch(planWeekDaysProvider);
+  return ref.watch(appDatabaseProvider).mealPlanDao.watchEntriesInRange(days.first, days.last);
+});
+
 // --- A single day's meal sections (PlanDayScreen) --------------------------
 
 final mealPlanEntriesForDateProvider =
