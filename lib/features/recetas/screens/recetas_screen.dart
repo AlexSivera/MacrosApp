@@ -63,24 +63,11 @@ class RecetasScreen extends ConsumerWidget {
                       onCreate: () => context.push('/recetas/nuevo'),
                     );
                   }
-                  return GridView.builder(
-                    itemCount: recipes.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: AppSpacing.md,
-                      crossAxisSpacing: AppSpacing.md,
-                      childAspectRatio: 0.66,
+                  return SingleChildScrollView(
+                    child: _RecipeMasonryGrid(
+                      recipes: recipes,
+                      onTapRecipe: (id) => context.push('/recetas/$id'),
                     ),
-                    itemBuilder: (context, index) {
-                      final data = recipes[index];
-                      return FadeSlideIn(
-                        delay: Duration(milliseconds: 30 * (index % 10)),
-                        child: RecipeCard(
-                          data: data,
-                          onTap: () => context.push('/recetas/${data.recipe.id}'),
-                        ),
-                      );
-                    },
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
@@ -90,6 +77,52 @@ class RecetasScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// A manual 2-column masonry layout, not GridView: a recipe name can wrap
+// onto extra lines now that it's never truncated with "…" (see RecipeCard),
+// so cards need variable heights rather than the uniform ones a
+// SliverGridDelegateWithFixedCrossAxisCount would force on every card
+// regardless of its own content.
+class _RecipeMasonryGrid extends StatelessWidget {
+  const _RecipeMasonryGrid({required this.recipes, required this.onTapRecipe});
+
+  final List<RecipeCardData> recipes;
+  final ValueChanged<int> onTapRecipe;
+
+  @override
+  Widget build(BuildContext context) {
+    final leftColumn = <int>[];
+    final rightColumn = <int>[];
+    for (var i = 0; i < recipes.length; i++) {
+      (i.isEven ? leftColumn : rightColumn).add(i);
+    }
+
+    Widget buildColumn(List<int> indices) => Column(
+          children: [
+            for (final index in indices)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: FadeSlideIn(
+                  delay: Duration(milliseconds: 30 * (index % 10)),
+                  child: RecipeCard(
+                    data: recipes[index],
+                    onTap: () => onTapRecipe(recipes[index].recipe.id),
+                  ),
+                ),
+              ),
+          ],
+        );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: buildColumn(leftColumn)),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(child: buildColumn(rightColumn)),
+      ],
     );
   }
 }

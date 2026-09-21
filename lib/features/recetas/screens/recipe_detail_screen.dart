@@ -192,6 +192,25 @@ class _RecipeDetailBody extends ConsumerWidget {
         ]);
         if (context.mounted) context.pop();
       case 'delete':
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Eliminar receta'),
+            content: Text('Se eliminará "${recipe.name}" y no se podrá recuperar.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+                child: const Text('Eliminar'),
+              ),
+            ],
+          ),
+        );
+        if (confirmed != true) return;
         await db.recipesDao.deleteRecipe(recipe.id);
         if (context.mounted) context.pop();
     }

@@ -52,10 +52,10 @@ class RecipeCard extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
+                        // No maxLines/ellipsis: the full name always shows,
+                        // wrapping onto another line instead of truncating.
                         child: Text(
                           recipe.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleMedium,
                         ),
                       ),
