@@ -30,13 +30,17 @@ jobs:
       - run: flutter pub get
       # Served at https://<user>.github.io/MacrosApp/ — base-href must match
       # the repo name or every asset/route resolves to the wrong path.
-      # --pwa-strategy=none skips Flutter's offline-caching service worker:
+      # --pwa-strategy=none skips Flutter's own cache-first service worker:
       # with it, browsers happily keep serving an old cached build to anyone
       # who already has the PWA installed, sometimes for weeks. Without it,
       # every launch fetches index.html fresh and always gets the version
       # just deployed here — the app's own data (SQLite over IndexedDB) isn't
       # affected either way, since that never went through the service worker.
-      - run: flutter build web --release --base-href /MacrosApp/ --pwa-strategy=none
+      # Offline support comes from web/sw.js instead (network-first, so the
+      # always-latest behavior above is kept). --no-web-resources-cdn serves
+      # CanvasKit from this site rather than gstatic.com, so it can be cached
+      # for offline use too.
+      - run: flutter build web --release --base-href /MacrosApp/ --pwa-strategy=none --no-web-resources-cdn
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/web

@@ -8,19 +8,22 @@ import '../theme/app_theme.dart';
 // tagged with its identity color — shared by every quantity sheet and the
 // recipe detail so a preview reads the same everywhere.
 class MacroPreviewRow extends StatelessWidget {
-  const MacroPreviewRow({super.key, required this.macros, this.filled = true});
+  const MacroPreviewRow({super.key, required this.macros, this.filled = true, this.showKcal = true});
 
   final FoodMacros macros;
 
   // false when it already sits inside a card.
   final bool filled;
 
+  // false when the kcal figure is already shown bigger right above.
+  final bool showKcal;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final row = Row(
       children: [
-        Expanded(child: _Stat('${macros.kcal.round()}', 'kcal', theme.colorScheme.primary)),
+        if (showKcal) Expanded(child: _Stat('${macros.kcal.round()}', 'kcal', theme.colorScheme.primary)),
         Expanded(child: _Stat('${macros.proteinG.round()} g', 'Proteína', AppTheme.proteinColor)),
         Expanded(child: _Stat('${macros.carbsG.round()} g', 'Carbos', AppTheme.carbsColor)),
         Expanded(child: _Stat('${macros.fatG.round()} g', 'Grasa', AppTheme.fatColor)),

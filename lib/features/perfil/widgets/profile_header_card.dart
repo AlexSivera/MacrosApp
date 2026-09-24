@@ -46,7 +46,8 @@ class ProfileHeaderCard extends StatelessWidget {
                 Text(
                   currentWeightKg != null
                       ? '${formatKg(currentWeightKg!)}'
-                            '${profile.goalWeightKg != null ? ' → ${formatKg(profile.goalWeightKg!)}' : ''}'
+                            // Only when there's a real target to head towards.
+                          '${profile.goalWeightKg != null && (profile.goalWeightKg! - currentWeightKg!).abs() >= 0.05 ? ' → ${formatKg(profile.goalWeightKg!)}' : ''}'
                       : 'Sin peso registrado',
                   style: theme.textTheme.bodySmall,
                 ),

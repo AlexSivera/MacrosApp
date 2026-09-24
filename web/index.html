@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -37,8 +37,51 @@
 
   <title>Kalibra</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Splash shown while Flutter loads, painted in the last theme the app
+       used (saved by lib/core/platform/web_shell_web.dart) so a light or
+       green theme doesn't open on a black flash, and vice versa. -->
+  <style>
+    html, body { margin: 0; height: 100%; background: var(--kalibra-bg, #0A0C0E); }
+    #splash {
+      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: inherit; transition: opacity 250ms ease-out; z-index: 10;
+    }
+    #splash img { width: 96px; height: 96px; border-radius: 22px; animation: breathe 1.6s ease-in-out infinite; }
+    #splash.hide { opacity: 0; pointer-events: none; }
+    @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.94); opacity: 0.85; } }
+    @media (prefers-reduced-motion: reduce) { #splash img { animation: none; } #splash { transition: none; } }
+  </style>
+  <script>
+    (function () {
+      try {
+        var bg = localStorage.getItem('kalibra-bg');
+        if (bg && /^#[0-9a-fA-F]{6}$/.test(bg)) {
+          document.documentElement.style.setProperty('--kalibra-bg', bg);
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', bg);
+        }
+      } catch (e) { /* storage blocked: keep the dark default */ }
+    })();
+  </script>
 </head>
 <body>
+  <div id="splash"><img src="icons/Icon-192.png" alt=""></div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var splash = document.getElementById('splash');
+      if (!splash) return;
+      splash.classList.add('hide');
+      setTimeout(function () { splash.remove(); }, 300);
+    });
+
+    // Offline support (see sw.js): network-first, so installs still always
+    // get the latest deploy when online.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
+  </script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

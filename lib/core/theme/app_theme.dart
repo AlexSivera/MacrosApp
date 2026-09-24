@@ -224,7 +224,7 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: surfaceRaised,
         selectedColor: accentColor.withValues(alpha: 0.22),
-        labelStyle: TextStyle(color: textColor, fontWeight: FontWeight.w500),
+        labelStyle: body(TextStyle(color: textColor, fontWeight: FontWeight.w500)),
         side: BorderSide(color: border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
       ),
@@ -250,7 +250,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: accentColor,
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+          textStyle: body(const TextStyle(fontWeight: FontWeight.w600)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -301,7 +301,8 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: surfaceRaised,
-        contentTextStyle: TextStyle(color: textColor),
+        contentTextStyle: body(TextStyle(color: textColor)),
+        actionTextColor: accentColor,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
       ),

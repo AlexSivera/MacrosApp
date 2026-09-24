@@ -397,6 +397,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           Text('kcal al día', style: theme.textTheme.bodyMedium),
           const SizedBox(height: AppSpacing.lg),
           MacroPreviewRow(
+            showKcal: false,
             macros: FoodMacros(
               kcal: calories.toDouble(),
               proteinG: macros.proteinG,
