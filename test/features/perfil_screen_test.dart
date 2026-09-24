@@ -40,8 +40,10 @@ void main() {
     expect(find.text('Mi objetivo'), findsOneWidget);
     expect(find.text('Mis datos'), findsOneWidget);
     expect(find.text('Objetivos nutricionales'), findsOneWidget);
-    expect(find.text('Unidades'), findsOneWidget);
-    expect(find.text('Notificaciones'), findsOneWidget);
+    // Units and reminders were stored but never applied anywhere, so the
+    // screens were removed rather than left as switches that do nothing.
+    expect(find.text('Unidades'), findsNothing);
+    expect(find.text('Notificaciones'), findsNothing);
     expect(find.text('Apariencia'), findsOneWidget);
 
     // The last section is below the fold in the test viewport.

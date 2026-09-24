@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../data/database/database_provider.dart';
@@ -67,7 +68,7 @@ class ListasScreen extends ConsumerWidget {
                       height: 36,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                        color: AppTheme.tint(context),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(Icons.shopping_cart_outlined, size: 18, color: theme.colorScheme.primary),

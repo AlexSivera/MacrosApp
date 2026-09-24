@@ -219,6 +219,29 @@ class MealPlanDao extends DatabaseAccessor<AppDatabase> with _$MealPlanDaoMixin 
     return ids;
   }
 
+  // The foods used most often in one meal slot ("Frecuentes en Desayuno"),
+  // counted over that slot's latest 300 entries so old habits fade out. Ties
+  // go to the most recently used; foods used only once aren't habits yet.
+  Future<List<int>> frequentFoodIds(MealType mealType, {int limit = 5, int minUses = 2}) async {
+    final rows = await (select(mealPlanEntries)
+          ..where((e) => e.foodId.isNotNull() & e.mealType.equalsValue(mealType))
+          ..orderBy([(e) => OrderingTerm.desc(e.id)])
+          ..limit(300))
+        .get();
+    // Insertion order = most recent first, which breaks count ties below.
+    final counts = <int, int>{};
+    for (final row in rows) {
+      counts.update(row.foodId!, (n) => n + 1, ifAbsent: () => 1);
+    }
+    final ids = counts.keys.where((id) => counts[id]! >= minUses).toList();
+    final recency = {for (final (i, id) in counts.keys.indexed) id: i};
+    ids.sort((a, b) {
+      final byCount = counts[b]!.compareTo(counts[a]!);
+      return byCount != 0 ? byCount : recency[a]!.compareTo(recency[b]!);
+    });
+    return ids.take(limit).toList();
+  }
+
   // "Repetir de ayer": copies every entry of one meal slot onto another day.
   // Returns how many entries were copied (0 if the source slot was empty).
   Future<int> copyMeal({

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:go_router/go_router.dart';
+
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../data/database/app_database.dart';
+import '../../../services/nutrition_engine/goal_weight.dart';
 import '../../diario/providers/diary_providers.dart';
 import '../providers/progress_providers.dart';
 import '../widgets/avg_macros_card.dart';
@@ -25,6 +28,15 @@ class ProgressScreen extends ConsumerWidget {
     final profileAsync = ref.watch(userProfileStreamProvider);
     final targets = ref.watch(resolvedTargetsProvider);
     final latestWeight = ref.watch(latestWeightKgProvider);
+    final profile = profileAsync.valueOrNull;
+    final goalType = profile?.goalType ?? GoalType.maintain;
+    final startingKg = earliestAsync.valueOrNull?.weightKg ?? profile?.startingWeightKg;
+    // Judged against where the goal started from, not today's weight, so
+    // reaching (or passing) the goal doesn't read as a broken goal. Profiles
+    // saved before the goal weight was required can have none, or one equal
+    // to the starting weight.
+    final goalIsSet = goalWeightFitsGoal(goalType, profile?.goalWeightKg, startingKg);
+    final goalKg = goalType != GoalType.maintain && goalIsSet ? profile?.goalWeightKg : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -40,11 +52,15 @@ class ProgressScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
+          if (profile != null && !goalIsSet) ...[
+            _SetGoalWeightCard(onTap: () => context.push('/perfil/objetivo')),
+            const SizedBox(height: AppSpacing.lg),
+          ],
           WeightStatsRow(
             currentKg: latestWeight,
-            startingKg: earliestAsync.valueOrNull?.weightKg ?? profileAsync.valueOrNull?.startingWeightKg,
-            goalKg: profileAsync.valueOrNull?.goalWeightKg,
-            goalType: profileAsync.valueOrNull?.goalType ?? GoalType.maintain,
+            startingKg: startingKg,
+            goalKg: goalIsSet ? profile?.goalWeightKg : null,
+            goalType: goalType,
           ),
           const SizedBox(height: AppSpacing.lg),
           const RangeSelector(),
@@ -54,7 +70,7 @@ class ProgressScreen extends ConsumerWidget {
               height: 220,
               child: historyAsync.when(
                 skipLoadingOnReload: true,
-                data: (logs) => WeightChart(logs: logs),
+                data: (logs) => WeightChart(logs: logs, goalKg: goalKg),
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, _) => Center(child: Text('Error: $err')),
               ),
@@ -70,10 +86,39 @@ class ProgressScreen extends ConsumerWidget {
             error: (err, _) => Text('Error: $err'),
           ),
           const SizedBox(height: AppSpacing.lg),
-          CurrentGoalCard(
-            goalType: profileAsync.valueOrNull?.goalType ?? GoalType.maintain,
-            targets: targets,
+          CurrentGoalCard(goalType: goalType, targets: targets),
+        ],
+      ),
+    );
+  }
+}
+
+class _SetGoalWeightCard extends StatelessWidget {
+  const _SetGoalWeightCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AppCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Row(
+        children: [
+          Icon(Icons.flag_outlined, color: theme.colorScheme.primary),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Define tu peso objetivo', style: theme.textTheme.titleMedium),
+                const SizedBox(height: 2),
+                Text('Para ver cuánto te queda y marcarlo en el gráfico.', style: theme.textTheme.bodySmall),
+              ],
+            ),
           ),
+          Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
         ],
       ),
     );

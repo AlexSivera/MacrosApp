@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/meal_types.dart';
 import '../../../core/theme/app_motion.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_add_button.dart';
 import '../../../core/widgets/app_card.dart';
@@ -65,7 +66,7 @@ class PlanMealSectionCard extends ConsumerWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                    color: AppTheme.tint(context),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(mealType.icon, size: 18, color: theme.colorScheme.primary),
@@ -161,12 +162,12 @@ class PlanMealSectionCard extends ConsumerWidget {
   }
 
   Future<void> _addEntry(BuildContext context) async {
-    final action = await AddEntryOptionsSheet.show(context);
+    final action = await AddEntryOptionsSheet.show(context, mealType: mealType);
     if (action == null || !context.mounted) return;
 
     switch (action) {
       case AddEntryAction.food:
-        final food = await FoodSearchSheet.show(context);
+        final food = await FoodSearchSheet.show(context, mealType: mealType);
         if (food != null && context.mounted) {
           await PlanFoodQuantitySheet.showAdd(
             context,

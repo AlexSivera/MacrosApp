@@ -153,7 +153,7 @@ class _EmptyRecipesState extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                color: AppTheme.tint(context),
               ),
               child: Icon(Icons.menu_book_rounded, size: 40, color: theme.colorScheme.primary),
             ),

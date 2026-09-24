@@ -13,6 +13,7 @@ import '../../../core/widgets/macro_preview_row.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../../services/nutrition_engine/food_macros_calculator.dart';
+import '../../../services/nutrition_engine/goal_weight.dart';
 import '../../../services/nutrition_engine/macro_targets_calculator.dart';
 import '../../../services/nutrition_engine/tdee_calculator.dart';
 
@@ -106,10 +107,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (height == null || height < 100 || height > 250) return 'Introduce tu altura en cm (p. ej. 175).';
       if (weight == null || weight < 30 || weight > 300) return 'Introduce tu peso en kg (p. ej. 72,5).';
     }
-    if (step == 1 && _goalType != GoalType.maintain && _goalWeightController.text.trim().isNotEmpty) {
-      final goal = parseDecimal(_goalWeightController.text);
-      if (goal == null || goal < 30 || goal > 300) return 'El peso objetivo no parece válido.';
-    }
+    if (step == 1) return goalWeightError(_goalType, _goalWeightController.text, _weight);
     return null;
   }
 
@@ -159,7 +157,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         goalType: Value(_goalType),
         weeklyWeightChangeKg: Value(_signedWeeklyChange),
         startingWeightKg: Value(weight),
-        goalWeightKg: Value(_goalType == GoalType.maintain ? weight : (goalWeight ?? weight)),
+        goalWeightKg: Value(_goalType == GoalType.maintain ? weight : goalWeight),
         onboardingCompleted: const Value(true),
       ),
     );
@@ -349,10 +347,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   TextField(
                     controller: _goalWeightController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(
-                      labelText: 'Peso objetivo (opcional)',
-                      suffixText: 'kg',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Peso objetivo', suffixText: 'kg'),
+                    onChanged: (_) => setState(() => _error = null),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Text(

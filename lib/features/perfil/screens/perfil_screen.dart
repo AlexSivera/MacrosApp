@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../diario/providers/diary_providers.dart';
@@ -47,14 +48,7 @@ class PerfilScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.lg),
               _SettingsSection(
                 items: [
-                  _SettingsItem(Icons.straighten_outlined, 'Unidades', '/perfil/unidades'),
-                  _SettingsItem(Icons.notifications_outlined, 'Notificaciones', '/perfil/notificaciones'),
                   _SettingsItem(Icons.palette_outlined, 'Apariencia', '/perfil/apariencia'),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              _SettingsSection(
-                items: [
                   _SettingsItem(Icons.settings_outlined, 'Configuración', '/perfil/configuracion'),
                   _SettingsItem(Icons.info_outline, 'Sobre la aplicación', '/perfil/sobre'),
                 ],
@@ -102,7 +96,7 @@ class _SettingsSection extends StatelessWidget {
                       height: 36,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                        color: AppTheme.tint(context),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(items[i].icon, size: 18, color: theme.colorScheme.primary),

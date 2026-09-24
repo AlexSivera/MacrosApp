@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../data/database/app_database.dart';
@@ -28,7 +29,7 @@ class ProfileHeaderCard extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.16),
+            backgroundColor: AppTheme.tint(context),
             child: Text(
               initial,
               style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.primary),

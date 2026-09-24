@@ -47,6 +47,20 @@ void main() {
     await _settle(tester);
     expect(find.text('Tu objetivo'), findsOneWidget);
 
+    // Losing weight needs a goal weight, and one below the current weight.
+    await tester.tap(find.text('Perder'));
+    await _settle(tester);
+    await tester.tap(find.text('Siguiente'));
+    await _settle(tester);
+    expect(find.text('Tu objetivo'), findsOneWidget);
+    expect(find.textContaining('quieres llegar a pesar'), findsOneWidget);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Peso objetivo'), '85');
+    await tester.tap(find.text('Siguiente'));
+    await _settle(tester);
+    expect(find.textContaining('menor que 80,5 kg'), findsOneWidget);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Peso objetivo'), '75');
     await tester.tap(find.text('Siguiente'));
     await _settle(tester);
     expect(find.text('Tu plan'), findsOneWidget);
@@ -60,6 +74,8 @@ void main() {
     expect(profile!.onboardingCompleted, isTrue);
     expect(profile.heightCm, 180);
     expect(profile.startingWeightKg, 80.5);
+    expect(profile.goalType, GoalType.lose);
+    expect(profile.goalWeightKg, 75);
 
     await tester.runAsync(() async {
       container.dispose();

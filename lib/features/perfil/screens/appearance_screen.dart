@@ -65,7 +65,7 @@ class AppearanceScreen extends ConsumerWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? theme.colorScheme.primary.withValues(alpha: 0.10)
+                        ? AppTheme.tint(context)
                         : theme.cardTheme.color,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(

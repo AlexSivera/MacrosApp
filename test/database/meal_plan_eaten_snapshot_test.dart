@@ -168,6 +168,40 @@ void main() {
     expect(await db.mealPlanDao.recentFoodIds(), [a, b]);
   });
 
+  test('frequentFoodIds ranks one meal slot by use count, ties by recency', () async {
+    Future<int> food(String name) => db.foodsDao.insert(FoodsCompanion.insert(
+          name: name,
+          kcalPer100g: 100,
+          proteinPer100g: 1,
+          carbsPer100g: 1,
+          fatPer100g: 1,
+        ));
+    final oats = await food('Avena');
+    final milk = await food('Leche');
+    final yogurt = await food('Yogur');
+    final once = await food('Kiwi');
+    final rice = await insertRice();
+    Future<void> log(int id, MealType meal) => db.mealPlanDao.addFood(
+          date: day,
+          mealType: meal,
+          foodId: id,
+          quantityGrams: 100,
+          orderIndex: 0,
+        );
+    // Breakfast: oats x3, yogurt x2 then milk x2 (milk more recent), kiwi once.
+    for (final id in [oats, yogurt, oats, yogurt, milk, oats, once, milk]) {
+      await log(id, MealType.breakfast);
+    }
+    // Rice is frequent at lunch only.
+    for (var i = 0; i < 3; i++) {
+      await log(rice, MealType.lunch);
+    }
+
+    expect(await db.mealPlanDao.frequentFoodIds(MealType.breakfast), [oats, milk, yogurt]);
+    expect(await db.mealPlanDao.frequentFoodIds(MealType.lunch), [rice]);
+    expect(await db.mealPlanDao.frequentFoodIds(MealType.dinner), isEmpty);
+  });
+
   test('eatenOnly range query skips planned entries', () async {
     final foodId = await insertRice();
     await db.mealPlanDao.addFood(

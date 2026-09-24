@@ -28,7 +28,10 @@ class UserProfile extends Table {
   RealColumn get manualCarbTargetG => real().nullable()();
   RealColumn get manualFatTargetG => real().nullable()();
 
-  IntColumn get weightUnit => intEnum<WeightUnit>().withDefault(Constant(WeightUnit.kg.index))();
+  // weightUnit, foodMassUnit and remindersEnabled are unused: everything
+  // displays in kg/g and there are no reminders. Their settings screens were
+  // removed; the columns stay so the schema doesn't need a migration.
+  IntColumn get weightUnit =>intEnum<WeightUnit>().withDefault(Constant(WeightUnit.kg.index))();
   IntColumn get foodMassUnit =>
       intEnum<FoodMassUnit>().withDefault(Constant(FoodMassUnit.g.index))();
   IntColumn get appearanceMode =>

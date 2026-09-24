@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/meal_types.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/database/app_database.dart';
@@ -13,24 +14,31 @@ import 'food_category_chips.dart';
 // Fast food lookup sheet — search the bundled + custom Foods table by name,
 // tap a result to hand it back to the caller (add-entry flow, ingredient
 // builder). Doesn't itself write anything; quantity entry is a separate step.
+// Given the meal being filled, the title names it and the shortcuts lead
+// with what's usually eaten there.
 class FoodSearchSheet extends ConsumerWidget {
-  const FoodSearchSheet({super.key});
+  const FoodSearchSheet({super.key, this.mealType});
 
-  static Future<Food?> show(BuildContext context) {
+  final MealType? mealType;
+
+  static Future<Food?> show(BuildContext context, {MealType? mealType}) {
     return showModalBottomSheet<Food>(
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
-      builder: (context) => const FoodSearchSheet(),
+      builder: (context) => FoodSearchSheet(mealType: mealType),
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final resultsAsync = ref.watch(foodSearchResultsProvider);
-    final showRecents =
+    final showShortcuts =
         ref.watch(foodSearchQueryProvider).trim().isEmpty && ref.watch(foodCategoryFilterProvider) == null;
-    final recents = showRecents ? ref.watch(recentFoodsProvider).valueOrNull ?? const <Food>[] : const <Food>[];
+    final shortcuts = showShortcuts ? ref.watch(foodShortcutsProvider(mealType)).valueOrNull : null;
+    final frequent = shortcuts?.frequent ?? const <Food>[];
+    final recents = shortcuts?.recent ?? const <Food>[];
+    final meal = mealType;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
 
     return SafeArea(
@@ -42,7 +50,10 @@ class FoodSearchSheet extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Buscar alimento', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                meal == null ? 'Buscar alimento' : 'Añadir a ${meal.label}',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: AppSpacing.md),
               TextField(
                 autofocus: true,
@@ -66,11 +77,16 @@ class FoodSearchSheet extends ConsumerWidget {
                       return const _EmptySearchState();
                     }
                     final header = <Widget>[
+                      if (meal != null && frequent.isNotEmpty) ...[
+                        _SectionHeader('Frecuentes en ${meal.label}'),
+                        for (final food in frequent) _FoodResultTile(food: food),
+                      ],
                       if (recents.isNotEmpty) ...[
                         const _SectionHeader('Recientes'),
                         for (final food in recents) _FoodResultTile(food: food),
-                        const _SectionHeader('Todos los alimentos'),
                       ],
+                      if (frequent.isNotEmpty || recents.isNotEmpty)
+                        const _SectionHeader('Todos los alimentos'),
                     ];
                     // Lazily built: the full catalog is a few hundred rows.
                     return ListView.builder(

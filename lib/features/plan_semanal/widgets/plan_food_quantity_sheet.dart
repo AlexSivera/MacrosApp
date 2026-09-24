@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/meal_types.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/macro_preview_row.dart';
@@ -175,6 +176,12 @@ class _PlanFoodQuantitySheetState extends ConsumerState<PlanFoodQuantitySheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Which meal this lands in, when adding (an edit keeps its meal).
+            if (widget.entry == null && widget.mealType != null)
+              Text(
+                widget.mealType!.label.toUpperCase(),
+                style: theme.textTheme.labelMedium?.copyWith(letterSpacing: 0.6),
+              ),
             Text(widget.food.name, style: theme.textTheme.titleLarge),
             const SizedBox(height: AppSpacing.lg),
             if (_hasServingSize) ...[

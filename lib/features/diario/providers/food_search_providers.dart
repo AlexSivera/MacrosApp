@@ -15,11 +15,18 @@ final foodSearchResultsProvider = StreamProvider.autoDispose<List<Food>>((ref) {
   return foodsDao.watchFiltered(query: query, category: category);
 });
 
-// "Recientes" at the top of an unfiltered search — the foods logged or
-// planned most recently, newest first.
-final recentFoodsProvider = FutureProvider.autoDispose<List<Food>>((ref) async {
+typedef FoodShortcuts = ({List<Food> frequent, List<Food> recent});
+
+// The shortcuts at the top of an unfiltered search: the foods usually eaten
+// in the meal being filled ("Frecuentes en Desayuno" — only when a meal is
+// known), then the foods logged or planned most recently, newest first,
+// without repeating the frequent ones.
+final foodShortcutsProvider =
+    FutureProvider.autoDispose.family<FoodShortcuts, MealType?>((ref, mealType) async {
   final db = ref.watch(appDatabaseProvider);
-  final ids = await db.mealPlanDao.recentFoodIds();
-  final foods = await Future.wait(ids.map(db.foodsDao.getById));
-  return foods.nonNulls.toList();
+  final frequentIds = mealType == null ? const <int>[] : await db.mealPlanDao.frequentFoodIds(mealType);
+  final recentIds = (await db.mealPlanDao.recentFoodIds()).where((id) => !frequentIds.contains(id));
+  Future<List<Food>> load(Iterable<int> ids) async =>
+      (await Future.wait(ids.map(db.foodsDao.getById))).nonNulls.toList();
+  return (frequent: await load(frequentIds), recent: await load(recentIds));
 });

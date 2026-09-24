@@ -78,6 +78,20 @@ class AppTheme {
     ];
   }
 
+  // Lifted neutral for selected states in dark mode (see _build).
+  static const selectedDark = Color(0xFF2A2F35);
+
+  // Soft fill behind an accent-colored icon (meal and settings icons, the
+  // profile avatar, the chosen theme). A translucent accent wash reads as
+  // muddy brown on near-black, so dark mode uses the raised neutral and lets
+  // the icon carry the color; the light skins keep the accent wash.
+  static Color tint(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return scheme.brightness == Brightness.dark
+        ? scheme.surfaceContainerHighest
+        : scheme.primary.withValues(alpha: 0.12);
+  }
+
   static ThemeData get dark => _build(
     brightness: Brightness.dark,
     background: background,
@@ -138,6 +152,13 @@ class AppTheme {
       brightness: brightness,
       surface: surface,
     );
+    final isDark = brightness == Brightness.dark;
+
+    // Selected segments, chips and the nav indicator. Same reasoning as
+    // tint(): dark mode gets a lifted neutral with the accent on the label
+    // and icon; the light skins a soft accent wash with the normal text.
+    final selectedFill = isDark ? selectedDark : accentColor.withValues(alpha: 0.16);
+    final selectedForeground = isDark ? accentColor : textColor;
 
     // Display face: Outfit — a geometric sans with a confident, sporty
     // character for numbers and headings. Body face: Plus Jakarta Sans —
@@ -195,8 +216,25 @@ class AppTheme {
       brightness: brightness,
       scaffoldBackgroundColor: background,
       colorScheme: colorScheme.copyWith(
+        // The brand accent itself, not the seed-derived primary: fromSeed
+        // darkens it to brown in light mode and to peach in dark, so the
+        // ring, checks and buttons drifted away from the coral (or pink /
+        // green) the rest of the skin uses.
+        primary: accentColor,
+        onPrimary: onAccentColor,
+        // Every container tone pinned to this palette's neutrals — the
+        // seed-derived ones are warm-tinted, which is what gave the date
+        // picker and popup menus their brown surfaces — and no primary tint
+        // blended into elevated surfaces.
+        surfaceTint: Colors.transparent,
         surface: surface,
+        surfaceContainerLowest: background,
+        surfaceContainerLow: surface,
+        surfaceContainer: surfaceRaised,
+        surfaceContainerHigh: surfaceRaised,
         surfaceContainerHighest: surfaceRaised,
+        secondaryContainer: selectedFill,
+        onSecondaryContainer: selectedForeground,
         onSurface: textColor,
         onSurfaceVariant: mutedTextColor,
         outline: border,
@@ -223,7 +261,8 @@ class AppTheme {
       dividerTheme: DividerThemeData(color: border, space: 1, thickness: 1),
       chipTheme: ChipThemeData(
         backgroundColor: surfaceRaised,
-        selectedColor: accentColor.withValues(alpha: 0.22),
+        selectedColor: selectedFill,
+        checkmarkColor: selectedForeground,
         labelStyle: body(TextStyle(color: textColor, fontWeight: FontWeight.w500)),
         side: BorderSide(color: border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
@@ -272,7 +311,12 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surface,
-        indicatorColor: accentColor.withValues(alpha: 0.18),
+        indicatorColor: selectedFill,
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected) ? selectedForeground : mutedTextColor,
+          ),
+        ),
         elevation: 0,
         height: 64,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
@@ -295,6 +339,21 @@ class AppTheme {
           borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
         ),
       ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: surfaceRaised,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          side: BorderSide(color: border),
+        ),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: surfaceRaised,
+        surfaceTintColor: Colors.transparent,
+        headerForegroundColor: textColor,
+        dividerColor: border,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+      ),
       dialogTheme: DialogThemeData(
         backgroundColor: surfaceRaised,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
@@ -316,7 +375,9 @@ class AppTheme {
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
           backgroundColor: surfaceRaised,
-          selectedBackgroundColor: accentColor.withValues(alpha: 0.22),
+          foregroundColor: textColor,
+          selectedBackgroundColor: selectedFill,
+          selectedForegroundColor: selectedForeground,
           side: BorderSide(color: border),
         ),
       ),

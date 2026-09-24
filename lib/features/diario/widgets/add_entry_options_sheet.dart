@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/meal_types.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../data/database/enums.dart';
 
 // What the user picked from the add-entry menu. Only the choice is returned
 // here — the caller (whose context outlives this transient sheet) drives the
@@ -14,15 +16,18 @@ import '../../../core/theme/app_spacing.dart';
 // always land there right after confirming a search has nothing to offer.
 enum AddEntryAction { food, recipe }
 
-// The fast add-entry entry point tapped from a meal section's "+ Añadir".
+// The fast add-entry entry point tapped from a meal section's "+ Añadir",
+// titled with the meal being filled.
 class AddEntryOptionsSheet extends StatelessWidget {
-  const AddEntryOptionsSheet({super.key});
+  const AddEntryOptionsSheet({super.key, required this.mealType});
 
-  static Future<AddEntryAction?> show(BuildContext context) {
+  final MealType mealType;
+
+  static Future<AddEntryAction?> show(BuildContext context, {required MealType mealType}) {
     return showModalBottomSheet<AddEntryAction>(
       context: context,
       useRootNavigator: true,
-      builder: (context) => const AddEntryOptionsSheet(),
+      builder: (context) => AddEntryOptionsSheet(mealType: mealType),
     );
   }
 
@@ -33,7 +38,12 @@ class AddEntryOptionsSheet extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
+              child: Text('Añadir a ${mealType.label}', style: Theme.of(context).textTheme.titleLarge),
+            ),
             ListTile(
               leading: const Icon(Icons.restaurant_outlined),
               title: const Text('Añadir alimento'),

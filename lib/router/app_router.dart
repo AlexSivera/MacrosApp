@@ -11,11 +11,9 @@ import '../features/perfil/screens/about_screen.dart';
 import '../features/perfil/screens/appearance_screen.dart';
 import '../features/perfil/screens/goal_screen.dart';
 import '../features/perfil/screens/my_data_screen.dart';
-import '../features/perfil/screens/notifications_screen.dart';
 import '../features/perfil/screens/nutrition_goals_screen.dart';
 import '../features/perfil/screens/perfil_screen.dart';
 import '../features/perfil/screens/settings_screen.dart';
-import '../features/perfil/screens/units_screen.dart';
 import '../features/plan_semanal/providers/meal_plan_providers.dart';
 import '../features/plan_semanal/screens/plan_day_screen.dart';
 import '../features/plan_semanal/screens/plan_semanal_screen.dart';
@@ -115,8 +113,6 @@ GoRouter buildAppRouter({required String initialLocation}) => GoRouter(
                   builder: (context, state) => const NutritionGoalsScreen(),
                 ),
                 GoRoute(path: 'progreso', builder: (context, state) => const ProgressScreen()),
-                GoRoute(path: 'unidades', builder: (context, state) => const UnitsScreen()),
-                GoRoute(path: 'notificaciones', builder: (context, state) => const NotificationsScreen()),
                 GoRoute(path: 'apariencia', builder: (context, state) => const AppearanceScreen()),
                 GoRoute(path: 'configuracion', builder: (context, state) => const SettingsScreen()),
                 GoRoute(path: 'sobre', builder: (context, state) => const AboutScreen()),

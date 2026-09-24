@@ -10,9 +10,13 @@ import '../../../core/utils/formatters.dart';
 import '../../../data/database/app_database.dart';
 
 class WeightChart extends StatelessWidget {
-  const WeightChart({super.key, required this.logs});
+  const WeightChart({super.key, required this.logs, this.goalKg});
 
   final List<BodyWeightLog> logs;
+
+  // Drawn as a dashed "Objetivo" line, and kept inside the visible range so
+  // the distance left to it reads at a glance.
+  final double? goalKg;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +36,7 @@ class WeightChart extends StatelessWidget {
     final spots = [
       for (final log in sorted) FlSpot(daysBetween(firstDay, log.date).toDouble(), log.weightKg),
     ];
-    final weights = sorted.map((l) => l.weightKg);
+    final weights = [...sorted.map((l) => l.weightKg), ?goalKg];
     final minY = (weights.reduce(math.min) - 1).floorToDouble();
     final maxY = (weights.reduce(math.max) + 1).ceilToDouble();
     final spanDays = math.max(spots.last.x, 1.0);
@@ -81,6 +85,23 @@ class WeightChart extends StatelessWidget {
           ),
         ),
         borderData: FlBorderData(show: false),
+        extraLinesData: ExtraLinesData(
+          horizontalLines: [
+            if (goalKg != null)
+              HorizontalLine(
+                y: goalKg!,
+                color: theme.colorScheme.onSurfaceVariant,
+                strokeWidth: 1.5,
+                dashArray: const [6, 4],
+                label: HorizontalLineLabel(
+                  show: true,
+                  alignment: Alignment.topRight,
+                  style: axisStyle,
+                  labelResolver: (_) => 'Objetivo',
+                ),
+              ),
+          ],
+        ),
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
             getTooltipColor: (_) => theme.colorScheme.surfaceContainerHighest,

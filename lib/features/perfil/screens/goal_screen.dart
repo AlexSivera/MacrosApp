@@ -7,6 +7,7 @@ import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../diario/providers/diary_providers.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../services/nutrition_engine/goal_weight.dart';
 
 class GoalScreen extends ConsumerStatefulWidget {
   const GoalScreen({super.key});
@@ -20,6 +21,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
   GoalType _goalType = GoalType.maintain;
   double _weeklyChangeKg = 0.5;
   bool _initialized = false;
+  String? _goalWeightError;
 
   void _initFrom(UserProfileData profile) {
     if (_initialized) return;
@@ -38,8 +40,18 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
     super.dispose();
   }
 
-  Future<void> _save() async {
-    final goalWeight = double.tryParse(_goalWeight.text.replaceAll(',', '.'));
+  // The goal is checked against the latest weigh-in, falling back to the
+  // weight entered at onboarding.
+  double? _currentKg(UserProfileData profile) => ref.read(latestWeightKgProvider) ?? profile.startingWeightKg;
+
+  Future<void> _save(UserProfileData profile) async {
+    final currentKg = _currentKg(profile);
+    final error = goalWeightError(_goalType, _goalWeight.text, currentKg);
+    if (error != null) {
+      setState(() => _goalWeightError = error);
+      return;
+    }
+    final goalWeight = _goalType == GoalType.maintain ? currentKg : parseDecimal(_goalWeight.text);
     final weeklyChange = _goalType == GoalType.maintain
         ? 0.0
         : (_goalType == GoalType.lose ? -_weeklyChangeKg : _weeklyChangeKg);
@@ -77,14 +89,23 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                   ButtonSegment(value: GoalType.gain, label: Text('Ganar')),
                 ],
                 selected: {_goalType},
-                onSelectionChanged: (s) => setState(() => _goalType = s.first),
+                onSelectionChanged: (s) => setState(() {
+                  _goalType = s.first;
+                  _goalWeightError = null;
+                }),
               ),
               if (_goalType != GoalType.maintain) ...[
                 const SizedBox(height: AppSpacing.lg),
                 TextField(
                   controller: _goalWeight,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Peso objetivo (kg)'),
+                  decoration: InputDecoration(
+                    labelText: 'Peso objetivo',
+                    suffixText: 'kg',
+                    errorText: _goalWeightError,
+                    errorMaxLines: 2,
+                  ),
+                  onChanged: (_) => setState(() => _goalWeightError = null),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text('Ritmo: ${formatDecimal(_weeklyChangeKg)} kg/semana', style: theme.textTheme.bodyMedium),
@@ -98,7 +119,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                 ),
               ],
               const SizedBox(height: AppSpacing.xl),
-              ElevatedButton(onPressed: _save, child: const Text('Guardar')),
+              ElevatedButton(onPressed: () => _save(profile), child: const Text('Guardar')),
             ],
           );
         },
