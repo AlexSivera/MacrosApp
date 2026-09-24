@@ -6,6 +6,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../diario/providers/diary_providers.dart';
 import '../widgets/profile_header_card.dart';
+import '../../../core/utils/dates.dart';
 
 class PerfilScreen extends ConsumerWidget {
   const PerfilScreen({super.key});
@@ -26,28 +27,38 @@ class PerfilScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
               ProfileHeaderCard(profile: profile, currentWeightKg: currentWeight),
+              if (_backupIsStale(profile.lastBackupAt)) ...[
+                const SizedBox(height: AppSpacing.md),
+                _BackupReminder(onTap: () => context.push('/perfil/configuracion')),
+              ],
               const SizedBox(height: AppSpacing.xl),
-              _SettingsSection(items: [
-                _SettingsItem(Icons.flag_outlined, 'Mi objetivo', '/perfil/objetivo'),
-                _SettingsItem(Icons.badge_outlined, 'Mis datos', '/perfil/mis-datos'),
-                _SettingsItem(
-                  Icons.pie_chart_outline,
-                  'Objetivos nutricionales',
-                  '/perfil/objetivos-nutricionales',
-                ),
-                _SettingsItem(Icons.show_chart_outlined, 'Progreso', '/perfil/progreso'),
-              ]),
+              _SettingsSection(
+                items: [
+                  _SettingsItem(Icons.flag_outlined, 'Mi objetivo', '/perfil/objetivo'),
+                  _SettingsItem(Icons.badge_outlined, 'Mis datos', '/perfil/mis-datos'),
+                  _SettingsItem(
+                    Icons.pie_chart_outline,
+                    'Objetivos nutricionales',
+                    '/perfil/objetivos-nutricionales',
+                  ),
+                  _SettingsItem(Icons.show_chart_outlined, 'Progreso', '/perfil/progreso'),
+                ],
+              ),
               const SizedBox(height: AppSpacing.lg),
-              _SettingsSection(items: [
-                _SettingsItem(Icons.straighten_outlined, 'Unidades', '/perfil/unidades'),
-                _SettingsItem(Icons.notifications_outlined, 'Notificaciones', '/perfil/notificaciones'),
-                _SettingsItem(Icons.palette_outlined, 'Apariencia', '/perfil/apariencia'),
-              ]),
+              _SettingsSection(
+                items: [
+                  _SettingsItem(Icons.straighten_outlined, 'Unidades', '/perfil/unidades'),
+                  _SettingsItem(Icons.notifications_outlined, 'Notificaciones', '/perfil/notificaciones'),
+                  _SettingsItem(Icons.palette_outlined, 'Apariencia', '/perfil/apariencia'),
+                ],
+              ),
               const SizedBox(height: AppSpacing.lg),
-              _SettingsSection(items: [
-                _SettingsItem(Icons.settings_outlined, 'Configuración', '/perfil/configuracion'),
-                _SettingsItem(Icons.info_outline, 'Sobre la aplicación', '/perfil/sobre'),
-              ]),
+              _SettingsSection(
+                items: [
+                  _SettingsItem(Icons.settings_outlined, 'Configuración', '/perfil/configuracion'),
+                  _SettingsItem(Icons.info_outline, 'Sobre la aplicación', '/perfil/sobre'),
+                ],
+              ),
             ],
           );
         },
@@ -83,10 +94,7 @@ class _SettingsSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.sm),
               onTap: () => context.push(items[i].route),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.sm,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
                 child: Row(
                   children: [
                     Container(
@@ -101,10 +109,7 @@ class _SettingsSection extends StatelessWidget {
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(child: Text(items[i].label, style: theme.textTheme.bodyLarge)),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                    Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
                   ],
                 ),
               ),
@@ -112,6 +117,43 @@ class _SettingsSection extends StatelessWidget {
             if (i != items.length - 1)
               Divider(height: AppSpacing.xs, color: theme.colorScheme.outline.withValues(alpha: 0.5)),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// Nothing leaves this device on its own, so nudge towards an export when
+// there's never been one or the last is over two weeks old.
+bool _backupIsStale(DateTime? lastBackupAt) =>
+    lastBackupAt == null || daysBetween(lastBackupAt, DateTime.now()) > 14;
+
+class _BackupReminder extends StatelessWidget {
+  const _BackupReminder({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AppCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_download_outlined, color: theme.colorScheme.primary),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Haz una copia de seguridad', style: theme.textTheme.titleMedium),
+                const SizedBox(height: 2),
+                Text('Tus datos solo están en este dispositivo.', style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
         ],
       ),
     );

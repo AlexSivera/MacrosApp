@@ -6,6 +6,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../diario/providers/diary_providers.dart';
+import '../../../core/utils/formatters.dart';
 
 class GoalScreen extends ConsumerStatefulWidget {
   const GoalScreen({super.key});
@@ -29,7 +30,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
     _goalWeight.text = profile.goalWeightKg != null ? _fmt(profile.goalWeightKg!) : '';
   }
 
-  static String _fmt(double v) => v == v.roundToDouble() ? v.round().toString() : v.toString();
+  static String _fmt(double v) => formatInputNumber(v);
 
   @override
   void dispose() {
@@ -42,11 +43,16 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
     final weeklyChange = _goalType == GoalType.maintain
         ? 0.0
         : (_goalType == GoalType.lose ? -_weeklyChangeKg : _weeklyChangeKg);
-    await ref.read(appDatabaseProvider).userProfileDao.updateProfile(UserProfileCompanion(
-          goalType: Value(_goalType),
-          weeklyWeightChangeKg: Value(weeklyChange),
-          goalWeightKg: Value(goalWeight),
-        ));
+    await ref
+        .read(appDatabaseProvider)
+        .userProfileDao
+        .updateProfile(
+          UserProfileCompanion(
+            goalType: Value(_goalType),
+            weeklyWeightChangeKg: Value(weeklyChange),
+            goalWeightKg: Value(goalWeight),
+          ),
+        );
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -81,14 +87,13 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                   decoration: const InputDecoration(labelText: 'Peso objetivo (kg)'),
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                Text('Ritmo: ${_weeklyChangeKg.toStringAsFixed(1)} kg/semana',
-                    style: theme.textTheme.bodyMedium),
+                Text('Ritmo: ${formatDecimal(_weeklyChangeKg)} kg/semana', style: theme.textTheme.bodyMedium),
                 Slider(
                   value: _weeklyChangeKg,
                   min: 0.1,
                   max: 1.0,
                   divisions: 9,
-                  label: '${_weeklyChangeKg.toStringAsFixed(1)} kg',
+                  label: '${formatDecimal(_weeklyChangeKg)} kg',
                   onChanged: (v) => setState(() => _weeklyChangeKg = v),
                 ),
               ],

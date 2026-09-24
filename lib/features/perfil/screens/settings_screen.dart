@@ -6,7 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:drift/drift.dart' show Value;
+
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/dates.dart';
+import '../../../data/database/app_database.dart';
+import '../../diario/providers/diary_providers.dart';
 import '../../../data/database/database_provider.dart';
 import '../../../services/backup/backup_service.dart';
 
@@ -57,6 +62,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         type: FileType.custom,
         allowedExtensions: const ['json'],
       );
+      await ref
+          .read(appDatabaseProvider)
+          .userProfileDao
+          .updateProfile(UserProfileCompanion(lastBackupAt: Value(DateTime.now())));
       if (mounted) _showMessage('Copia de seguridad guardada.');
     } catch (e) {
       if (mounted) _showMessage('No se pudo exportar: $e');
@@ -104,6 +113,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  // Your data only lives in this browser/phone, so say plainly how old the
+  // last copy is.
+  static String _lastBackupText(DateTime? last) {
+    if (last == null) return 'Aún no has guardado ninguna copia. Tus datos solo están en este dispositivo.';
+    final days = daysBetween(last, DateTime.now());
+    if (days == 0) return 'Última copia: hoy.';
+    if (days == 1) return 'Última copia: ayer.';
+    return 'Última copia: hace $days días.';
+  }
+
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
@@ -119,6 +138,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text('Copia de seguridad', style: theme.textTheme.labelMedium),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              _lastBackupText(ref.watch(userProfileStreamProvider).valueOrNull?.lastBackupAt),
+              style: theme.textTheme.bodySmall,
+            ),
             const SizedBox(height: AppSpacing.sm),
             OutlinedButton.icon(
               onPressed: _busy ? null : _export,
@@ -137,10 +161,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             OutlinedButton.icon(
               onPressed: _busy ? null : _confirmReset,
               icon: Icon(Icons.delete_outline_rounded, color: theme.colorScheme.error),
-              label: Text(
-                'Restablecer datos de la app',
-                style: TextStyle(color: theme.colorScheme.error),
-              ),
+              label: Text('Restablecer datos de la app', style: TextStyle(color: theme.colorScheme.error)),
               style: OutlinedButton.styleFrom(side: BorderSide(color: theme.colorScheme.error)),
             ),
             if (_busy) ...[

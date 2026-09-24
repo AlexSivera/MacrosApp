@@ -24,8 +24,8 @@ class CelebrationOverlay extends StatelessWidget {
           numberOfParticles: 16,
           gravity: 0.3,
           emissionFrequency: 0.03,
-          colors: const [
-            AppTheme.accent,
+          colors: [
+            Theme.of(context).colorScheme.primary,
             AppTheme.carbsColor,
             AppTheme.proteinColor,
             AppTheme.fatColor,

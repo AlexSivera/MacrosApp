@@ -16,14 +16,20 @@ class RecetasScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final recipesAsync = ref.watch(filteredRecipesProvider);
+    // Only the whole collection being empty is "no recipes yet"; an empty
+    // search or filter result is its own, lighter state.
+    final hasAnyRecipe = ref.watch(recipesWithMacrosProvider).valueOrNull?.isNotEmpty ?? true;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Recetas')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/recetas/nuevo'),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Crear receta'),
-      ),
+      // The empty state already has its own centered "Crear" button.
+      floatingActionButton: !hasAnyRecipe
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => context.push('/recetas/nuevo'),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Crear receta'),
+            ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
@@ -59,9 +65,9 @@ class RecetasScreen extends ConsumerWidget {
               child: recipesAsync.when(
                 data: (recipes) {
                   if (recipes.isEmpty) {
-                    return _EmptyRecipesState(
-                      onCreate: () => context.push('/recetas/nuevo'),
-                    );
+                    return hasAnyRecipe
+                        ? const _NoResultsState()
+                        : _EmptyRecipesState(onCreate: () => context.push('/recetas/nuevo'));
                   }
                   return SingleChildScrollView(
                     child: _RecipeMasonryGrid(
@@ -101,20 +107,20 @@ class _RecipeMasonryGrid extends StatelessWidget {
     }
 
     Widget buildColumn(List<int> indices) => Column(
-          children: [
-            for (final index in indices)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                child: FadeSlideIn(
-                  delay: Duration(milliseconds: 30 * (index % 10)),
-                  child: RecipeCard(
-                    data: recipes[index],
-                    onTap: () => onTapRecipe(recipes[index].recipe.id),
-                  ),
-                ),
-              ),
-          ],
-        );
+      children: [
+        for (final index in indices)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: FadeSlideIn(
+              // Keyed by recipe so a card only animates in once, not again
+              // whenever filtering shuffles which slot it lands in.
+              key: ValueKey(recipes[index].recipe.id),
+              delay: Duration(milliseconds: 30 * (index % 10)),
+              child: RecipeCard(data: recipes[index], onTap: () => onTapRecipe(recipes[index].recipe.id)),
+            ),
+          ),
+      ],
+    );
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,22 +154,11 @@ class _EmptyRecipesState extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.22),
-                    blurRadius: 40,
-                    spreadRadius: -12,
-                  ),
-                ],
               ),
               child: Icon(Icons.menu_book_rounded, size: 40, color: theme.colorScheme.primary),
             ),
             const SizedBox(height: AppSpacing.xl),
-            Text(
-              'Aún no tienes recetas',
-              style: theme.textTheme.titleLarge,
-              textAlign: TextAlign.center,
-            ),
+            Text('Aún no tienes recetas', style: theme.textTheme.titleLarge, textAlign: TextAlign.center),
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Guarda tus platos favoritos y añádelos al diario en un toque',
@@ -178,6 +173,27 @@ class _EmptyRecipesState extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _NoResultsState extends StatelessWidget {
+  const _NoResultsState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.search_off_rounded, size: 40, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(height: AppSpacing.md),
+          Text('Ninguna receta coincide', style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.xs),
+          Text('Prueba con otra búsqueda o filtro.', style: theme.textTheme.bodyMedium),
+        ],
       ),
     );
   }

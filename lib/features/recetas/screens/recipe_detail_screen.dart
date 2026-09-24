@@ -11,6 +11,8 @@ import '../../../data/database/database_provider.dart';
 import '../../diario/providers/diary_providers.dart';
 import '../../plan_semanal/widgets/plan_recipe_quantity_sheet.dart';
 import '../providers/recipes_providers.dart';
+import '../../../core/widgets/macro_preview_row.dart';
+import '../../../core/utils/formatters.dart';
 
 class RecipeDetailScreen extends ConsumerWidget {
   const RecipeDetailScreen({super.key, required this.recipeId});
@@ -88,20 +90,19 @@ class _RecipeDetailBody extends ConsumerWidget {
             ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            recipe.servings == 1 ? '1 ración' : '${recipe.servings.round()} raciones',
+            recipe.servings == 1 ? '1 ración' : '${formatDecimal(recipe.servings)} raciones',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: AppSpacing.lg),
           macrosAsync.when(
             data: (perServing) => AppCard(
               padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _Stat('${perServing.kcal.round()}', 'kcal'),
-                  _Stat('${perServing.proteinG.round()}g', 'prot'),
-                  _Stat('${perServing.carbsG.round()}g', 'carb'),
-                  _Stat('${perServing.fatG.round()}g', 'grasa'),
+                  Text('Por ración', style: theme.textTheme.labelMedium),
+                  const SizedBox(height: AppSpacing.sm),
+                  MacroPreviewRow(macros: perServing, filled: false),
                 ],
               ),
             ),
@@ -129,13 +130,8 @@ class _RecipeDetailBody extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                             child: Row(
                               children: [
-                                Expanded(
-                                  child: Text(food?.name ?? '…', style: theme.textTheme.bodyLarge),
-                                ),
-                                Text(
-                                  '${ingredients[i].grams.round()} g',
-                                  style: theme.textTheme.bodyMedium,
-                                ),
+                                Expanded(child: Text(food?.name ?? '…', style: theme.textTheme.bodyLarge)),
+                                Text('${ingredients[i].grams.round()} g', style: theme.textTheme.bodyMedium),
                               ],
                             ),
                           );
@@ -173,14 +169,16 @@ class _RecipeDetailBody extends ConsumerWidget {
       case 'edit':
         context.push('/recetas/${recipe.id}/editar');
       case 'duplicate':
-        final newId = await db.recipesDao.insert(RecipesCompanion.insert(
-          name: '${recipe.name} (copia)',
-          imagePath: Value(recipe.imagePath),
-          imageBytes: Value(recipe.imageBytes),
-          category: Value(recipe.category),
-          servings: Value(recipe.servings),
-          prepTimeMinutes: Value(recipe.prepTimeMinutes),
-        ));
+        final newId = await db.recipesDao.insert(
+          RecipesCompanion.insert(
+            name: '${recipe.name} (copia)',
+            imagePath: Value(recipe.imagePath),
+            imageBytes: Value(recipe.imageBytes),
+            category: Value(recipe.category),
+            servings: Value(recipe.servings),
+            prepTimeMinutes: Value(recipe.prepTimeMinutes),
+          ),
+        );
         final ingredients = await db.recipeIngredientsDao.getForRecipe(recipe.id);
         await db.recipeIngredientsDao.replaceIngredients(newId, [
           for (final i in ingredients)
@@ -191,7 +189,12 @@ class _RecipeDetailBody extends ConsumerWidget {
               orderIndex: i.orderIndex,
             ),
         ]);
-        if (context.mounted) context.pop();
+        // Opens the copy (usually to rename or tweak it) instead of just
+        // closing this screen.
+        if (context.mounted) {
+          context.pushReplacement('/recetas/$newId');
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Receta duplicada')));
+        }
       case 'delete':
         final confirmed = await showDialog<bool>(
           context: context,
@@ -199,10 +202,7 @@ class _RecipeDetailBody extends ConsumerWidget {
             title: const Text('Eliminar receta'),
             content: Text('Se eliminará "${recipe.name}" y no se podrá recuperar.'),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancelar'),
-              ),
+              TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancelar')),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
                 style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
@@ -215,23 +215,5 @@ class _RecipeDetailBody extends ConsumerWidget {
         await db.recipesDao.deleteRecipe(recipe.id);
         if (context.mounted) context.pop();
     }
-  }
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat(this.value, this.label);
-
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      children: [
-        Text(value, style: theme.textTheme.titleMedium),
-        Text(label, style: theme.textTheme.bodySmall),
-      ],
-    );
   }
 }

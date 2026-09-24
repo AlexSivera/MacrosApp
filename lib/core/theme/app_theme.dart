@@ -79,48 +79,48 @@ class AppTheme {
   }
 
   static ThemeData get dark => _build(
-        brightness: Brightness.dark,
-        background: background,
-        surface: surface,
-        surfaceRaised: surfaceRaised,
-        border: border,
-        textColor: const Color(0xFFF4F5F6),
-        mutedTextColor: const Color(0xFF9CA3AB),
-      );
+    brightness: Brightness.dark,
+    background: background,
+    surface: surface,
+    surfaceRaised: surfaceRaised,
+    border: border,
+    textColor: const Color(0xFFF4F5F6),
+    mutedTextColor: const Color(0xFF9CA3AB),
+  );
 
   static ThemeData get light => _build(
-        brightness: Brightness.light,
-        background: backgroundLight,
-        surface: surfaceLight,
-        surfaceRaised: surfaceRaisedLight,
-        border: borderLight,
-        textColor: const Color(0xFF1A1C1E),
-        mutedTextColor: const Color(0xFF6B7076),
-      );
+    brightness: Brightness.light,
+    background: backgroundLight,
+    surface: surfaceLight,
+    surfaceRaised: surfaceRaisedLight,
+    border: borderLight,
+    textColor: const Color(0xFF1A1C1E),
+    mutedTextColor: const Color(0xFF6B7076),
+  );
 
   static ThemeData get pastel => _build(
-        brightness: Brightness.light,
-        background: backgroundPastel,
-        surface: surfacePastel,
-        surfaceRaised: surfaceRaisedPastel,
-        border: borderPastel,
-        textColor: const Color(0xFF4A2942),
-        mutedTextColor: const Color(0xFF9B7C93),
-        accentColor: pastelAccent,
-        onAccentColor: pastelOnAccent,
-      );
+    brightness: Brightness.light,
+    background: backgroundPastel,
+    surface: surfacePastel,
+    surfaceRaised: surfaceRaisedPastel,
+    border: borderPastel,
+    textColor: const Color(0xFF4A2942),
+    mutedTextColor: const Color(0xFF9B7C93),
+    accentColor: pastelAccent,
+    onAccentColor: pastelOnAccent,
+  );
 
   static ThemeData get green => _build(
-        brightness: Brightness.light,
-        background: backgroundGreen,
-        surface: surfaceGreen,
-        surfaceRaised: surfaceRaisedGreen,
-        border: borderGreen,
-        textColor: const Color(0xFF17301F),
-        mutedTextColor: const Color(0xFF6C8574),
-        accentColor: greenAccent,
-        onAccentColor: greenOnAccent,
-      );
+    brightness: Brightness.light,
+    background: backgroundGreen,
+    surface: surfaceGreen,
+    surfaceRaised: surfaceRaisedGreen,
+    border: borderGreen,
+    textColor: const Color(0xFF17301F),
+    mutedTextColor: const Color(0xFF6C8574),
+    accentColor: greenAccent,
+    onAccentColor: greenOnAccent,
+  );
 
   static ThemeData _build({
     required Brightness brightness,
@@ -146,36 +146,48 @@ class AppTheme {
     TextStyle display(TextStyle style) => GoogleFonts.outfit(textStyle: style);
     TextStyle body(TextStyle style) => GoogleFonts.plusJakartaSans(textStyle: style);
 
-    final textTheme = TextTheme(
-      // Hero numbers / big CTAs.
-      displaySmall: display(TextStyle(
-        fontSize: 34,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.5,
-        color: textColor,
-        height: 1.1,
-      )),
-      headlineMedium: display(TextStyle(
-        fontSize: 24,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.3,
-        color: textColor,
-      )),
-      titleLarge: display(TextStyle(
-        fontSize: 19,
-        fontWeight: FontWeight.w600,
-        color: textColor,
-      )),
-      titleMedium: display(TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: textColor,
-      )),
-      bodyLarge: body(TextStyle(fontSize: 16, color: textColor, height: 1.35)),
-      bodyMedium: body(TextStyle(fontSize: 14, color: textColor, height: 1.35)),
-      bodySmall: body(TextStyle(fontSize: 13, color: mutedTextColor, height: 1.3)),
-      labelLarge: body(TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor)),
-      labelMedium: body(TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: mutedTextColor)),
+    // Every slot of the type scale gets one of the two brand faces — the
+    // slots not tuned below (headlineSmall, titleSmall, labelSmall…) are
+    // what dialogs, date pickers, calendars and chips reach for, and used to
+    // fall back to Roboto. Body face for everything by default, display face
+    // for the display/headline/title roles.
+    final base = GoogleFonts.plusJakartaSansTextTheme(
+      ThemeData(brightness: brightness).textTheme,
+    ).apply(bodyColor: textColor, displayColor: textColor);
+    final baseWithDisplay = base.copyWith(
+      displayLarge: display(base.displayLarge!),
+      displayMedium: display(base.displayMedium!),
+      headlineLarge: display(base.headlineLarge!),
+      headlineSmall: display(base.headlineSmall!),
+      titleSmall: display(base.titleSmall!.copyWith(fontWeight: FontWeight.w600)),
+      labelSmall: body(
+        TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: mutedTextColor, letterSpacing: 0.2),
+      ),
+    );
+
+    final textTheme = baseWithDisplay.merge(
+      TextTheme(
+        // Hero numbers / big CTAs.
+        displaySmall: display(
+          TextStyle(
+            fontSize: 34,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.5,
+            color: textColor,
+            height: 1.1,
+          ),
+        ),
+        headlineMedium: display(
+          TextStyle(fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: textColor),
+        ),
+        titleLarge: display(TextStyle(fontSize: 19, fontWeight: FontWeight.w600, color: textColor)),
+        titleMedium: display(TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textColor)),
+        bodyLarge: body(TextStyle(fontSize: 16, color: textColor, height: 1.35)),
+        bodyMedium: body(TextStyle(fontSize: 14, color: textColor, height: 1.35)),
+        bodySmall: body(TextStyle(fontSize: 13, color: mutedTextColor, height: 1.3)),
+        labelLarge: body(TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor)),
+        labelMedium: body(TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: mutedTextColor)),
+      ),
     );
 
     return ThemeData(
@@ -186,6 +198,7 @@ class AppTheme {
         surface: surface,
         surfaceContainerHighest: surfaceRaised,
         onSurface: textColor,
+        onSurfaceVariant: mutedTextColor,
         outline: border,
       ),
       textTheme: textTheme,
@@ -195,11 +208,7 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: display(TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          color: textColor,
-        )),
+        titleTextStyle: display(TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: textColor)),
       ),
       cardTheme: CardThemeData(
         color: surface,
@@ -210,10 +219,7 @@ class AppTheme {
           side: BorderSide(color: border),
         ),
       ),
-      listTileTheme: ListTileThemeData(
-        iconColor: mutedTextColor,
-        textColor: textColor,
-      ),
+      listTileTheme: ListTileThemeData(iconColor: mutedTextColor, textColor: textColor),
       dividerTheme: DividerThemeData(color: border, space: 1, thickness: 1),
       chipTheme: ChipThemeData(
         backgroundColor: surfaceRaised,
@@ -271,10 +277,12 @@ class AppTheme {
         height: 64,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return TextStyle(
-            fontSize: 11,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            color: selected ? textColor : mutedTextColor,
+          return body(
+            TextStyle(
+              fontSize: 11,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color: selected ? textColor : mutedTextColor,
+            ),
           );
         }),
       ),

@@ -42,9 +42,9 @@ class ProgressScreen extends ConsumerWidget {
         children: [
           WeightStatsRow(
             currentKg: latestWeight,
-            startingKg: earliestAsync.valueOrNull?.weightKg ??
-                profileAsync.valueOrNull?.startingWeightKg,
+            startingKg: earliestAsync.valueOrNull?.weightKg ?? profileAsync.valueOrNull?.startingWeightKg,
             goalKg: profileAsync.valueOrNull?.goalWeightKg,
+            goalType: profileAsync.valueOrNull?.goalType ?? GoalType.maintain,
           ),
           const SizedBox(height: AppSpacing.lg),
           const RangeSelector(),
@@ -53,6 +53,7 @@ class ProgressScreen extends ConsumerWidget {
             child: SizedBox(
               height: 220,
               child: historyAsync.when(
+                skipLoadingOnReload: true,
                 data: (logs) => WeightChart(logs: logs),
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, _) => Center(child: Text('Error: $err')),
@@ -61,8 +62,11 @@ class ProgressScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           avgMacrosAsync.when(
+            skipLoadingOnReload: true,
             data: (avg) => AvgMacrosCard(average: avg, rangeLabel: range.label),
-            loading: () => const SizedBox.shrink(),
+            // Holds the card's height while loading so the goal card below
+            // doesn't jump up and back down.
+            loading: () => const SizedBox(height: 118),
             error: (err, _) => Text('Error: $err'),
           ),
           const SizedBox(height: AppSpacing.lg),

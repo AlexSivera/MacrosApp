@@ -15,6 +15,7 @@ import '../../../services/nutrition_engine/food_macros_calculator.dart';
 import '../../../services/nutrition_engine/recipe_macros_calculator.dart';
 import '../widgets/add_ingredient_sheet.dart';
 import '../widgets/ingredient_builder_list.dart';
+import '../../../core/utils/formatters.dart';
 
 // Handles both "+ Crear receta" (recipeId == null) and "Editar" (recipeId
 // set) — the brief asks for both flows to share the same fast
@@ -60,15 +61,11 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
         _category = recipe.category;
         _imageBytes = recipe.imageBytes;
         if (_imageBytes == null) _legacyImagePath = recipe.imagePath;
-        final ingredients = await db.recipeIngredientsDao.getForRecipe(
-          recipe.id,
-        );
+        final ingredients = await db.recipeIngredientsDao.getForRecipe(recipe.id);
         for (final ingredient in ingredients) {
           final food = await db.foodsDao.getById(ingredient.foodId);
           if (food != null) {
-            _ingredients.add(
-              IngredientDraft(food: food, grams: ingredient.grams),
-            );
+            _ingredients.add(IngredientDraft(food: food, grams: ingredient.grams));
           }
         }
       }
@@ -76,8 +73,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
     if (mounted) setState(() => _loading = false);
   }
 
-  static String _formatNum(double v) =>
-      v == v.roundToDouble() ? v.round().toString() : v.toString();
+  static String _formatNum(double v) => formatInputNumber(v);
 
   @override
   void dispose() {
@@ -111,10 +107,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
     );
     if (source == null) return;
 
-    final picked = await ImagePicker().pickImage(
-      source: source,
-      imageQuality: 85,
-    );
+    final picked = await ImagePicker().pickImage(source: source, imageQuality: 85);
     if (picked == null) return;
     final bytes = await picked.readAsBytes();
     if (mounted) {
@@ -194,11 +187,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
       _error = null;
     });
 
-    await _persistRecipe(
-      name: name,
-      servings: servings,
-      prepTime: int.tryParse(_prepTime.text),
-    );
+    await _persistRecipe(name: name, servings: servings, prepTime: int.tryParse(_prepTime.text));
 
     if (mounted) context.pop();
   }
@@ -209,20 +198,10 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
   // mid-navigation. Only reachable when _ingredients is non-empty (see the
   // PopScope's canPop below), so there's always something worth keeping.
   Future<void> _saveDraftOnBack() async {
-    final name = _name.text.trim().isEmpty
-        ? 'Receta sin nombre'
-        : _name.text.trim();
-    final enteredServings = double.tryParse(
-      _servings.text.replaceAll(',', '.'),
-    );
-    final servings = (enteredServings != null && enteredServings > 0)
-        ? enteredServings
-        : 1.0;
-    await _persistRecipe(
-      name: name,
-      servings: servings,
-      prepTime: int.tryParse(_prepTime.text),
-    );
+    final name = _name.text.trim().isEmpty ? 'Receta sin nombre' : _name.text.trim();
+    final enteredServings = double.tryParse(_servings.text.replaceAll(',', '.'));
+    final servings = (enteredServings != null && enteredServings > 0) ? enteredServings : 1.0;
+    await _persistRecipe(name: name, servings: servings, prepTime: int.tryParse(_prepTime.text));
   }
 
   @override
@@ -234,23 +213,12 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
 
     final imagePreview = _imageBytes != null
         ? Image.memory(_imageBytes!, fit: BoxFit.cover)
-        : (_legacyImagePath != null
-              ? legacyFileImage(_legacyImagePath!)
-              : null);
+        : (_legacyImagePath != null ? legacyFileImage(_legacyImagePath!) : null);
 
     final servings = double.tryParse(_servings.text.replaceAll(',', '.'));
     final totals = computeRecipeTotals([
       for (final i in _ingredients)
-        (
-          RecipeIngredient(
-            id: 0,
-            recipeId: 0,
-            foodId: i.food.id,
-            grams: i.grams,
-            orderIndex: 0,
-          ),
-          i.food,
-        ),
+        (RecipeIngredient(id: 0, recipeId: 0, foodId: i.food.id, grams: i.grams, orderIndex: 0), i.food),
     ]);
     final perServing = servings != null && servings > 0
         ? computePerServing(totals, servings)
@@ -269,11 +237,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
         if (context.mounted) Navigator.of(context).pop();
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            widget.recipeId != null ? 'Editar receta' : 'Nueva receta',
-          ),
-        ),
+        appBar: AppBar(title: Text(widget.recipeId != null ? 'Editar receta' : 'Nueva receta')),
         body: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
@@ -291,15 +255,9 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
-                                  Icons.add_a_photo_outlined,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
+                                Icon(Icons.add_a_photo_outlined, color: theme.colorScheme.onSurfaceVariant),
                                 const SizedBox(height: AppSpacing.xs),
-                                Text(
-                                  'Añadir imagen',
-                                  style: theme.textTheme.bodySmall,
-                                ),
+                                Text('Añadir imagen', style: theme.textTheme.bodySmall),
                               ],
                             ),
                           ),
@@ -320,25 +278,12 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
                     initialValue: _category,
                     decoration: const InputDecoration(labelText: 'Categoría'),
                     items: const [
-                      DropdownMenuItem(
-                        value: RecipeCategory.breakfast,
-                        child: Text('Desayuno'),
-                      ),
-                      DropdownMenuItem(
-                        value: RecipeCategory.lunch,
-                        child: Text('Comida'),
-                      ),
-                      DropdownMenuItem(
-                        value: RecipeCategory.dinner,
-                        child: Text('Cena'),
-                      ),
-                      DropdownMenuItem(
-                        value: RecipeCategory.snack,
-                        child: Text('Extra'),
-                      ),
+                      DropdownMenuItem(value: RecipeCategory.breakfast, child: Text('Desayuno')),
+                      DropdownMenuItem(value: RecipeCategory.lunch, child: Text('Comida')),
+                      DropdownMenuItem(value: RecipeCategory.dinner, child: Text('Cena')),
+                      DropdownMenuItem(value: RecipeCategory.snack, child: Text('Extra')),
                     ],
-                    onChanged: (v) =>
-                        setState(() => _category = v ?? _category),
+                    onChanged: (v) => setState(() => _category = v ?? _category),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
@@ -354,9 +299,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
             const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _servings,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(labelText: 'Raciones'),
               onChanged: (_) => setState(() {}),
             ),
@@ -398,11 +341,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
             ElevatedButton(
               onPressed: _saving ? null : _submit,
               child: _saving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Text('Guardar receta'),
             ),
           ],

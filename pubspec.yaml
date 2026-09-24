@@ -71,6 +71,9 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icon/
+    # Outfit + Plus Jakarta Sans empaquetadas: google_fonts las toma de aquí
+    # en vez de descargarlas, así la app funciona sin conexión (OFL 1.1).
+    - assets/google_fonts/
 
 flutter_launcher_icons:
   android: true

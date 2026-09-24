@@ -28,8 +28,8 @@ class PlanMonthHeader extends ConsumerWidget {
         IconButton(
           tooltip: 'Mes anterior',
           icon: const Icon(Icons.chevron_left_rounded),
-          onPressed: () => ref.read(selectedPlanMonthProvider.notifier).state =
-              DateTime(month.year, month.month - 1, 1),
+          onPressed: () =>
+              ref.read(selectedPlanMonthProvider.notifier).state = DateTime(month.year, month.month - 1, 1),
         ),
         IconButton(
           tooltip: 'Ir a una fecha',
@@ -42,16 +42,15 @@ class PlanMonthHeader extends ConsumerWidget {
               lastDate: DateTime.now().add(const Duration(days: 730)),
             );
             if (picked != null) {
-              ref.read(selectedPlanMonthProvider.notifier).state =
-                  DateTime(picked.year, picked.month, 1);
+              ref.read(selectedPlanMonthProvider.notifier).state = DateTime(picked.year, picked.month, 1);
             }
           },
         ),
         IconButton(
           tooltip: 'Mes siguiente',
           icon: const Icon(Icons.chevron_right_rounded),
-          onPressed: () => ref.read(selectedPlanMonthProvider.notifier).state =
-              DateTime(month.year, month.month + 1, 1),
+          onPressed: () =>
+              ref.read(selectedPlanMonthProvider.notifier).state = DateTime(month.year, month.month + 1, 1),
         ),
       ],
     );
@@ -87,9 +86,7 @@ class PlanMonthGrid extends ConsumerWidget {
           children: [
             for (final label in _weekdayLabels)
               Expanded(
-                child: Center(
-                  child: Text(label, style: theme.textTheme.labelSmall),
-                ),
+                child: Center(child: Text(label, style: theme.textTheme.labelSmall)),
               ),
           ],
         ),
@@ -172,7 +169,7 @@ class _DayCell extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.sm),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 4),
             // mainAxisSize.min: the cell (and the week Row it sits in)
             // sizes to fit however many lines the food names actually
             // need, instead of being handed a fixed height that would
@@ -218,9 +215,7 @@ class _MealPreviewLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final labelColor = dimmed
-        ? theme.colorScheme.primary.withValues(alpha: 0.4)
-        : theme.colorScheme.primary;
+    final labelColor = dimmed ? theme.colorScheme.primary.withValues(alpha: 0.4) : theme.colorScheme.primary;
     final nameColor = dimmed
         ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)
         : theme.colorScheme.onSurfaceVariant;
@@ -230,23 +225,31 @@ class _MealPreviewLine extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            preview.label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelSmall?.copyWith(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              height: 1.1,
-              color: labelColor,
+          // Scaled down rather than cut to "Desayu…" in a narrow cell.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              preview.label,
+              maxLines: 1,
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                height: 1.1,
+                color: labelColor,
+              ),
             ),
           ),
           Text(
             // No maxLines/ellipsis: the full name always shows, wrapping
             // over as many lines as it needs rather than ever truncating.
+            // 9 px keeps a typical long word ("Jamoncitos") on one line in a
+            // ~45 px cell instead of breaking it mid-word.
             preview.names,
             style: theme.textTheme.labelSmall?.copyWith(
-              fontSize: 10,
+              fontSize: 9,
+              letterSpacing: -0.1,
+              fontWeight: FontWeight.w500,
               height: 1.1,
               color: nameColor,
             ),

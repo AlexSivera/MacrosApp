@@ -16,10 +16,11 @@ class DateFieldTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Ink (not Container) so the ripple paints on top of the fill.
     return InkWell(
       borderRadius: BorderRadius.circular(AppRadius.sm),
       onTap: onTap,
-      child: Container(
+      child: Ink(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerHighest,

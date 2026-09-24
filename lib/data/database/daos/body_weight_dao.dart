@@ -6,8 +6,7 @@ import '../tables/body_weight_logs_table.dart';
 part 'body_weight_dao.g.dart';
 
 @DriftAccessor(tables: [BodyWeightLogs])
-class BodyWeightDao extends DatabaseAccessor<AppDatabase>
-    with _$BodyWeightDaoMixin {
+class BodyWeightDao extends DatabaseAccessor<AppDatabase> with _$BodyWeightDaoMixin {
   BodyWeightDao(super.db);
 
   Stream<BodyWeightLog?> watchLatest() {
@@ -32,11 +31,26 @@ class BodyWeightDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<BodyWeightLog?> earliest() =>
-      (select(bodyWeightLogs)..orderBy([(w) => OrderingTerm.asc(w.date)])..limit(1))
+      (select(bodyWeightLogs)
+            ..orderBy([(w) => OrderingTerm.asc(w.date)])
+            ..limit(1))
           .getSingleOrNull();
 
   Future<int> insertLog(BodyWeightLogsCompanion entry) {
     return into(bodyWeightLogs).insert(entry);
+  }
+
+  // One weight per calendar day: logging again on the same day corrects it
+  // instead of adding a second point to the chart.
+  Future<void> logForDay(DateTime day, double weightKg) async {
+    final start = DateTime(day.year, day.month, day.day);
+    final end = DateTime(day.year, day.month, day.day + 1);
+    await transaction(() async {
+      await (delete(
+        bodyWeightLogs,
+      )..where((w) => w.date.isBiggerOrEqualValue(start) & w.date.isSmallerThanValue(end))).go();
+      await into(bodyWeightLogs).insert(BodyWeightLogsCompanion.insert(date: start, weightKg: weightKg));
+    });
   }
 
   Future<int> deleteLog(int id) {

@@ -14,28 +14,28 @@ class AvgMacrosCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final days = average.dayCount;
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Promedio diario · $rangeLabel', style: theme.textTheme.labelMedium),
+          const SizedBox(height: 2),
+          Text(
+            days == 0
+                ? 'Aún no hay comidas registradas en este periodo'
+                : 'Sobre ${days == 1 ? '1 día registrado' : '$days días registrados'}',
+            style: theme.textTheme.bodySmall,
+          ),
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
-              Expanded(child: _AvgStat('${average.perDay.kcal.round()}', 'kcal', AppTheme.accent)),
+              Expanded(child: _AvgStat('${average.perDay.kcal.round()}', 'kcal', theme.colorScheme.primary)),
               Expanded(
-                child: _AvgStat('${average.perDay.carbsG.round()}g', 'carbs', AppTheme.carbsColor),
+                child: _AvgStat('${average.perDay.proteinG.round()} g', 'Proteína', AppTheme.proteinColor),
               ),
-              Expanded(
-                child: _AvgStat(
-                  '${average.perDay.proteinG.round()}g',
-                  'proteína',
-                  AppTheme.proteinColor,
-                ),
-              ),
-              Expanded(
-                child: _AvgStat('${average.perDay.fatG.round()}g', 'grasa', AppTheme.fatColor),
-              ),
+              Expanded(child: _AvgStat('${average.perDay.carbsG.round()} g', 'Carbos', AppTheme.carbsColor)),
+              Expanded(child: _AvgStat('${average.perDay.fatG.round()} g', 'Grasa', AppTheme.fatColor)),
             ],
           ),
         ],

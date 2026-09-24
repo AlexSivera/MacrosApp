@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../data/database/app_database.dart';
+import '../../../core/utils/formatters.dart';
 
 class ProfileHeaderCard extends StatelessWidget {
   const ProfileHeaderCard({super.key, required this.profile, required this.currentWeightKg});
@@ -12,10 +12,10 @@ class ProfileHeaderCard extends StatelessWidget {
   final double? currentWeightKg;
 
   String get _goalLabel => switch (profile.goalType) {
-        GoalType.lose => 'Perder peso',
-        GoalType.maintain => 'Mantener peso',
-        GoalType.gain => 'Ganar peso',
-      };
+    GoalType.lose => 'Perder peso',
+    GoalType.maintain => 'Mantener peso',
+    GoalType.gain => 'Ganar peso',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -28,10 +28,10 @@ class ProfileHeaderCard extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundColor: AppTheme.accent.withValues(alpha: 0.18),
+            backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.16),
             child: Text(
               initial,
-              style: theme.textTheme.titleLarge?.copyWith(color: AppTheme.accent),
+              style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.primary),
             ),
           ),
           const SizedBox(width: AppSpacing.lg),
@@ -45,8 +45,8 @@ class ProfileHeaderCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   currentWeightKg != null
-                      ? '${currentWeightKg!.toStringAsFixed(1)} kg'
-                          '${profile.goalWeightKg != null ? ' → ${profile.goalWeightKg!.toStringAsFixed(1)} kg' : ''}'
+                      ? '${formatKg(currentWeightKg!)}'
+                            '${profile.goalWeightKg != null ? ' → ${formatKg(profile.goalWeightKg!)}' : ''}'
                       : 'Sin peso registrado',
                   style: theme.textTheme.bodySmall,
                 ),

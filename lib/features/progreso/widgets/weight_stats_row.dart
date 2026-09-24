@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../data/database/enums.dart';
 
 class WeightStatsRow extends StatelessWidget {
   const WeightStatsRow({
@@ -10,11 +12,25 @@ class WeightStatsRow extends StatelessWidget {
     required this.currentKg,
     required this.startingKg,
     required this.goalKg,
+    required this.goalType,
   });
 
   final double? currentKg;
   final double? startingKg;
   final double? goalKg;
+  final GoalType goalType;
+
+  // Green when the change goes the way the goal wants (down to lose, up to
+  // gain, within ±1 kg to maintain), red when it goes the other way.
+  Color? _changeColor(double change) {
+    if (change.abs() < 0.05) return null;
+    final onTrack = switch (goalType) {
+      GoalType.lose => change < 0,
+      GoalType.gain => change > 0,
+      GoalType.maintain => change.abs() <= 1,
+    };
+    return onTrack ? AppTheme.statusOnTrack : AppTheme.statusOverTarget;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,10 +45,8 @@ class WeightStatsRow extends StatelessWidget {
           Expanded(
             child: _Stat(
               'Cambio',
-              change == null ? '—' : '${change >= 0 ? '+' : ''}${change.toStringAsFixed(1)} kg',
-              color: change == null
-                  ? null
-                  : (change <= 0 ? AppTheme.statusOnTrack : AppTheme.statusOverTarget),
+              change == null ? '—' : '${change > 0 ? '+' : ''}${formatKg(change)}',
+              color: change == null ? null : _changeColor(change),
             ),
           ),
         ],
@@ -40,7 +54,7 @@ class WeightStatsRow extends StatelessWidget {
     );
   }
 
-  static String _fmt(double? v) => v == null ? '—' : '${v.toStringAsFixed(1)} kg';
+  static String _fmt(double? v) => v == null ? '—' : formatKg(v);
 }
 
 class _Stat extends StatelessWidget {
@@ -55,7 +69,10 @@ class _Stat extends StatelessWidget {
     final theme = Theme.of(context);
     return Column(
       children: [
-        Text(value, style: theme.textTheme.titleMedium?.copyWith(color: color)),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(value, maxLines: 1, style: theme.textTheme.titleMedium?.copyWith(color: color)),
+        ),
         const SizedBox(height: AppSpacing.xs),
         Text(label, style: theme.textTheme.labelMedium),
       ],

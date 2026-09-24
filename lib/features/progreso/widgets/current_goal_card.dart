@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../services/nutrition_engine/food_macros_calculator.dart';
 import '../../../data/database/app_database.dart';
 import '../../diario/providers/diary_providers.dart';
 
@@ -12,10 +14,10 @@ class CurrentGoalCard extends StatelessWidget {
   final ResolvedTargets targets;
 
   String get _goalLabel => switch (goalType) {
-        GoalType.lose => 'Perder peso',
-        GoalType.maintain => 'Mantener peso',
-        GoalType.gain => 'Ganar peso',
-      };
+    GoalType.lose => 'Perder peso',
+    GoalType.maintain => 'Mantener peso',
+    GoalType.gain => 'Ganar peso',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -29,10 +31,14 @@ class CurrentGoalCard extends StatelessWidget {
           Text(_goalLabel, style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.md),
           Text(
-            '${targets.calorieTarget} kcal · '
-            'P${targets.proteinG.round()}g · '
-            'C${targets.carbsG.round()}g · '
-            'G${targets.fatG.round()}g',
+            macroLine(
+              FoodMacros(
+                kcal: targets.calorieTarget.toDouble(),
+                proteinG: targets.proteinG,
+                carbsG: targets.carbsG,
+                fatG: targets.fatG,
+              ),
+            ),
             style: theme.textTheme.bodyMedium,
           ),
         ],

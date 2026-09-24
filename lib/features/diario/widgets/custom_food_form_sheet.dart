@@ -6,6 +6,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import 'food_category_chips.dart';
+import '../../../core/utils/formatters.dart';
 
 // "Crear alimento personalizado" / "Editar alimento" — a minimal form (name
 // + macros, entered either per 100g or per serving when creating), saved to
@@ -79,7 +80,7 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
     _servingLabel.text = food.servingLabel ?? '';
   }
 
-  static String _formatNum(double v) => v == v.roundToDouble() ? v.round().toString() : v.toString();
+  static String _formatNum(double v) => formatInputNumber(v);
 
   @override
   void dispose() {
@@ -163,17 +164,19 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
       return;
     }
 
-    final id = await db.foodsDao.insert(FoodsCompanion.insert(
-      name: _name.text.trim(),
-      kcalPer100g: enteredKcal * factor,
-      proteinPer100g: enteredProtein * factor,
-      carbsPer100g: enteredCarbs * factor,
-      fatPer100g: enteredFat * factor,
-      isCustom: const Value(true),
-      category: Value(_category),
-      defaultServingGrams: Value(servingGrams),
-      servingLabel: Value(_perServing ? servingLabel : null),
-    ));
+    final id = await db.foodsDao.insert(
+      FoodsCompanion.insert(
+        name: _name.text.trim(),
+        kcalPer100g: enteredKcal * factor,
+        proteinPer100g: enteredProtein * factor,
+        carbsPer100g: enteredCarbs * factor,
+        fatPer100g: enteredFat * factor,
+        isCustom: const Value(true),
+        category: Value(_category),
+        defaultServingGrams: Value(servingGrams),
+        servingLabel: Value(_perServing ? servingLabel : null),
+      ),
+    );
     final food = await db.foodsDao.getById(id);
     if (mounted) Navigator.of(context).pop(food);
   }

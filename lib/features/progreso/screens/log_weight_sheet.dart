@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_spacing.dart';
-import '../../../data/database/app_database.dart';
+import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/date_field_tile.dart';
 import '../../../data/database/database_provider.dart';
 
 class LogWeightSheet extends ConsumerStatefulWidget {
@@ -33,15 +35,12 @@ class _LogWeightSheetState extends ConsumerState<LogWeightSheet> {
   }
 
   Future<void> _submit() async {
-    final weight = double.tryParse(_weight.text.replaceAll(',', '.'));
+    final weight = parseDecimal(_weight.text);
     if (weight == null || weight <= 0) {
       setState(() => _error = 'Introduce un peso válido.');
       return;
     }
-    await ref.read(appDatabaseProvider).bodyWeightDao.insertLog(BodyWeightLogsCompanion.insert(
-          date: _date,
-          weightKg: weight,
-        ));
+    await ref.read(appDatabaseProvider).bodyWeightDao.logForDay(_date, weight);
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -68,13 +67,12 @@ class _LogWeightSheetState extends ConsumerState<LogWeightSheet> {
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(labelText: 'Peso', suffixText: 'kg', errorText: _error),
               onChanged: (_) => setState(() => _error = null),
+              onSubmitted: (_) => _submit(),
             ),
             const SizedBox(height: AppSpacing.md),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Fecha'),
-              subtitle: Text('${_date.day}/${_date.month}/${_date.year}'),
-              trailing: const Icon(Icons.calendar_today_outlined),
+            DateFieldTile(
+              label: 'Fecha',
+              value: capitalize(DateFormat('EEEE d MMM y', 'es').format(_date)),
               onTap: () async {
                 final picked = await showDatePicker(
                   context: context,
@@ -85,6 +83,8 @@ class _LogWeightSheetState extends ConsumerState<LogWeightSheet> {
                 if (picked != null) setState(() => _date = picked);
               },
             ),
+            const SizedBox(height: AppSpacing.xs),
+            Text('Si ya registraste un peso ese día, se sustituye.', style: theme.textTheme.bodySmall),
             const SizedBox(height: AppSpacing.lg),
             ElevatedButton(onPressed: _submit, child: const Text('Guardar')),
           ],

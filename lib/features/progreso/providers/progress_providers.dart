@@ -10,20 +10,28 @@ enum ProgressRange { sevenDays, thirtyDays, threeMonths, sixMonths, oneYear }
 
 extension ProgressRangeLabel on ProgressRange {
   String get label => switch (this) {
-        ProgressRange.sevenDays => '7 días',
-        ProgressRange.thirtyDays => '30 días',
-        ProgressRange.threeMonths => '3 meses',
-        ProgressRange.sixMonths => '6 meses',
-        ProgressRange.oneYear => '1 año',
-      };
+    ProgressRange.sevenDays => '7 días',
+    ProgressRange.thirtyDays => '30 días',
+    ProgressRange.threeMonths => '3 meses',
+    ProgressRange.sixMonths => '6 meses',
+    ProgressRange.oneYear => '1 año',
+  };
+
+  String get shortLabel => switch (this) {
+    ProgressRange.sevenDays => '7 d',
+    ProgressRange.thirtyDays => '30 d',
+    ProgressRange.threeMonths => '3 m',
+    ProgressRange.sixMonths => '6 m',
+    ProgressRange.oneYear => '1 a',
+  };
 
   int get days => switch (this) {
-        ProgressRange.sevenDays => 7,
-        ProgressRange.thirtyDays => 30,
-        ProgressRange.threeMonths => 90,
-        ProgressRange.sixMonths => 180,
-        ProgressRange.oneYear => 365,
-      };
+    ProgressRange.sevenDays => 7,
+    ProgressRange.thirtyDays => 30,
+    ProgressRange.threeMonths => 90,
+    ProgressRange.sixMonths => 180,
+    ProgressRange.oneYear => 365,
+  };
 }
 
 final progressRangeProvider = StateProvider<ProgressRange>((ref) => ProgressRange.thirtyDays);
@@ -59,9 +67,9 @@ final averageMacrosForRangeProvider = StreamProvider.autoDispose<AverageMacros>(
   final range = ref.watch(progressRangeProvider);
   final db = ref.watch(appDatabaseProvider);
   final start = _startOfRange(range);
-  return db.mealPlanDao
-      .watchEntriesInRange(start, DateTime.now(), eatenOnly: true)
-      .asyncMap((displays) async {
+  return db.mealPlanDao.watchEntriesInRange(start, DateTime.now(), eatenOnly: true).asyncMap((
+    displays,
+  ) async {
     final macros = await Future.wait(displays.map((d) => resolveEntryMacros(db, d.entry)));
     final total = macros.fold(FoodMacros.zero, (sum, m) => sum + m);
     final dayCount = {for (final d in displays) d.entry.date}.length;

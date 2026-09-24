@@ -20,10 +20,11 @@ class PlanWeekHeader extends ConsumerWidget {
     final monday = ref.watch(selectedPlanWeekStartProvider);
     final sunday = addDays(monday, 6);
     final sameMonth = monday.month == sunday.month;
+    // Spanish month names stay lowercase mid-sentence ("21 - 27 de septiembre").
     final range = sameMonth
-        ? '${monday.day} - ${sunday.day} de ${_capitalize(DateFormat('MMMM', 'es').format(sunday))}'
-        : '${monday.day} ${_capitalize(DateFormat('MMM', 'es').format(monday))} - '
-            '${sunday.day} ${_capitalize(DateFormat('MMM', 'es').format(sunday))}';
+        ? '${monday.day} - ${sunday.day} de ${DateFormat('MMMM', 'es').format(sunday)}'
+        : '${monday.day} ${DateFormat('MMM', 'es').format(monday)} - '
+              '${sunday.day} ${DateFormat('MMM', 'es').format(sunday)}';
 
     return Row(
       children: [
@@ -31,20 +32,16 @@ class PlanWeekHeader extends ConsumerWidget {
         IconButton(
           tooltip: 'Semana anterior',
           icon: const Icon(Icons.chevron_left_rounded),
-          onPressed: () => ref.read(selectedPlanWeekStartProvider.notifier).state =
-              addDays(monday, -7),
+          onPressed: () => ref.read(selectedPlanWeekStartProvider.notifier).state = addDays(monday, -7),
         ),
         IconButton(
           tooltip: 'Semana siguiente',
           icon: const Icon(Icons.chevron_right_rounded),
-          onPressed: () => ref.read(selectedPlanWeekStartProvider.notifier).state =
-              addDays(monday, 7),
+          onPressed: () => ref.read(selectedPlanWeekStartProvider.notifier).state = addDays(monday, 7),
         ),
       ],
     );
   }
-
-  static String _capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 }
 
 // A full-width list of the week's 7 days — the month grid's cells are too
@@ -79,27 +76,14 @@ class PlanWeekView extends ConsumerWidget {
 }
 
 class _WeekDayCard extends StatelessWidget {
-  const _WeekDayCard({
-    required this.day,
-    required this.isToday,
-    required this.entries,
-    required this.onTap,
-  });
+  const _WeekDayCard({required this.day, required this.isToday, required this.entries, required this.onTap});
 
   final DateTime day;
   final bool isToday;
   final List<MealPlanEntryDisplay> entries;
   final VoidCallback onTap;
 
-  static const _weekdayNames = [
-    'Lunes',
-    'Martes',
-    'Miércoles',
-    'Jueves',
-    'Viernes',
-    'Sábado',
-    'Domingo',
-  ];
+  static const _weekdayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
   @override
   Widget build(BuildContext context) {
@@ -111,67 +95,63 @@ class _WeekDayCard extends StatelessWidget {
           (label: meal.label, names: entriesByMeal[meal]!.map((e) => e.label).join(', ')),
     ];
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.md),
+    return AppCard(
       onTap: onTap,
-      child: AppCard(
-        borderColor: isToday ? theme.colorScheme.primary : null,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(
-                  '${_weekdayNames[day.weekday - 1]} ${day.day}',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: isToday ? theme.colorScheme.primary : null,
-                    fontWeight: isToday ? FontWeight.bold : null,
-                  ),
-                ),
-                if (isToday) ...[
-                  const SizedBox(width: AppSpacing.sm),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
-                    child: Text(
-                      'Hoy',
-                      style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onPrimary),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            if (previews.isEmpty) ...[
-              const SizedBox(height: AppSpacing.xs),
+      borderColor: isToday ? theme.colorScheme.primary : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
               Text(
-                'Nada planificado todavía',
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                '${_weekdayNames[day.weekday - 1]} ${day.day}',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: isToday ? theme.colorScheme.primary : null,
+                  fontWeight: isToday ? FontWeight.bold : null,
+                ),
               ),
-            ] else ...[
-              const SizedBox(height: AppSpacing.sm),
-              for (final preview in previews)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                  child: RichText(
-                    text: TextSpan(
-                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface),
-                      children: [
-                        TextSpan(
-                          text: '${preview.label}: ',
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        TextSpan(text: preview.names),
-                      ],
-                    ),
+              if (isToday) ...[
+                const SizedBox(width: AppSpacing.sm),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text(
+                    'Hoy',
+                    style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onPrimary),
                   ),
                 ),
+              ],
             ],
+          ),
+          if (previews.isEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Nada planificado',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ] else ...[
+            const SizedBox(height: AppSpacing.sm),
+            for (final preview in previews)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                child: RichText(
+                  text: TextSpan(
+                    style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface),
+                    children: [
+                      TextSpan(
+                        text: '${preview.label}: ',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      TextSpan(text: preview.names),
+                    ],
+                  ),
+                ),
+              ),
           ],
-        ),
+        ],
       ),
     );
   }

@@ -8,10 +8,12 @@ import 'package:macrosapp/data/database/database_provider.dart';
 import 'package:macrosapp/router/app_router.dart';
 
 Future<void> _pumpApp(WidgetTester tester, ProviderContainer container, GoRouter router) async {
-  await tester.pumpWidget(UncontrolledProviderScope(
-    container: container,
-    child: MacrosApp(router: router),
-  ));
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: MacrosApp(router: router),
+    ),
+  );
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 50));
   await tester.pump(const Duration(milliseconds: 50));
@@ -41,20 +43,16 @@ void main() {
   testWidgets('Progreso shows current/starting weight stats once logs exist', (tester) async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     await db.userProfileDao.ensureDefaultRow();
-    await db.bodyWeightDao.insertLog(BodyWeightLogsCompanion.insert(
-      date: DateTime.now().subtract(const Duration(days: 10)),
-      weightKg: 82,
-    ));
-    await db.bodyWeightDao.insertLog(BodyWeightLogsCompanion.insert(
-      date: DateTime.now(),
-      weightKg: 79,
-    ));
+    await db.bodyWeightDao.insertLog(
+      BodyWeightLogsCompanion.insert(date: DateTime.now().subtract(const Duration(days: 10)), weightKg: 82),
+    );
+    await db.bodyWeightDao.insertLog(BodyWeightLogsCompanion.insert(date: DateTime.now(), weightKg: 79));
     final container = ProviderContainer(overrides: [appDatabaseProvider.overrideWithValue(db)]);
 
     await _pumpApp(tester, container, buildAppRouter(initialLocation: '/perfil/progreso'));
 
-    expect(find.textContaining('79.0'), findsOneWidget); // current
-    expect(find.textContaining('82.0'), findsWidgets); // starting
+    expect(find.textContaining('79,0'), findsOneWidget); // current
+    expect(find.textContaining('82,0'), findsWidgets); // starting
 
     await _teardown(tester, container, db);
   });

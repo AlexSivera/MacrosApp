@@ -9,6 +9,7 @@ import '../../../data/database/database_provider.dart';
 import '../../diario/widgets/food_category_chips.dart';
 import '../providers/meal_plan_providers.dart';
 import '../../../core/utils/dates.dart';
+import '../../../core/utils/formatters.dart';
 
 // A trip-friendly checklist for the week currently visible in Plan semanal.
 // Two independent modes per week (see ShoppingListWeekModes):
@@ -36,9 +37,7 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
     final isManual = modeAsync.valueOrNull ?? false;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Lista de la compra'),
-      ),
+      appBar: AppBar(title: const Text('Lista de la compra')),
       body: Column(
         children: [
           Padding(
@@ -48,8 +47,8 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
                 IconButton(
                   tooltip: 'Semana anterior',
                   icon: const Icon(Icons.chevron_left_rounded),
-                  onPressed: () => ref.read(shoppingListWeekStartProvider.notifier).state =
-                      addDays(weekStart, -7),
+                  onPressed: () =>
+                      ref.read(shoppingListWeekStartProvider.notifier).state = addDays(weekStart, -7),
                 ),
                 Expanded(
                   child: Text(
@@ -62,8 +61,8 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
                 IconButton(
                   tooltip: 'Semana siguiente',
                   icon: const Icon(Icons.chevron_right_rounded),
-                  onPressed: () => ref.read(shoppingListWeekStartProvider.notifier).state =
-                      addDays(weekStart, 7),
+                  onPressed: () =>
+                      ref.read(shoppingListWeekStartProvider.notifier).state = addDays(weekStart, 7),
                 ),
               ],
             ),
@@ -76,15 +75,11 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
                 ButtonSegment(value: true, label: Text('Manual')),
               ],
               selected: {isManual},
-              onSelectionChanged: (s) => ref
-                  .read(appDatabaseProvider)
-                  .shoppingListDao
-                  .setMode(weekStart, manual: s.first),
+              onSelectionChanged: (s) =>
+                  ref.read(appDatabaseProvider).shoppingListDao.setMode(weekStart, manual: s.first),
             ),
           ),
-          Expanded(
-            child: isManual ? const _ManualShoppingList() : const _AutomaticShoppingList(),
-          ),
+          Expanded(child: isManual ? const _ManualShoppingList() : const _AutomaticShoppingList()),
         ],
       ),
     );
@@ -180,8 +175,7 @@ class _ManualShoppingList extends ConsumerWidget {
     return itemsAsync.when(
       data: (items) => EditableChecklist(
         items: [
-          for (final item in items)
-            ChecklistItemData(id: item.id, name: item.name, checked: item.checked),
+          for (final item in items) ChecklistItemData(id: item.id, name: item.name, checked: item.checked),
         ],
         hintText: 'p. ej. pan, tomates...',
         emptyText: 'Añade a mano lo que necesites comprar esta semana.',
@@ -218,12 +212,12 @@ class _ShoppingListTile extends StatelessWidget {
       final units = grams / servingGrams;
       final rounded = units.roundToDouble();
       final display = (units - rounded).abs() < 0.05 ? rounded : (units * 10).round() / 10;
-      final displayText = display == display.roundToDouble() ? display.round().toString() : display.toString();
+      final displayText = formatDecimal(display);
       return '$displayText ${display == 1 ? 'ud' : 'uds'}';
     }
     if (grams >= 1000) {
       final kg = grams / 1000;
-      return '${kg == kg.roundToDouble() ? kg.round() : kg.toStringAsFixed(1)} kg';
+      return '${formatDecimal(kg)} kg';
     }
     return '${grams.round()} g';
   }
