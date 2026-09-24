@@ -3,13 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/meal_types.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/macro_preview_row.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
+import '../../../services/nutrition_engine/food_macros_calculator.dart';
 import '../../../services/nutrition_engine/recipe_macros_calculator.dart';
 
-// Servings-entry step for a recipe, on a given day — used by both the Plan
-// (mealType always known, from the section tapped) and the recipe detail
-// screen's "Añadir al Diario" (mealType unknown, picked here via dropdown).
+// Servings-entry step for a recipe, on a given day — used by the Plan
+// (mealType known from the section tapped, planned), the Diario (eaten) and
+// the recipe detail screen's "Añadir al diario" (mealType unknown, picked
+// here via dropdown; eaten).
 class PlanRecipeQuantitySheet extends ConsumerStatefulWidget {
   const PlanRecipeQuantitySheet({
     super.key,
@@ -17,23 +21,32 @@ class PlanRecipeQuantitySheet extends ConsumerStatefulWidget {
     this.date,
     this.mealType,
     this.entry,
+    this.eaten = false,
   });
 
   final Recipe recipe;
   final DateTime? date;
   final MealType? mealType;
   final MealPlanEntry? entry;
+  final bool eaten;
 
   static Future<void> showAdd(
     BuildContext context, {
     required Recipe recipe,
     required DateTime date,
     MealType? mealType,
+    bool eaten = false,
   }) {
     return showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      builder: (context) => PlanRecipeQuantitySheet(recipe: recipe, date: date, mealType: mealType),
+      builder: (context) => PlanRecipeQuantitySheet(
+        recipe: recipe,
+        date: date,
+        mealType: mealType,
+        eaten: eaten,
+      ),
     );
   }
 
@@ -44,6 +57,7 @@ class PlanRecipeQuantitySheet extends ConsumerStatefulWidget {
   }) {
     return showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       builder: (context) => PlanRecipeQuantitySheet(recipe: recipe, entry: entry),
     );
@@ -56,18 +70,30 @@ class PlanRecipeQuantitySheet extends ConsumerStatefulWidget {
 class _PlanRecipeQuantitySheetState extends ConsumerState<PlanRecipeQuantitySheet> {
   late final TextEditingController _controller;
   late MealType _mealType;
+  late final Future<FoodMacros> _perServing;
   String? _error;
 
   @override
   void initState() {
     super.initState();
     final initial = widget.entry?.servings ?? 1.0;
-    _controller = TextEditingController(text: _formatServings(initial));
+    _controller = TextEditingController(text: formatInputNumber(initial));
     _mealType = widget.mealType ?? widget.entry?.mealType ?? MealType.lunch;
+    _perServing = _loadPerServing();
   }
 
-  static String _formatServings(double s) =>
-      s == s.roundToDouble() ? s.round().toString() : s.toString();
+  // Loaded once, not in build(): a FutureBuilder fed a fresh Future every
+  // keystroke flashed a spinner on each digit typed.
+  Future<FoodMacros> _loadPerServing() async {
+    final db = ref.read(appDatabaseProvider);
+    final ingredients = await db.recipeIngredientsDao.getForRecipe(widget.recipe.id);
+    final foods = await Future.wait(ingredients.map((i) => db.foodsDao.getById(i.foodId)));
+    final pairs = [
+      for (var i = 0; i < ingredients.length; i++)
+        if (foods[i] != null) (ingredients[i], foods[i]!),
+    ];
+    return computePerServing(computeRecipeTotals(pairs), widget.recipe.servings);
+  }
 
   @override
   void dispose() {
@@ -75,7 +101,7 @@ class _PlanRecipeQuantitySheetState extends ConsumerState<PlanRecipeQuantityShee
     super.dispose();
   }
 
-  double? get _servings => double.tryParse(_controller.text.replaceAll(',', '.'));
+  double? get _servings => parseDecimal(_controller.text);
 
   Future<void> _submit() async {
     final servings = _servings;
@@ -95,6 +121,7 @@ class _PlanRecipeQuantitySheetState extends ConsumerState<PlanRecipeQuantityShee
         recipeId: widget.recipe.id,
         servings: servings,
         orderIndex: orderIndex,
+        eaten: widget.eaten,
       );
     }
 
@@ -104,7 +131,6 @@ class _PlanRecipeQuantitySheetState extends ConsumerState<PlanRecipeQuantityShee
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final db = ref.watch(appDatabaseProvider);
 
     return SafeArea(
       child: Padding(
@@ -114,8 +140,8 @@ class _PlanRecipeQuantitySheetState extends ConsumerState<PlanRecipeQuantityShee
           top: AppSpacing.lg,
           bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
         ),
-        child: FutureBuilder<List<RecipeIngredient>>(
-          future: db.recipeIngredientsDao.getForRecipe(widget.recipe.id),
+        child: FutureBuilder<FoodMacros>(
+          future: _perServing,
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return const SizedBox(
@@ -123,102 +149,65 @@ class _PlanRecipeQuantitySheetState extends ConsumerState<PlanRecipeQuantityShee
                 child: Center(child: CircularProgressIndicator()),
               );
             }
-            return FutureBuilder<List<Food>>(
-              future: Future.wait(
-                snapshot.data!.map((i) => db.foodsDao.getById(i.foodId)),
-              ).then((foods) => foods.whereType<Food>().toList()),
-              builder: (context, foodsSnapshot) {
-                if (!foodsSnapshot.hasData) {
-                  return const SizedBox(
-                    height: 120,
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                final ingredients = snapshot.data!;
-                final foodsById = {for (final f in foodsSnapshot.data!) f.id: f};
-                final pairs = [
-                  for (final i in ingredients)
-                    if (foodsById[i.foodId] != null) (i, foodsById[i.foodId]!),
-                ];
-                final totals = computeRecipeTotals(pairs);
-                final perServing = computePerServing(totals, widget.recipe.servings);
-                final servings = _servings;
-                final preview =
-                    servings != null && servings > 0 ? perServing * servings : null;
+            final servings = _servings;
+            final preview = servings != null && servings > 0 ? snapshot.data! * servings : null;
 
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(widget.recipe.name, style: theme.textTheme.titleLarge),
-                    const SizedBox(height: AppSpacing.md),
-                    if (widget.mealType == null && widget.entry == null) ...[
-                      DropdownButtonFormField<MealType>(
-                        initialValue: _mealType,
-                        decoration: const InputDecoration(labelText: 'Comida'),
-                        items: [
-                          for (final meal in mealSectionOrder)
-                            DropdownMenuItem(value: meal, child: Text(meal.label)),
-                        ],
-                        onChanged: (v) => setState(() => _mealType = v ?? _mealType),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(widget.recipe.name, style: theme.textTheme.titleLarge),
+                const SizedBox(height: AppSpacing.md),
+                if (widget.mealType == null && widget.entry == null) ...[
+                  DropdownButtonFormField<MealType>(
+                    initialValue: _mealType,
+                    decoration: const InputDecoration(labelText: 'Comida'),
+                    items: [
+                      for (final meal in mealSectionOrder)
+                        DropdownMenuItem(value: meal, child: Text(meal.label)),
                     ],
-                    TextField(
-                      controller: _controller,
-                      autofocus: widget.mealType != null || widget.entry != null,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(labelText: 'Raciones', errorText: _error),
-                      onChanged: (_) => setState(() => _error = null),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    if (preview != null)
-                      Container(
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _PreviewStat('${preview.kcal.round()}', 'kcal'),
-                            _PreviewStat('${preview.proteinG.round()}g', 'prot'),
-                            _PreviewStat('${preview.carbsG.round()}g', 'carb'),
-                            _PreviewStat('${preview.fatG.round()}g', 'grasa'),
-                          ],
-                        ),
+                    onChanged: (v) => setState(() => _mealType = v ?? _mealType),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+                TextField(
+                  controller: _controller,
+                  autofocus: widget.mealType != null || widget.entry != null,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(labelText: 'Raciones', errorText: _error),
+                  onChanged: (_) => setState(() => _error = null),
+                  onSubmitted: (_) => _submit(),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.xs,
+                  children: [
+                    for (final v in const [0.5, 1.0, 1.5, 2.0])
+                      ActionChip(
+                        label: Text(v == 1 ? '1 ración' : '${formatDecimal(v)} raciones'),
+                        onPressed: () => setState(() {
+                          _error = null;
+                          _controller.text = formatInputNumber(v);
+                        }),
                       ),
-                    const SizedBox(height: AppSpacing.xl),
-                    ElevatedButton(
-                      onPressed: _submit,
-                      child: Text(widget.entry != null ? 'Guardar' : 'Añadir al plan'),
-                    ),
                   ],
-                );
-              },
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                if (preview != null) MacroPreviewRow(macros: preview),
+                const SizedBox(height: AppSpacing.xl),
+                ElevatedButton(
+                  onPressed: _submit,
+                  child: Text(
+                    widget.entry != null
+                        ? 'Guardar'
+                        : (widget.eaten ? 'Añadir al diario' : 'Añadir al plan'),
+                  ),
+                ),
+              ],
             );
           },
         ),
       ),
-    );
-  }
-}
-
-class _PreviewStat extends StatelessWidget {
-  const _PreviewStat(this.value, this.label);
-
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      children: [
-        Text(value, style: theme.textTheme.titleMedium),
-        Text(label, style: theme.textTheme.bodySmall),
-      ],
     );
   }
 }

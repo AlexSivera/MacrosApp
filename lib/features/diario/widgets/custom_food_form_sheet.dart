@@ -25,6 +25,7 @@ class CustomFoodFormSheet extends ConsumerStatefulWidget {
   static Future<Food?> show(BuildContext context) {
     return showModalBottomSheet<Food>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       builder: (context) => const CustomFoodFormSheet(),
     );
@@ -33,6 +34,7 @@ class CustomFoodFormSheet extends ConsumerStatefulWidget {
   static Future<Food?> showEdit(BuildContext context, {required Food food}) {
     return showModalBottomSheet<Food>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       builder: (context) => CustomFoodFormSheet(food: food),
     );

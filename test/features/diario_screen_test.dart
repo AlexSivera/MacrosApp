@@ -55,7 +55,7 @@ void main() {
     expect(find.text('Consumidas'), findsOneWidget);
     expect(find.text('Restantes'), findsOneWidget);
     expect(find.text('Quemadas'), findsOneWidget);
-    expect(find.textContaining('Nada planeado'), findsWidgets);
+    expect(find.textContaining('Sin registrar'), findsWidgets);
 
     await _teardown(tester, container, db);
   });
@@ -82,15 +82,65 @@ void main() {
       foodId: foodId,
       quantityGrams: 200,
       orderIndex: 0,
+      eaten: true,
+    );
+    final container = ProviderContainer(overrides: [appDatabaseProvider.overrideWithValue(db)]);
+
+    await _pumpApp(tester, container, buildAppRouter(initialLocation: '/diario'));
+    // Past the kcal count-up animation (AppMotion.counter).
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(find.text('330'), findsOneWidget); // Consumidas: 200g at 165kcal/100g, snapshotted when logged
+    expect(find.textContaining('Pechuga de pollo'), findsOneWidget);
+    expect(find.textContaining('200 g'), findsOneWidget);
+
+    await _teardown(tester, container, db);
+  });
+
+  testWidgets('a planned entry does not count until it is ticked off as eaten', (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    await db.userProfileDao.ensureDefaultRow();
+    await db.userProfileDao.updateProfile(const UserProfileCompanion(
+      heightCm: Value(180),
+      startingWeightKg: Value(80),
+      onboardingCompleted: Value(true),
+    ));
+    final foodId = await db.foodsDao.insert(FoodsCompanion.insert(
+      name: 'Pechuga de pollo',
+      kcalPer100g: 165,
+      proteinPer100g: 31,
+      carbsPer100g: 0,
+      fatPer100g: 3.6,
+    ));
+    final today = DateTime.now();
+    await db.mealPlanDao.addFood(
+      date: DateTime(today.year, today.month, today.day),
+      mealType: MealType.lunch,
+      foodId: foodId,
+      quantityGrams: 200,
+      orderIndex: 0,
     );
     final container = ProviderContainer(overrides: [appDatabaseProvider.overrideWithValue(db)]);
 
     await _pumpApp(tester, container, buildAppRouter(initialLocation: '/diario'));
     await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.text('330'), findsOneWidget); // Consumidas: 200g at 165kcal/100g, resolved live
-    expect(find.textContaining('Pechuga de pollo'), findsOneWidget);
-    expect(find.textContaining('200 g'), findsOneWidget);
+    expect(find.textContaining('330 kcal planeadas'), findsOneWidget);
+    expect(find.textContaining('planeado'), findsWidgets);
+
+    final toggle = find.bySemanticsLabel('Marcar como comido');
+    await tester.ensureVisible(toggle);
+    await tester.pump();
+    await tester.tap(toggle);
+    // markEaten runs several DB round-trips, each needing a pump to advance.
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(find.text('330'), findsOneWidget); // Consumidas
+    expect(find.textContaining('kcal planeadas'), findsNothing);
 
     await _teardown(tester, container, db);
   });

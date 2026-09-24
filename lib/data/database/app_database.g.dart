@@ -257,6 +257,17 @@ class $UserProfileTable extends UserProfile
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _lastBackupAtMeta = const VerificationMeta(
+    'lastBackupAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastBackupAt = GeneratedColumn<DateTime>(
+    'last_backup_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -281,6 +292,7 @@ class $UserProfileTable extends UserProfile
     appearanceMode,
     remindersEnabled,
     onboardingCompleted,
+    lastBackupAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -414,6 +426,15 @@ class $UserProfileTable extends UserProfile
         ),
       );
     }
+    if (data.containsKey('last_backup_at')) {
+      context.handle(
+        _lastBackupAtMeta,
+        lastBackupAt.isAcceptableOrUnknown(
+          data['last_backup_at']!,
+          _lastBackupAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -525,6 +546,10 @@ class $UserProfileTable extends UserProfile
         DriftSqlType.bool,
         data['${effectivePrefix}onboarding_completed'],
       )!,
+      lastBackupAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_backup_at'],
+      ),
     );
   }
 
@@ -576,6 +601,7 @@ class UserProfileData extends DataClass implements Insertable<UserProfileData> {
   final AppearanceMode appearanceMode;
   final bool remindersEnabled;
   final bool onboardingCompleted;
+  final DateTime? lastBackupAt;
   const UserProfileData({
     required this.id,
     this.name,
@@ -599,6 +625,7 @@ class UserProfileData extends DataClass implements Insertable<UserProfileData> {
     required this.appearanceMode,
     required this.remindersEnabled,
     required this.onboardingCompleted,
+    this.lastBackupAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -669,6 +696,9 @@ class UserProfileData extends DataClass implements Insertable<UserProfileData> {
     }
     map['reminders_enabled'] = Variable<bool>(remindersEnabled);
     map['onboarding_completed'] = Variable<bool>(onboardingCompleted);
+    if (!nullToAbsent || lastBackupAt != null) {
+      map['last_backup_at'] = Variable<DateTime>(lastBackupAt);
+    }
     return map;
   }
 
@@ -712,6 +742,9 @@ class UserProfileData extends DataClass implements Insertable<UserProfileData> {
       appearanceMode: Value(appearanceMode),
       remindersEnabled: Value(remindersEnabled),
       onboardingCompleted: Value(onboardingCompleted),
+      lastBackupAt: lastBackupAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastBackupAt),
     );
   }
 
@@ -769,6 +802,7 @@ class UserProfileData extends DataClass implements Insertable<UserProfileData> {
       onboardingCompleted: serializer.fromJson<bool>(
         json['onboardingCompleted'],
       ),
+      lastBackupAt: serializer.fromJson<DateTime?>(json['lastBackupAt']),
     );
   }
   @override
@@ -811,6 +845,7 @@ class UserProfileData extends DataClass implements Insertable<UserProfileData> {
       ),
       'remindersEnabled': serializer.toJson<bool>(remindersEnabled),
       'onboardingCompleted': serializer.toJson<bool>(onboardingCompleted),
+      'lastBackupAt': serializer.toJson<DateTime?>(lastBackupAt),
     };
   }
 
@@ -837,6 +872,7 @@ class UserProfileData extends DataClass implements Insertable<UserProfileData> {
     AppearanceMode? appearanceMode,
     bool? remindersEnabled,
     bool? onboardingCompleted,
+    Value<DateTime?> lastBackupAt = const Value.absent(),
   }) => UserProfileData(
     id: id ?? this.id,
     name: name.present ? name.value : this.name,
@@ -870,6 +906,7 @@ class UserProfileData extends DataClass implements Insertable<UserProfileData> {
     appearanceMode: appearanceMode ?? this.appearanceMode,
     remindersEnabled: remindersEnabled ?? this.remindersEnabled,
     onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+    lastBackupAt: lastBackupAt.present ? lastBackupAt.value : this.lastBackupAt,
   );
   UserProfileData copyWithCompanion(UserProfileCompanion data) {
     return UserProfileData(
@@ -927,6 +964,9 @@ class UserProfileData extends DataClass implements Insertable<UserProfileData> {
       onboardingCompleted: data.onboardingCompleted.present
           ? data.onboardingCompleted.value
           : this.onboardingCompleted,
+      lastBackupAt: data.lastBackupAt.present
+          ? data.lastBackupAt.value
+          : this.lastBackupAt,
     );
   }
 
@@ -954,7 +994,8 @@ class UserProfileData extends DataClass implements Insertable<UserProfileData> {
           ..write('foodMassUnit: $foodMassUnit, ')
           ..write('appearanceMode: $appearanceMode, ')
           ..write('remindersEnabled: $remindersEnabled, ')
-          ..write('onboardingCompleted: $onboardingCompleted')
+          ..write('onboardingCompleted: $onboardingCompleted, ')
+          ..write('lastBackupAt: $lastBackupAt')
           ..write(')'))
         .toString();
   }
@@ -983,6 +1024,7 @@ class UserProfileData extends DataClass implements Insertable<UserProfileData> {
     appearanceMode,
     remindersEnabled,
     onboardingCompleted,
+    lastBackupAt,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1009,7 +1051,8 @@ class UserProfileData extends DataClass implements Insertable<UserProfileData> {
           other.foodMassUnit == this.foodMassUnit &&
           other.appearanceMode == this.appearanceMode &&
           other.remindersEnabled == this.remindersEnabled &&
-          other.onboardingCompleted == this.onboardingCompleted);
+          other.onboardingCompleted == this.onboardingCompleted &&
+          other.lastBackupAt == this.lastBackupAt);
 }
 
 class UserProfileCompanion extends UpdateCompanion<UserProfileData> {
@@ -1035,6 +1078,7 @@ class UserProfileCompanion extends UpdateCompanion<UserProfileData> {
   final Value<AppearanceMode> appearanceMode;
   final Value<bool> remindersEnabled;
   final Value<bool> onboardingCompleted;
+  final Value<DateTime?> lastBackupAt;
   const UserProfileCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -1058,6 +1102,7 @@ class UserProfileCompanion extends UpdateCompanion<UserProfileData> {
     this.appearanceMode = const Value.absent(),
     this.remindersEnabled = const Value.absent(),
     this.onboardingCompleted = const Value.absent(),
+    this.lastBackupAt = const Value.absent(),
   });
   UserProfileCompanion.insert({
     this.id = const Value.absent(),
@@ -1082,6 +1127,7 @@ class UserProfileCompanion extends UpdateCompanion<UserProfileData> {
     this.appearanceMode = const Value.absent(),
     this.remindersEnabled = const Value.absent(),
     this.onboardingCompleted = const Value.absent(),
+    this.lastBackupAt = const Value.absent(),
   });
   static Insertable<UserProfileData> custom({
     Expression<int>? id,
@@ -1106,6 +1152,7 @@ class UserProfileCompanion extends UpdateCompanion<UserProfileData> {
     Expression<int>? appearanceMode,
     Expression<bool>? remindersEnabled,
     Expression<bool>? onboardingCompleted,
+    Expression<DateTime>? lastBackupAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1135,6 +1182,7 @@ class UserProfileCompanion extends UpdateCompanion<UserProfileData> {
       if (remindersEnabled != null) 'reminders_enabled': remindersEnabled,
       if (onboardingCompleted != null)
         'onboarding_completed': onboardingCompleted,
+      if (lastBackupAt != null) 'last_backup_at': lastBackupAt,
     });
   }
 
@@ -1161,6 +1209,7 @@ class UserProfileCompanion extends UpdateCompanion<UserProfileData> {
     Value<AppearanceMode>? appearanceMode,
     Value<bool>? remindersEnabled,
     Value<bool>? onboardingCompleted,
+    Value<DateTime?>? lastBackupAt,
   }) {
     return UserProfileCompanion(
       id: id ?? this.id,
@@ -1185,6 +1234,7 @@ class UserProfileCompanion extends UpdateCompanion<UserProfileData> {
       appearanceMode: appearanceMode ?? this.appearanceMode,
       remindersEnabled: remindersEnabled ?? this.remindersEnabled,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      lastBackupAt: lastBackupAt ?? this.lastBackupAt,
     );
   }
 
@@ -1279,6 +1329,9 @@ class UserProfileCompanion extends UpdateCompanion<UserProfileData> {
     if (onboardingCompleted.present) {
       map['onboarding_completed'] = Variable<bool>(onboardingCompleted.value);
     }
+    if (lastBackupAt.present) {
+      map['last_backup_at'] = Variable<DateTime>(lastBackupAt.value);
+    }
     return map;
   }
 
@@ -1306,7 +1359,8 @@ class UserProfileCompanion extends UpdateCompanion<UserProfileData> {
           ..write('foodMassUnit: $foodMassUnit, ')
           ..write('appearanceMode: $appearanceMode, ')
           ..write('remindersEnabled: $remindersEnabled, ')
-          ..write('onboardingCompleted: $onboardingCompleted')
+          ..write('onboardingCompleted: $onboardingCompleted, ')
+          ..write('lastBackupAt: $lastBackupAt')
           ..write(')'))
         .toString();
   }
@@ -3007,6 +3061,70 @@ class $MealPlanEntriesTable extends MealPlanEntries
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _isEatenMeta = const VerificationMeta(
+    'isEaten',
+  );
+  @override
+  late final GeneratedColumn<bool> isEaten = GeneratedColumn<bool>(
+    'is_eaten',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_eaten" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _kcalMeta = const VerificationMeta('kcal');
+  @override
+  late final GeneratedColumn<double> kcal = GeneratedColumn<double>(
+    'kcal',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _proteinGMeta = const VerificationMeta(
+    'proteinG',
+  );
+  @override
+  late final GeneratedColumn<double> proteinG = GeneratedColumn<double>(
+    'protein_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _carbsGMeta = const VerificationMeta('carbsG');
+  @override
+  late final GeneratedColumn<double> carbsG = GeneratedColumn<double>(
+    'carbs_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fatGMeta = const VerificationMeta('fatG');
+  @override
+  late final GeneratedColumn<double> fatG = GeneratedColumn<double>(
+    'fat_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _labelSnapshotMeta = const VerificationMeta(
+    'labelSnapshot',
+  );
+  @override
+  late final GeneratedColumn<String> labelSnapshot = GeneratedColumn<String>(
+    'label_snapshot',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3017,6 +3135,12 @@ class $MealPlanEntriesTable extends MealPlanEntries
     quantityGrams,
     servings,
     orderIndex,
+    isEaten,
+    kcal,
+    proteinG,
+    carbsG,
+    fatG,
+    labelSnapshot,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3076,6 +3200,45 @@ class $MealPlanEntriesTable extends MealPlanEntries
     } else if (isInserting) {
       context.missing(_orderIndexMeta);
     }
+    if (data.containsKey('is_eaten')) {
+      context.handle(
+        _isEatenMeta,
+        isEaten.isAcceptableOrUnknown(data['is_eaten']!, _isEatenMeta),
+      );
+    }
+    if (data.containsKey('kcal')) {
+      context.handle(
+        _kcalMeta,
+        kcal.isAcceptableOrUnknown(data['kcal']!, _kcalMeta),
+      );
+    }
+    if (data.containsKey('protein_g')) {
+      context.handle(
+        _proteinGMeta,
+        proteinG.isAcceptableOrUnknown(data['protein_g']!, _proteinGMeta),
+      );
+    }
+    if (data.containsKey('carbs_g')) {
+      context.handle(
+        _carbsGMeta,
+        carbsG.isAcceptableOrUnknown(data['carbs_g']!, _carbsGMeta),
+      );
+    }
+    if (data.containsKey('fat_g')) {
+      context.handle(
+        _fatGMeta,
+        fatG.isAcceptableOrUnknown(data['fat_g']!, _fatGMeta),
+      );
+    }
+    if (data.containsKey('label_snapshot')) {
+      context.handle(
+        _labelSnapshotMeta,
+        labelSnapshot.isAcceptableOrUnknown(
+          data['label_snapshot']!,
+          _labelSnapshotMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3119,6 +3282,30 @@ class $MealPlanEntriesTable extends MealPlanEntries
         DriftSqlType.int,
         data['${effectivePrefix}order_index'],
       )!,
+      isEaten: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_eaten'],
+      )!,
+      kcal: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}kcal'],
+      ),
+      proteinG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}protein_g'],
+      ),
+      carbsG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}carbs_g'],
+      ),
+      fatG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fat_g'],
+      ),
+      labelSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}label_snapshot'],
+      ),
     );
   }
 
@@ -3140,6 +3327,12 @@ class MealPlanEntry extends DataClass implements Insertable<MealPlanEntry> {
   final double? quantityGrams;
   final double? servings;
   final int orderIndex;
+  final bool isEaten;
+  final double? kcal;
+  final double? proteinG;
+  final double? carbsG;
+  final double? fatG;
+  final String? labelSnapshot;
   const MealPlanEntry({
     required this.id,
     required this.date,
@@ -3149,6 +3342,12 @@ class MealPlanEntry extends DataClass implements Insertable<MealPlanEntry> {
     this.quantityGrams,
     this.servings,
     required this.orderIndex,
+    required this.isEaten,
+    this.kcal,
+    this.proteinG,
+    this.carbsG,
+    this.fatG,
+    this.labelSnapshot,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3173,6 +3372,22 @@ class MealPlanEntry extends DataClass implements Insertable<MealPlanEntry> {
       map['servings'] = Variable<double>(servings);
     }
     map['order_index'] = Variable<int>(orderIndex);
+    map['is_eaten'] = Variable<bool>(isEaten);
+    if (!nullToAbsent || kcal != null) {
+      map['kcal'] = Variable<double>(kcal);
+    }
+    if (!nullToAbsent || proteinG != null) {
+      map['protein_g'] = Variable<double>(proteinG);
+    }
+    if (!nullToAbsent || carbsG != null) {
+      map['carbs_g'] = Variable<double>(carbsG);
+    }
+    if (!nullToAbsent || fatG != null) {
+      map['fat_g'] = Variable<double>(fatG);
+    }
+    if (!nullToAbsent || labelSnapshot != null) {
+      map['label_snapshot'] = Variable<String>(labelSnapshot);
+    }
     return map;
   }
 
@@ -3194,6 +3409,18 @@ class MealPlanEntry extends DataClass implements Insertable<MealPlanEntry> {
           ? const Value.absent()
           : Value(servings),
       orderIndex: Value(orderIndex),
+      isEaten: Value(isEaten),
+      kcal: kcal == null && nullToAbsent ? const Value.absent() : Value(kcal),
+      proteinG: proteinG == null && nullToAbsent
+          ? const Value.absent()
+          : Value(proteinG),
+      carbsG: carbsG == null && nullToAbsent
+          ? const Value.absent()
+          : Value(carbsG),
+      fatG: fatG == null && nullToAbsent ? const Value.absent() : Value(fatG),
+      labelSnapshot: labelSnapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(labelSnapshot),
     );
   }
 
@@ -3213,6 +3440,12 @@ class MealPlanEntry extends DataClass implements Insertable<MealPlanEntry> {
       quantityGrams: serializer.fromJson<double?>(json['quantityGrams']),
       servings: serializer.fromJson<double?>(json['servings']),
       orderIndex: serializer.fromJson<int>(json['orderIndex']),
+      isEaten: serializer.fromJson<bool>(json['isEaten']),
+      kcal: serializer.fromJson<double?>(json['kcal']),
+      proteinG: serializer.fromJson<double?>(json['proteinG']),
+      carbsG: serializer.fromJson<double?>(json['carbsG']),
+      fatG: serializer.fromJson<double?>(json['fatG']),
+      labelSnapshot: serializer.fromJson<String?>(json['labelSnapshot']),
     );
   }
   @override
@@ -3229,6 +3462,12 @@ class MealPlanEntry extends DataClass implements Insertable<MealPlanEntry> {
       'quantityGrams': serializer.toJson<double?>(quantityGrams),
       'servings': serializer.toJson<double?>(servings),
       'orderIndex': serializer.toJson<int>(orderIndex),
+      'isEaten': serializer.toJson<bool>(isEaten),
+      'kcal': serializer.toJson<double?>(kcal),
+      'proteinG': serializer.toJson<double?>(proteinG),
+      'carbsG': serializer.toJson<double?>(carbsG),
+      'fatG': serializer.toJson<double?>(fatG),
+      'labelSnapshot': serializer.toJson<String?>(labelSnapshot),
     };
   }
 
@@ -3241,6 +3480,12 @@ class MealPlanEntry extends DataClass implements Insertable<MealPlanEntry> {
     Value<double?> quantityGrams = const Value.absent(),
     Value<double?> servings = const Value.absent(),
     int? orderIndex,
+    bool? isEaten,
+    Value<double?> kcal = const Value.absent(),
+    Value<double?> proteinG = const Value.absent(),
+    Value<double?> carbsG = const Value.absent(),
+    Value<double?> fatG = const Value.absent(),
+    Value<String?> labelSnapshot = const Value.absent(),
   }) => MealPlanEntry(
     id: id ?? this.id,
     date: date ?? this.date,
@@ -3252,6 +3497,14 @@ class MealPlanEntry extends DataClass implements Insertable<MealPlanEntry> {
         : this.quantityGrams,
     servings: servings.present ? servings.value : this.servings,
     orderIndex: orderIndex ?? this.orderIndex,
+    isEaten: isEaten ?? this.isEaten,
+    kcal: kcal.present ? kcal.value : this.kcal,
+    proteinG: proteinG.present ? proteinG.value : this.proteinG,
+    carbsG: carbsG.present ? carbsG.value : this.carbsG,
+    fatG: fatG.present ? fatG.value : this.fatG,
+    labelSnapshot: labelSnapshot.present
+        ? labelSnapshot.value
+        : this.labelSnapshot,
   );
   MealPlanEntry copyWithCompanion(MealPlanEntriesCompanion data) {
     return MealPlanEntry(
@@ -3267,6 +3520,14 @@ class MealPlanEntry extends DataClass implements Insertable<MealPlanEntry> {
       orderIndex: data.orderIndex.present
           ? data.orderIndex.value
           : this.orderIndex,
+      isEaten: data.isEaten.present ? data.isEaten.value : this.isEaten,
+      kcal: data.kcal.present ? data.kcal.value : this.kcal,
+      proteinG: data.proteinG.present ? data.proteinG.value : this.proteinG,
+      carbsG: data.carbsG.present ? data.carbsG.value : this.carbsG,
+      fatG: data.fatG.present ? data.fatG.value : this.fatG,
+      labelSnapshot: data.labelSnapshot.present
+          ? data.labelSnapshot.value
+          : this.labelSnapshot,
     );
   }
 
@@ -3280,7 +3541,13 @@ class MealPlanEntry extends DataClass implements Insertable<MealPlanEntry> {
           ..write('recipeId: $recipeId, ')
           ..write('quantityGrams: $quantityGrams, ')
           ..write('servings: $servings, ')
-          ..write('orderIndex: $orderIndex')
+          ..write('orderIndex: $orderIndex, ')
+          ..write('isEaten: $isEaten, ')
+          ..write('kcal: $kcal, ')
+          ..write('proteinG: $proteinG, ')
+          ..write('carbsG: $carbsG, ')
+          ..write('fatG: $fatG, ')
+          ..write('labelSnapshot: $labelSnapshot')
           ..write(')'))
         .toString();
   }
@@ -3295,6 +3562,12 @@ class MealPlanEntry extends DataClass implements Insertable<MealPlanEntry> {
     quantityGrams,
     servings,
     orderIndex,
+    isEaten,
+    kcal,
+    proteinG,
+    carbsG,
+    fatG,
+    labelSnapshot,
   );
   @override
   bool operator ==(Object other) =>
@@ -3307,7 +3580,13 @@ class MealPlanEntry extends DataClass implements Insertable<MealPlanEntry> {
           other.recipeId == this.recipeId &&
           other.quantityGrams == this.quantityGrams &&
           other.servings == this.servings &&
-          other.orderIndex == this.orderIndex);
+          other.orderIndex == this.orderIndex &&
+          other.isEaten == this.isEaten &&
+          other.kcal == this.kcal &&
+          other.proteinG == this.proteinG &&
+          other.carbsG == this.carbsG &&
+          other.fatG == this.fatG &&
+          other.labelSnapshot == this.labelSnapshot);
 }
 
 class MealPlanEntriesCompanion extends UpdateCompanion<MealPlanEntry> {
@@ -3319,6 +3598,12 @@ class MealPlanEntriesCompanion extends UpdateCompanion<MealPlanEntry> {
   final Value<double?> quantityGrams;
   final Value<double?> servings;
   final Value<int> orderIndex;
+  final Value<bool> isEaten;
+  final Value<double?> kcal;
+  final Value<double?> proteinG;
+  final Value<double?> carbsG;
+  final Value<double?> fatG;
+  final Value<String?> labelSnapshot;
   const MealPlanEntriesCompanion({
     this.id = const Value.absent(),
     this.date = const Value.absent(),
@@ -3328,6 +3613,12 @@ class MealPlanEntriesCompanion extends UpdateCompanion<MealPlanEntry> {
     this.quantityGrams = const Value.absent(),
     this.servings = const Value.absent(),
     this.orderIndex = const Value.absent(),
+    this.isEaten = const Value.absent(),
+    this.kcal = const Value.absent(),
+    this.proteinG = const Value.absent(),
+    this.carbsG = const Value.absent(),
+    this.fatG = const Value.absent(),
+    this.labelSnapshot = const Value.absent(),
   });
   MealPlanEntriesCompanion.insert({
     this.id = const Value.absent(),
@@ -3338,6 +3629,12 @@ class MealPlanEntriesCompanion extends UpdateCompanion<MealPlanEntry> {
     this.quantityGrams = const Value.absent(),
     this.servings = const Value.absent(),
     required int orderIndex,
+    this.isEaten = const Value.absent(),
+    this.kcal = const Value.absent(),
+    this.proteinG = const Value.absent(),
+    this.carbsG = const Value.absent(),
+    this.fatG = const Value.absent(),
+    this.labelSnapshot = const Value.absent(),
   }) : date = Value(date),
        mealType = Value(mealType),
        orderIndex = Value(orderIndex);
@@ -3350,6 +3647,12 @@ class MealPlanEntriesCompanion extends UpdateCompanion<MealPlanEntry> {
     Expression<double>? quantityGrams,
     Expression<double>? servings,
     Expression<int>? orderIndex,
+    Expression<bool>? isEaten,
+    Expression<double>? kcal,
+    Expression<double>? proteinG,
+    Expression<double>? carbsG,
+    Expression<double>? fatG,
+    Expression<String>? labelSnapshot,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3360,6 +3663,12 @@ class MealPlanEntriesCompanion extends UpdateCompanion<MealPlanEntry> {
       if (quantityGrams != null) 'quantity_grams': quantityGrams,
       if (servings != null) 'servings': servings,
       if (orderIndex != null) 'order_index': orderIndex,
+      if (isEaten != null) 'is_eaten': isEaten,
+      if (kcal != null) 'kcal': kcal,
+      if (proteinG != null) 'protein_g': proteinG,
+      if (carbsG != null) 'carbs_g': carbsG,
+      if (fatG != null) 'fat_g': fatG,
+      if (labelSnapshot != null) 'label_snapshot': labelSnapshot,
     });
   }
 
@@ -3372,6 +3681,12 @@ class MealPlanEntriesCompanion extends UpdateCompanion<MealPlanEntry> {
     Value<double?>? quantityGrams,
     Value<double?>? servings,
     Value<int>? orderIndex,
+    Value<bool>? isEaten,
+    Value<double?>? kcal,
+    Value<double?>? proteinG,
+    Value<double?>? carbsG,
+    Value<double?>? fatG,
+    Value<String?>? labelSnapshot,
   }) {
     return MealPlanEntriesCompanion(
       id: id ?? this.id,
@@ -3382,6 +3697,12 @@ class MealPlanEntriesCompanion extends UpdateCompanion<MealPlanEntry> {
       quantityGrams: quantityGrams ?? this.quantityGrams,
       servings: servings ?? this.servings,
       orderIndex: orderIndex ?? this.orderIndex,
+      isEaten: isEaten ?? this.isEaten,
+      kcal: kcal ?? this.kcal,
+      proteinG: proteinG ?? this.proteinG,
+      carbsG: carbsG ?? this.carbsG,
+      fatG: fatG ?? this.fatG,
+      labelSnapshot: labelSnapshot ?? this.labelSnapshot,
     );
   }
 
@@ -3414,6 +3735,24 @@ class MealPlanEntriesCompanion extends UpdateCompanion<MealPlanEntry> {
     if (orderIndex.present) {
       map['order_index'] = Variable<int>(orderIndex.value);
     }
+    if (isEaten.present) {
+      map['is_eaten'] = Variable<bool>(isEaten.value);
+    }
+    if (kcal.present) {
+      map['kcal'] = Variable<double>(kcal.value);
+    }
+    if (proteinG.present) {
+      map['protein_g'] = Variable<double>(proteinG.value);
+    }
+    if (carbsG.present) {
+      map['carbs_g'] = Variable<double>(carbsG.value);
+    }
+    if (fatG.present) {
+      map['fat_g'] = Variable<double>(fatG.value);
+    }
+    if (labelSnapshot.present) {
+      map['label_snapshot'] = Variable<String>(labelSnapshot.value);
+    }
     return map;
   }
 
@@ -3427,7 +3766,13 @@ class MealPlanEntriesCompanion extends UpdateCompanion<MealPlanEntry> {
           ..write('recipeId: $recipeId, ')
           ..write('quantityGrams: $quantityGrams, ')
           ..write('servings: $servings, ')
-          ..write('orderIndex: $orderIndex')
+          ..write('orderIndex: $orderIndex, ')
+          ..write('isEaten: $isEaten, ')
+          ..write('kcal: $kcal, ')
+          ..write('proteinG: $proteinG, ')
+          ..write('carbsG: $carbsG, ')
+          ..write('fatG: $fatG, ')
+          ..write('labelSnapshot: $labelSnapshot')
           ..write(')'))
         .toString();
   }
@@ -5383,6 +5728,7 @@ typedef $$UserProfileTableCreateCompanionBuilder =
       Value<AppearanceMode> appearanceMode,
       Value<bool> remindersEnabled,
       Value<bool> onboardingCompleted,
+      Value<DateTime?> lastBackupAt,
     });
 typedef $$UserProfileTableUpdateCompanionBuilder =
     UserProfileCompanion Function({
@@ -5408,6 +5754,7 @@ typedef $$UserProfileTableUpdateCompanionBuilder =
       Value<AppearanceMode> appearanceMode,
       Value<bool> remindersEnabled,
       Value<bool> onboardingCompleted,
+      Value<DateTime?> lastBackupAt,
     });
 
 class $$UserProfileTableFilterComposer
@@ -5535,6 +5882,11 @@ class $$UserProfileTableFilterComposer
     column: $table.onboardingCompleted,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<DateTime> get lastBackupAt => $composableBuilder(
+    column: $table.lastBackupAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$UserProfileTableOrderingComposer
@@ -5655,6 +6007,11 @@ class $$UserProfileTableOrderingComposer
     column: $table.onboardingCompleted,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get lastBackupAt => $composableBuilder(
+    column: $table.lastBackupAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserProfileTableAnnotationComposer
@@ -5768,6 +6125,11 @@ class $$UserProfileTableAnnotationComposer
     column: $table.onboardingCompleted,
     builder: (column) => column,
   );
+
+  GeneratedColumn<DateTime> get lastBackupAt => $composableBuilder(
+    column: $table.lastBackupAt,
+    builder: (column) => column,
+  );
 }
 
 class $$UserProfileTableTableManager
@@ -5824,6 +6186,7 @@ class $$UserProfileTableTableManager
                 Value<AppearanceMode> appearanceMode = const Value.absent(),
                 Value<bool> remindersEnabled = const Value.absent(),
                 Value<bool> onboardingCompleted = const Value.absent(),
+                Value<DateTime?> lastBackupAt = const Value.absent(),
               }) => UserProfileCompanion(
                 id: id,
                 name: name,
@@ -5847,6 +6210,7 @@ class $$UserProfileTableTableManager
                 appearanceMode: appearanceMode,
                 remindersEnabled: remindersEnabled,
                 onboardingCompleted: onboardingCompleted,
+                lastBackupAt: lastBackupAt,
               ),
           createCompanionCallback:
               ({
@@ -5873,6 +6237,7 @@ class $$UserProfileTableTableManager
                 Value<AppearanceMode> appearanceMode = const Value.absent(),
                 Value<bool> remindersEnabled = const Value.absent(),
                 Value<bool> onboardingCompleted = const Value.absent(),
+                Value<DateTime?> lastBackupAt = const Value.absent(),
               }) => UserProfileCompanion.insert(
                 id: id,
                 name: name,
@@ -5896,6 +6261,7 @@ class $$UserProfileTableTableManager
                 appearanceMode: appearanceMode,
                 remindersEnabled: remindersEnabled,
                 onboardingCompleted: onboardingCompleted,
+                lastBackupAt: lastBackupAt,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -6728,6 +7094,12 @@ typedef $$MealPlanEntriesTableCreateCompanionBuilder =
       Value<double?> quantityGrams,
       Value<double?> servings,
       required int orderIndex,
+      Value<bool> isEaten,
+      Value<double?> kcal,
+      Value<double?> proteinG,
+      Value<double?> carbsG,
+      Value<double?> fatG,
+      Value<String?> labelSnapshot,
     });
 typedef $$MealPlanEntriesTableUpdateCompanionBuilder =
     MealPlanEntriesCompanion Function({
@@ -6739,6 +7111,12 @@ typedef $$MealPlanEntriesTableUpdateCompanionBuilder =
       Value<double?> quantityGrams,
       Value<double?> servings,
       Value<int> orderIndex,
+      Value<bool> isEaten,
+      Value<double?> kcal,
+      Value<double?> proteinG,
+      Value<double?> carbsG,
+      Value<double?> fatG,
+      Value<String?> labelSnapshot,
     });
 
 class $$MealPlanEntriesTableFilterComposer
@@ -6788,6 +7166,36 @@ class $$MealPlanEntriesTableFilterComposer
 
   ColumnFilters<int> get orderIndex => $composableBuilder(
     column: $table.orderIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isEaten => $composableBuilder(
+    column: $table.isEaten,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get kcal => $composableBuilder(
+    column: $table.kcal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get proteinG => $composableBuilder(
+    column: $table.proteinG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get carbsG => $composableBuilder(
+    column: $table.carbsG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fatG => $composableBuilder(
+    column: $table.fatG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get labelSnapshot => $composableBuilder(
+    column: $table.labelSnapshot,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6840,6 +7248,36 @@ class $$MealPlanEntriesTableOrderingComposer
     column: $table.orderIndex,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isEaten => $composableBuilder(
+    column: $table.isEaten,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get kcal => $composableBuilder(
+    column: $table.kcal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get proteinG => $composableBuilder(
+    column: $table.proteinG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get carbsG => $composableBuilder(
+    column: $table.carbsG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fatG => $composableBuilder(
+    column: $table.fatG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get labelSnapshot => $composableBuilder(
+    column: $table.labelSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$MealPlanEntriesTableAnnotationComposer
@@ -6876,6 +7314,26 @@ class $$MealPlanEntriesTableAnnotationComposer
 
   GeneratedColumn<int> get orderIndex => $composableBuilder(
     column: $table.orderIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isEaten =>
+      $composableBuilder(column: $table.isEaten, builder: (column) => column);
+
+  GeneratedColumn<double> get kcal =>
+      $composableBuilder(column: $table.kcal, builder: (column) => column);
+
+  GeneratedColumn<double> get proteinG =>
+      $composableBuilder(column: $table.proteinG, builder: (column) => column);
+
+  GeneratedColumn<double> get carbsG =>
+      $composableBuilder(column: $table.carbsG, builder: (column) => column);
+
+  GeneratedColumn<double> get fatG =>
+      $composableBuilder(column: $table.fatG, builder: (column) => column);
+
+  GeneratedColumn<String> get labelSnapshot => $composableBuilder(
+    column: $table.labelSnapshot,
     builder: (column) => column,
   );
 }
@@ -6921,6 +7379,12 @@ class $$MealPlanEntriesTableTableManager
                 Value<double?> quantityGrams = const Value.absent(),
                 Value<double?> servings = const Value.absent(),
                 Value<int> orderIndex = const Value.absent(),
+                Value<bool> isEaten = const Value.absent(),
+                Value<double?> kcal = const Value.absent(),
+                Value<double?> proteinG = const Value.absent(),
+                Value<double?> carbsG = const Value.absent(),
+                Value<double?> fatG = const Value.absent(),
+                Value<String?> labelSnapshot = const Value.absent(),
               }) => MealPlanEntriesCompanion(
                 id: id,
                 date: date,
@@ -6930,6 +7394,12 @@ class $$MealPlanEntriesTableTableManager
                 quantityGrams: quantityGrams,
                 servings: servings,
                 orderIndex: orderIndex,
+                isEaten: isEaten,
+                kcal: kcal,
+                proteinG: proteinG,
+                carbsG: carbsG,
+                fatG: fatG,
+                labelSnapshot: labelSnapshot,
               ),
           createCompanionCallback:
               ({
@@ -6941,6 +7411,12 @@ class $$MealPlanEntriesTableTableManager
                 Value<double?> quantityGrams = const Value.absent(),
                 Value<double?> servings = const Value.absent(),
                 required int orderIndex,
+                Value<bool> isEaten = const Value.absent(),
+                Value<double?> kcal = const Value.absent(),
+                Value<double?> proteinG = const Value.absent(),
+                Value<double?> carbsG = const Value.absent(),
+                Value<double?> fatG = const Value.absent(),
+                Value<String?> labelSnapshot = const Value.absent(),
               }) => MealPlanEntriesCompanion.insert(
                 id: id,
                 date: date,
@@ -6950,6 +7426,12 @@ class $$MealPlanEntriesTableTableManager
                 quantityGrams: quantityGrams,
                 servings: servings,
                 orderIndex: orderIndex,
+                isEaten: isEaten,
+                kcal: kcal,
+                proteinG: proteinG,
+                carbsG: carbsG,
+                fatG: fatG,
+                labelSnapshot: labelSnapshot,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

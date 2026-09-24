@@ -21,6 +21,7 @@ class AddEntryOptionsSheet extends StatelessWidget {
   static Future<AddEntryAction?> show(BuildContext context) {
     return showModalBottomSheet<AddEntryAction>(
       context: context,
+      useRootNavigator: true,
       builder: (context) => const AddEntryOptionsSheet(),
     );
   }
@@ -41,11 +42,7 @@ class AddEntryOptionsSheet extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.menu_book_outlined),
               title: const Text('Añadir receta'),
-              onTap: () => Navigator.of(context).pop(AddEntryAction.recipe),
-            ),
-            ListTile(
-              leading: const Icon(Icons.bookmark_outline),
-              title: const Text('Añadir comida guardada'),
+              subtitle: const Text('Tus recetas y comidas guardadas'),
               onTap: () => Navigator.of(context).pop(AddEntryAction.recipe),
             ),
           ],

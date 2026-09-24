@@ -5,6 +5,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/macro_progress_bar.dart';
 import '../../../services/nutrition_engine/diary_summary_calculator.dart';
 
+// Always Proteínas · Carbos · Grasas — the same P · C · G order every macro
+// line in the app uses.
 class MacroProgressBars extends StatelessWidget {
   const MacroProgressBars({super.key, required this.summary});
 
@@ -17,19 +19,19 @@ class MacroProgressBars extends StatelessWidget {
       children: [
         Expanded(
           child: MacroProgressBar(
-            label: 'Carbohidratos',
-            consumedG: summary.consumed.carbsG,
-            targetG: summary.macroTargets.carbsG,
-            color: AppTheme.carbsColor,
+            label: 'Proteínas',
+            consumedG: summary.consumed.proteinG,
+            targetG: summary.macroTargets.proteinG,
+            color: AppTheme.proteinColor,
           ),
         ),
         const SizedBox(width: AppSpacing.lg),
         Expanded(
           child: MacroProgressBar(
-            label: 'Proteínas',
-            consumedG: summary.consumed.proteinG,
-            targetG: summary.macroTargets.proteinG,
-            color: AppTheme.proteinColor,
+            label: 'Carbos',
+            consumedG: summary.consumed.carbsG,
+            targetG: summary.macroTargets.carbsG,
+            color: AppTheme.carbsColor,
           ),
         ),
         const SizedBox(width: AppSpacing.lg),

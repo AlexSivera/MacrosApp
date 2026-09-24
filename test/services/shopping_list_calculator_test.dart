@@ -30,6 +30,7 @@ MealPlanEntry _foodEntry({required int id, required int foodId, required double 
       foodId: foodId,
       quantityGrams: grams,
       orderIndex: 0,
+      isEaten: false,
     );
 
 MealPlanEntry _recipeEntry({required int id, required int recipeId, required double servings}) =>
@@ -40,6 +41,7 @@ MealPlanEntry _recipeEntry({required int id, required int recipeId, required dou
       recipeId: recipeId,
       servings: servings,
       orderIndex: 0,
+      isEaten: false,
     );
 
 void main() {

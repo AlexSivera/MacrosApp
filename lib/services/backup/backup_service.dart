@@ -55,6 +55,14 @@ Future<String> exportBackup(AppDatabase db) async {
   return const JsonEncoder.withIndent('  ').convert(json);
 }
 
+// Drift's default JSON serializer writes DateTimes as epoch milliseconds;
+// accept an ISO string too in case that ever changes.
+DateTime? _parseJsonDate(Object? value) => switch (value) {
+      int ms => DateTime.fromMillisecondsSinceEpoch(ms),
+      String s => DateTime.tryParse(s),
+      _ => null,
+    };
+
 class BackupSummary {
   const BackupSummary({
     required this.foods,
@@ -147,17 +155,29 @@ Future<BackupSummary> importBackup(AppDatabase db, String jsonString) async {
     // (id/date/mealType/foodId/recipeId/quantityGrams/servings/orderIndex),
     // it just ignores the old snapshot macro columns as unknown JSON keys.
     final mealPlanEntriesJson = (data['mealPlanEntries'] ?? data['diaryEntries']) as List;
+    final today = DateTime.now();
     for (final raw in mealPlanEntriesJson.cast<Map<String, dynamic>>()) {
-      final entry = MealPlanEntry.fromJson(raw);
+      // Backups from before the planned/eaten split have no isEaten key.
+      // Pre-merge DiaryEntries rows carry their kcal snapshot (always eaten);
+      // otherwise anything up to today was shown as consumed back then.
+      final json = {...raw};
+      if (json['isEaten'] == null) {
+        final date = _parseJsonDate(json['date']);
+        json['isEaten'] = json['kcal'] != null || (date != null && !date.isAfter(today));
+      }
+      final entry = MealPlanEntry.fromJson(json);
       final mappedFoodId = entry.foodId != null ? foodIdMap[entry.foodId] : null;
       final mappedRecipeId = entry.recipeId != null ? recipeIdMap[entry.recipeId] : null;
       if (entry.foodId != null && mappedFoodId == null) continue;
       if (entry.recipeId != null && mappedRecipeId == null) continue;
-      await db.into(db.mealPlanEntries).insert(entry.toCompanion(true).copyWith(
+      final newId = await db.into(db.mealPlanEntries).insert(entry.toCompanion(true).copyWith(
             id: const Value.absent(),
             foodId: Value(mappedFoodId),
             recipeId: Value(mappedRecipeId),
           ));
+      // Eaten but never snapshotted (exported between the Diario/Plan merge
+      // and the planned/eaten split): freeze it now.
+      if (entry.isEaten && entry.kcal == null) await db.mealPlanDao.markEaten(newId);
     }
 
     for (final raw in (data['bodyWeightLogs'] as List).cast<Map<String, dynamic>>()) {

@@ -44,6 +44,10 @@ dependencies:
   image_picker: ^1.1.2
   file_picker: ^12.0.0
 
+  # Acceso al documento HTML en el build web (color de tema, splash,
+  # almacenamiento persistente) — ver lib/core/platform/web_shell.dart.
+  web: ^1.1.1
+
   # Sincronización de calorías quemadas desde Health Connect (Android) —
   # p.ej. datos de un Xiaomi Smart Band volcados ahí por Mi Fitness.
   # Solo Android/iOS: todo su uso está protegido con `kIsWeb` para no

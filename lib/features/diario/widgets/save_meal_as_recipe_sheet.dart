@@ -26,6 +26,7 @@ class SaveMealAsRecipeSheet extends ConsumerStatefulWidget {
   }) {
     return showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       builder: (context) => SaveMealAsRecipeSheet(entries: entries, mealType: mealType),
     );

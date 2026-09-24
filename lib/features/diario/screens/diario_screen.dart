@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/meal_types.dart';
+import '../../../core/theme/app_motion.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/celebration_overlay.dart';
-import '../../../core/widgets/fade_slide_in.dart';
 import '../../../core/widgets/shimmer_box.dart';
 import '../../../data/database/database_provider.dart';
 import '../../../services/health_connect/health_connect_service.dart';
@@ -16,6 +16,7 @@ import '../providers/diary_providers.dart';
 import '../widgets/calorie_summary_card.dart';
 import '../widgets/date_selector_bar.dart';
 import '../widgets/detalles_sheet.dart';
+import '../../../core/utils/dates.dart';
 
 class DiarioScreen extends ConsumerStatefulWidget {
   const DiarioScreen({super.key});
@@ -27,20 +28,14 @@ class DiarioScreen extends ConsumerStatefulWidget {
 class _DiarioScreenState extends ConsumerState<DiarioScreen> {
   late final ConfettiController _confetti =
       ConfettiController(duration: const Duration(milliseconds: 900));
-  DateTime? _celebratedForDate;
+  final _goalReachedByDate = <DateTime, bool>{};
+  bool _slideFromRight = true;
   bool _syncingHealthConnect = false;
 
   @override
   void dispose() {
     _confetti.dispose();
     super.dispose();
-  }
-
-  void _maybeCelebrate(DateTime date, bool goalReached) {
-    if (!goalReached) return;
-    if (_celebratedForDate == date) return;
-    _celebratedForDate = date;
-    _confetti.play();
   }
 
   // Pulls "calorías quemadas" for the selected day from Health Connect (e.g.
@@ -86,19 +81,83 @@ class _DiarioScreenState extends ConsumerState<DiarioScreen> {
     }
   }
 
+  // Celebrates only when the goal flips from "not reached" to "reached"
+  // while watching today — not when opening a day that already met it, nor
+  // when browsing past days.
+  void _maybeCelebrate(DateTime date, bool goalReached) {
+    final previous = _goalReachedByDate[date];
+    _goalReachedByDate[date] = goalReached;
+    if (previous == false &&
+        goalReached &&
+        date == ref.read(todayProvider) &&
+        mounted &&
+        !AppMotion.reduced(context)) {
+      _confetti.play();
+    }
+  }
+
+  void _shiftDay(int days) {
+    final notifier = ref.read(selectedDiaryDateProvider.notifier);
+    notifier.state = addDays(notifier.state, days);
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedDate = ref.watch(selectedDiaryDateProvider);
     final entriesAsync = ref.watch(diaryEntriesForSelectedDateProvider);
+    final previousDayEntries = ref.watch(diaryPreviousDayEntriesProvider).valueOrNull ?? const [];
     final summary = ref.watch(diarySummaryProvider);
+
+    // Slide direction for the day change: newer days come in from the right.
+    ref.listen(selectedDiaryDateProvider, (previous, next) {
+      if (previous != null) _slideFromRight = next.isAfter(previous);
+    });
 
     // "Goal reached" = within a tight band of the target, not just barely
     // over 0% — reaching 95-105% of target reads as "on plan today" without
-    // requiring the user to hit the number exactly.
-    final goalReached = summary.calorieTarget > 0 &&
-        summary.consumedKcal >= summary.calorieTarget * 0.95 &&
-        !summary.isOverTarget;
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeCelebrate(selectedDate, goalReached));
+    // requiring the user to hit the number exactly. Only judged once the
+    // day's entries have actually loaded, so the empty loading state never
+    // counts as "not reached yet".
+    final loaded = entriesAsync.hasValue && !entriesAsync.isLoading;
+    if (loaded) {
+      final goalReached = summary.calorieTarget > 0 &&
+          summary.consumedKcal >= summary.calorieTarget * 0.95 &&
+          !summary.isOverTarget;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _maybeCelebrate(selectedDate, goalReached));
+    }
+    final repeatableMeals = {for (final e in previousDayEntries) e.entry.mealType};
+
+    final dayContent = Column(
+      key: ValueKey(selectedDate),
+      children: [
+        CalorieSummaryCard(summary: summary),
+        const SizedBox(height: AppSpacing.xl),
+        entriesAsync.when(
+          data: (entries) {
+            final grouped = groupPlanEntriesByMeal(entries);
+            return Column(
+              children: [
+                for (final meal in mealSectionOrder) ...[
+                  PlanMealSectionCard(
+                    date: selectedDate,
+                    mealType: meal,
+                    entries: grouped[meal]!,
+                    diaryMode: true,
+                    canRepeatFromYesterday: repeatableMeals.contains(meal),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+              ],
+            );
+          },
+          loading: () => const _MealSectionsSkeleton(),
+          error: (err, _) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
+            child: Center(child: Text('Error al cargar el diario: $err')),
+          ),
+        ),
+      ],
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -124,38 +183,41 @@ class _DiarioScreenState extends ConsumerState<DiarioScreen> {
       ),
       body: Stack(
         children: [
-          RefreshIndicator(
-            onRefresh: () async {},
+          // A horizontal fling anywhere on the page moves one day back or
+          // forward (entry rows keep their own swipe-to-delete, which wins
+          // the gesture when the drag starts on them).
+          GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onHorizontalDragEnd: (details) {
+              final velocity = details.primaryVelocity ?? 0;
+              if (velocity < -300) _shiftDay(1);
+              if (velocity > 300) _shiftDay(-1);
+            },
             child: ListView(
               padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
                 const DateSelectorBar(),
                 const SizedBox(height: AppSpacing.lg),
-                FadeSlideIn(child: CalorieSummaryCard(summary: summary)),
-                const SizedBox(height: AppSpacing.xl),
-                entriesAsync.when(
-                  data: (entries) {
-                    final grouped = groupPlanEntriesByMeal(entries);
-                    return Column(
-                      children: [
-                        for (final meal in mealSectionOrder) ...[
-                          FadeSlideIn(
-                            child: PlanMealSectionCard(
-                              date: selectedDate,
-                              mealType: meal,
-                              entries: grouped[meal]!,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                        ],
-                      ],
+                AnimatedSwitcher(
+                  duration: AppMotion.of(context, AppMotion.normal),
+                  switchInCurve: AppMotion.curve,
+                  switchOutCurve: Curves.easeInCubic,
+                  layoutBuilder: (current, previous) => Stack(
+                    alignment: Alignment.topCenter,
+                    children: [...previous, ?current],
+                  ),
+                  transitionBuilder: (child, animation) {
+                    final incoming = child.key == ValueKey(selectedDate);
+                    final dx = (_slideFromRight ? 1 : -1) * (incoming ? 0.12 : -0.12);
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween(begin: Offset(dx, 0), end: Offset.zero).animate(animation),
+                        child: child,
+                      ),
                     );
                   },
-                  loading: () => const _MealSectionsSkeleton(),
-                  error: (err, _) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
-                    child: Center(child: Text('Error al cargar el diario: $err')),
-                  ),
+                  child: dayContent,
                 ),
               ],
             ),

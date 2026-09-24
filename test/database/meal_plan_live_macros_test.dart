@@ -3,11 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:macrosapp/data/database/app_database.dart';
 import 'package:macrosapp/services/nutrition_engine/meal_plan_macros_calculator.dart';
 
-// Since the Diario/Plan merge, MealPlanEntries never snapshots macros (see
-// meal_plan_entries_table.dart) — a logged day is meant to track live edits
-// to the food/recipe it points to, not freeze them. This file used to
-// assert the opposite (the pre-merge DiaryEntries behavior); these tests
-// assert the new, intentional one instead.
+// A *planned* MealPlanEntry (isEaten = false, the default) never snapshots
+// macros — a plan tracks live edits to the food/recipe it points to. Eaten
+// entries are frozen instead: see meal_plan_eaten_snapshot_test.dart.
 void main() {
   late AppDatabase db;
 

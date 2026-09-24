@@ -32,6 +32,7 @@ class AddIngredientSheet extends StatefulWidget {
   static Future<IngredientDraft?> showForFood(BuildContext context, Food food) {
     return showModalBottomSheet<IngredientDraft>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       builder: (context) => AddIngredientSheet(food: food),
     );

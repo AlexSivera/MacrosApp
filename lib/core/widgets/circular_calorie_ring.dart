@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_motion.dart';
 import '../theme/app_theme.dart';
+import 'animated_number.dart';
 
 // The Diario's centerpiece — a ring showing consumed/target calories, with
 // the "Restantes" figure as the number inside it. fraction is always
@@ -12,7 +13,9 @@ import '../theme/app_theme.dart';
 //
 // Drawn as an open gauge (270° sweep, gap centered at the bottom) rather
 // than a closed circle — a full ring reads as "done"/a clock face, while
-// the open gauge reads as a meter with headroom left in it.
+// the open gauge reads as a meter with headroom left in it. Flat strokes
+// only (no glow), and every color comes from the active theme so the
+// Verde/Pastel/Claro skins don't get a near-black track.
 class CircularCalorieRing extends StatelessWidget {
   const CircularCalorieRing({
     super.key,
@@ -20,12 +23,12 @@ class CircularCalorieRing extends StatelessWidget {
     required this.centerValue,
     required this.centerLabel,
     this.isOverTarget = false,
-    this.size = 168,
-    this.strokeWidth = 14,
+    this.size = 140,
+    this.strokeWidth = 12,
   });
 
   final double fraction;
-  final String centerValue;
+  final int centerValue;
   final String centerLabel;
   final bool isOverTarget;
   final double size;
@@ -38,6 +41,7 @@ class CircularCalorieRing extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final ringColor = isOverTarget ? AppTheme.statusOverTarget : theme.colorScheme.primary;
+    final trackColor = theme.colorScheme.onSurface.withValues(alpha: 0.08);
 
     return SizedBox(
       width: size,
@@ -47,30 +51,36 @@ class CircularCalorieRing extends StatelessWidget {
         children: [
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0, end: fraction),
-            duration: AppMotion.slow,
+            duration: AppMotion.of(context, AppMotion.counter),
             curve: AppMotion.curve,
             builder: (context, value, _) => CustomPaint(
               size: Size(size, size),
               painter: _GaugePainter(
-                trackColor: AppTheme.statusEmpty,
+                trackColor: trackColor,
                 progressColor: ringColor,
                 strokeWidth: strokeWidth,
                 fraction: value,
               ),
             ),
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                centerValue,
-                style: theme.textTheme.displaySmall?.copyWith(
-                  color: isOverTarget ? AppTheme.statusOverTarget : null,
-                  fontSize: 28,
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: strokeWidth + 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: AnimatedNumber(
+                    value: centerValue,
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      color: isOverTarget ? AppTheme.statusOverTarget : null,
+                      fontSize: 28,
+                    ),
+                  ),
                 ),
-              ),
-              Text(centerLabel, style: theme.textTheme.bodySmall),
-            ],
+                Text(centerLabel, style: theme.textTheme.bodySmall, maxLines: 1),
+              ],
+            ),
           ),
         ],
       ),
@@ -110,19 +120,6 @@ class _GaugePainter extends CustomPainter {
 
     if (fraction > 0) {
       final sweep = CircularCalorieRing._sweepAngle * fraction.clamp(0, 1);
-
-      // A soft blurred pass of the same stroke, drawn first and only
-      // slightly wider, so the glow hugs the arc itself — a BoxShadow on
-      // the widget would instead shadow the ring's full circular bounds,
-      // washing the whole card center with a flat tinted disc.
-      final glowPaint = Paint()
-        ..color = progressColor.withValues(alpha: 0.45)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth + 6
-        ..strokeCap = StrokeCap.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-      canvas.drawArc(ringRect, CircularCalorieRing._startAngle, sweep, false, glowPaint);
-
       final progressPaint = Paint()
         ..color = progressColor
         ..style = PaintingStyle.stroke

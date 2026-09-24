@@ -54,7 +54,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -91,6 +91,23 @@ class AppDatabase extends _$AppDatabase {
           if (from < 7) {
             await m.createTable(customLists);
             await m.createTable(customListItems);
+          }
+          if (from < 8) {
+            // Planned vs. eaten split. The table was created with the current
+            // schema (these columns included) by the from < 4 step above, so
+            // only add them when it already existed before this upgrade.
+            if (from >= 4) {
+              await m.addColumn(mealPlanEntries, mealPlanEntries.isEaten);
+              await m.addColumn(mealPlanEntries, mealPlanEntries.kcal);
+              await m.addColumn(mealPlanEntries, mealPlanEntries.proteinG);
+              await m.addColumn(mealPlanEntries, mealPlanEntries.carbsG);
+              await m.addColumn(mealPlanEntries, mealPlanEntries.fatG);
+              await m.addColumn(mealPlanEntries, mealPlanEntries.labelSnapshot);
+            }
+            await m.addColumn(userProfile, userProfile.lastBackupAt);
+            // Everything up to today was shown as "consumed" before this split
+            // existed, so it stays that way — frozen at today's values.
+            await mealPlanDao.backfillEatenUpTo(DateTime.now());
           }
         },
         beforeOpen: (details) async {

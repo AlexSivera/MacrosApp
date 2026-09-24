@@ -6,12 +6,17 @@ class DiarySummary {
     required this.consumed,
     required this.burnedKcal,
     required this.macroTargets,
+    this.plannedKcal = 0,
   });
 
   final int calorieTarget;
   final FoodMacros consumed;
   final double burnedKcal;
   final FoodMacros macroTargets; // .kcal unused here — carries protein/carbs/fat targets only
+
+  // Kcal still only planned (not ticked as eaten) for the day — shown as a
+  // hint in the Diario, never counted in consumidas/restantes.
+  final double plannedKcal;
 
   double get consumedKcal => consumed.kcal;
 

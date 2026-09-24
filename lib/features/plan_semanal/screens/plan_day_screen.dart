@@ -31,7 +31,7 @@ class PlanDayScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
-          CalorieSummaryCard(summary: summary),
+          CalorieSummaryCard(summary: summary, consumedLabel: 'Planificadas'),
           const SizedBox(height: AppSpacing.md),
           entriesAsync.when(
             data: (entries) {

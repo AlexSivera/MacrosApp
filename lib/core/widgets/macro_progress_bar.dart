@@ -41,7 +41,7 @@ class MacroProgressBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.pill),
           child: TweenAnimationBuilder<double>(
             tween: Tween(begin: 0, end: fraction),
-            duration: AppMotion.slow,
+            duration: AppMotion.of(context, AppMotion.counter),
             curve: AppMotion.curve,
             builder: (context, value, _) => LinearProgressIndicator(
               value: value,

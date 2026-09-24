@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
+import '../../../services/nutrition_engine/food_macros_calculator.dart';
 import '../providers/food_search_providers.dart';
 import 'custom_food_form_sheet.dart';
 import 'food_category_chips.dart';
@@ -17,6 +19,7 @@ class FoodSearchSheet extends ConsumerWidget {
   static Future<Food?> show(BuildContext context) {
     return showModalBottomSheet<Food>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       builder: (context) => const FoodSearchSheet(),
     );
@@ -25,12 +28,17 @@ class FoodSearchSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final resultsAsync = ref.watch(foodSearchResultsProvider);
+    final showRecents =
+        ref.watch(foodSearchQueryProvider).trim().isEmpty && ref.watch(foodCategoryFilterProvider) == null;
+    final recents = showRecents ? ref.watch(recentFoodsProvider).valueOrNull ?? const <Food>[] : const <Food>[];
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        // Lifts the sheet above the on-screen keyboard.
+        padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.lg + keyboard),
         child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.75,
+          height: (MediaQuery.sizeOf(context).height - keyboard) * 0.8,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -49,18 +57,27 @@ class FoodSearchSheet extends ConsumerWidget {
               const FoodCategoryChips(),
               const SizedBox(height: AppSpacing.md),
               Expanded(
+                // skipLoadingOnReload keeps the previous results on screen while
+                // the next query runs, instead of flashing a spinner per keystroke.
                 child: resultsAsync.when(
+                  skipLoadingOnReload: true,
                   data: (foods) {
                     if (foods.isEmpty) {
                       return const _EmptySearchState();
                     }
-                    return ListView.separated(
-                      itemCount: foods.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
-                      itemBuilder: (context, index) {
-                        final food = foods[index];
-                        return _FoodResultTile(food: food);
-                      },
+                    final header = <Widget>[
+                      if (recents.isNotEmpty) ...[
+                        const _SectionHeader('Recientes'),
+                        for (final food in recents) _FoodResultTile(food: food),
+                        const _SectionHeader('Todos los alimentos'),
+                      ],
+                    ];
+                    // Lazily built: the full catalog is a few hundred rows.
+                    return ListView.builder(
+                      itemCount: header.length + foods.length,
+                      itemBuilder: (context, index) => index < header.length
+                          ? header[index]
+                          : _FoodResultTile(food: foods[index - header.length]),
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
@@ -96,8 +113,7 @@ class _FoodResultTile extends ConsumerWidget {
       contentPadding: EdgeInsets.zero,
       title: Text(food.name, style: theme.textTheme.bodyLarge),
       subtitle: Text(
-        '${food.kcalPer100g.round()} kcal · P ${food.proteinPer100g.round()}g · '
-        'C ${food.carbsPer100g.round()}g · G ${food.fatPer100g.round()}g  (100g)',
+        '${macroLine(FoodMacros(kcal: food.kcalPer100g, proteinG: food.proteinPer100g, carbsG: food.carbsPer100g, fatG: food.fatPer100g))} · 100 g',
         style: theme.textTheme.bodySmall,
       ),
       trailing: Row(
@@ -163,6 +179,24 @@ class _EmptySearchState extends StatelessWidget {
         'No se han encontrado alimentos.\nPrueba a crear uno personalizado.',
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.bodyMedium,
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.xs),
+      child: Text(
+        text.toUpperCase(),
+        style: theme.textTheme.labelMedium?.copyWith(letterSpacing: 0.6),
       ),
     );
   }

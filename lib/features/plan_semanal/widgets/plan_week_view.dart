@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../data/database/daos/meal_plan_dao.dart';
 import '../providers/meal_plan_providers.dart';
+import '../../../core/utils/dates.dart';
 
 // Week header: date range + prev/next-week arrows, mirroring
 // PlanMonthHeader's shape but for a 7-day window instead of a month.
@@ -17,7 +18,7 @@ class PlanWeekHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final monday = ref.watch(selectedPlanWeekStartProvider);
-    final sunday = monday.add(const Duration(days: 6));
+    final sunday = addDays(monday, 6);
     final sameMonth = monday.month == sunday.month;
     final range = sameMonth
         ? '${monday.day} - ${sunday.day} de ${_capitalize(DateFormat('MMMM', 'es').format(sunday))}'
@@ -31,13 +32,13 @@ class PlanWeekHeader extends ConsumerWidget {
           tooltip: 'Semana anterior',
           icon: const Icon(Icons.chevron_left_rounded),
           onPressed: () => ref.read(selectedPlanWeekStartProvider.notifier).state =
-              monday.subtract(const Duration(days: 7)),
+              addDays(monday, -7),
         ),
         IconButton(
           tooltip: 'Semana siguiente',
           icon: const Icon(Icons.chevron_right_rounded),
           onPressed: () => ref.read(selectedPlanWeekStartProvider.notifier).state =
-              monday.add(const Duration(days: 7)),
+              addDays(monday, 7),
         ),
       ],
     );

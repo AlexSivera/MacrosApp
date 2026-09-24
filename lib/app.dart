@@ -3,9 +3,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'core/platform/web_shell.dart';
 import 'core/theme/app_theme.dart';
 import 'data/database/enums.dart';
 import 'features/diario/providers/diary_providers.dart';
+import 'features/plan_semanal/providers/meal_plan_providers.dart';
 
 ThemeMode _toThemeMode(AppearanceMode mode) => switch (mode) {
       AppearanceMode.dark => ThemeMode.dark,
@@ -42,10 +44,13 @@ class MacrosApp extends ConsumerStatefulWidget {
 
 class _MacrosAppState extends ConsumerState<MacrosApp> {
   final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+  late final AppLifecycleListener _lifecycle;
 
   @override
   void initState() {
     super.initState();
+    requestPersistentStorage();
+    _lifecycle = AppLifecycleListener(onResume: _rollOverDay, onShow: _rollOverDay);
     if (widget.skippedSeedDeletions.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(
@@ -57,6 +62,36 @@ class _MacrosAppState extends ConsumerState<MacrosApp> {
         ));
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  // An installed PWA is often resumed days after it was opened. When the
+  // calendar day changed while it was in the background, move every "current
+  // period" view that was still showing the old today along to the new one —
+  // but leave alone any view the user had deliberately navigated elsewhere.
+  void _rollOverDay() {
+    final oldToday = ref.read(todayProvider);
+    final newToday = currentDay();
+    if (oldToday == newToday) return;
+    ref.read(todayProvider.notifier).state = newToday;
+
+    void follow(StateProvider<DateTime> provider, DateTime oldValue, DateTime newValue) {
+      if (ref.read(provider) == oldValue) ref.read(provider.notifier).state = newValue;
+    }
+
+    follow(selectedDiaryDateProvider, oldToday, newToday);
+    follow(selectedPlanWeekStartProvider, mondayOf(oldToday), mondayOf(newToday));
+    follow(shoppingListWeekStartProvider, mondayOf(oldToday), mondayOf(newToday));
+    follow(
+      selectedPlanMonthProvider,
+      DateTime(oldToday.year, oldToday.month, 1),
+      DateTime(newToday.year, newToday.month, 1),
+    );
   }
 
   @override
@@ -72,6 +107,9 @@ class _MacrosAppState extends ConsumerState<MacrosApp> {
       theme: fixedTheme ?? AppTheme.light,
       darkTheme: fixedTheme ?? AppTheme.dark,
       themeMode: _toThemeMode(appearanceMode),
+      // Lerping between two skins produced muddy grey frames with heavy
+      // shadows mid-way; an instant switch reads cleaner.
+      themeAnimationDuration: Duration.zero,
       routerConfig: widget.router,
       locale: const Locale('es'),
       supportedLocales: const [Locale('es')],
@@ -80,6 +118,12 @@ class _MacrosAppState extends ConsumerState<MacrosApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      builder: (context, child) {
+        // Keeps the browser's theme-color / page background in step with
+        // whichever theme actually resolved (incl. "Sistema").
+        applyWebShellColor(Theme.of(context).scaffoldBackgroundColor);
+        return child!;
+      },
     );
   }
 }

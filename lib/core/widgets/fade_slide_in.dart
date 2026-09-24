@@ -34,7 +34,7 @@ class _FadeSlideInState extends State<FadeSlideIn> {
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: _visible ? 1 : 0),
-      duration: AppMotion.normal,
+      duration: AppMotion.of(context, AppMotion.normal),
       curve: AppMotion.curve,
       builder: (context, value, child) => Opacity(
         opacity: value,

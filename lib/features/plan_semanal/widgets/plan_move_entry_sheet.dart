@@ -17,6 +17,7 @@ class PlanMoveEntrySheet extends ConsumerWidget {
   static Future<void> show(BuildContext context, {required int entryId, required DateTime currentDate}) {
     return showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       builder: (context) => PlanMoveEntrySheet(entryId: entryId, currentDate: currentDate),
     );
   }

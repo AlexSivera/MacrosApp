@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../data/database/enums.dart';
 import '../../recetas/providers/recipes_providers.dart';
 import '../../recetas/widgets/recipe_filter_chips.dart';
@@ -13,20 +14,28 @@ import 'plan_recipe_quantity_sheet.dart';
 // picker: it starts pre-set to the slot's meal and must never leak onto the
 // Recetas tab's own shared filter.
 class PlanRecipePickerSheet extends ConsumerStatefulWidget {
-  const PlanRecipePickerSheet({super.key, required this.date, required this.mealType});
+  const PlanRecipePickerSheet({
+    super.key,
+    required this.date,
+    required this.mealType,
+    this.eaten = false,
+  });
 
   final DateTime date;
   final MealType mealType;
+  final bool eaten;
 
   static Future<void> show(
     BuildContext context, {
     required DateTime date,
     required MealType mealType,
+    bool eaten = false,
   }) {
     return showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      builder: (context) => PlanRecipePickerSheet(date: date, mealType: mealType),
+      builder: (context) => PlanRecipePickerSheet(date: date, mealType: mealType, eaten: eaten),
     );
   }
 
@@ -51,7 +60,7 @@ class _PlanRecipePickerSheetState extends ConsumerState<PlanRecipePickerSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Añadir receta al plan', style: theme.textTheme.titleLarge),
+              Text(widget.eaten ? 'Añadir receta' : 'Añadir receta al plan', style: theme.textTheme.titleLarge),
               const SizedBox(height: AppSpacing.md),
               TextField(
                 autofocus: true,
@@ -90,9 +99,13 @@ class _PlanRecipePickerSheetState extends ConsumerState<PlanRecipePickerSheet> {
                         return _RecipeResultTile(
                           data: data,
                           onTap: () async {
+                            // The root navigator outlives this sheet, unlike its
+                            // own context, which is gone once it pops.
+                            final rootContext = Navigator.of(context, rootNavigator: true).context;
                             Navigator.of(context).pop();
                             await PlanRecipeQuantitySheet.showAdd(
-                              context,
+                              rootContext,
+                              eaten: widget.eaten,
                               recipe: data.recipe,
                               date: widget.date,
                               mealType: widget.mealType,
@@ -161,10 +174,7 @@ class _RecipeResultTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${data.perServing.kcal.round()} kcal · '
-                  'P${data.perServing.proteinG.round()} '
-                  'C${data.perServing.carbsG.round()} '
-                  'G${data.perServing.fatG.round()}',
+                  '${macroLine(data.perServing)} · por ración',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall,

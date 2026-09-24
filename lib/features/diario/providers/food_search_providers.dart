@@ -14,3 +14,12 @@ final foodSearchResultsProvider = StreamProvider.autoDispose<List<Food>>((ref) {
   final foodsDao = ref.watch(appDatabaseProvider).foodsDao;
   return foodsDao.watchFiltered(query: query, category: category);
 });
+
+// "Recientes" at the top of an unfiltered search — the foods logged or
+// planned most recently, newest first.
+final recentFoodsProvider = FutureProvider.autoDispose<List<Food>>((ref) async {
+  final db = ref.watch(appDatabaseProvider);
+  final ids = await db.mealPlanDao.recentFoodIds();
+  final foods = await Future.wait(ids.map(db.foodsDao.getById));
+  return foods.nonNulls.toList();
+});

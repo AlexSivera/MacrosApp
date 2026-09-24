@@ -4,6 +4,7 @@ import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../../services/nutrition_engine/food_macros_calculator.dart';
 import '../../../services/nutrition_engine/meal_plan_macros_calculator.dart';
+import '../../../core/utils/dates.dart';
 
 enum ProgressRange { sevenDays, thirtyDays, threeMonths, sixMonths, oneYear }
 
@@ -30,7 +31,7 @@ final progressRangeProvider = StateProvider<ProgressRange>((ref) => ProgressRang
 DateTime _startOfRange(ProgressRange range) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
-  return today.subtract(Duration(days: range.days - 1));
+  return addDays(today, 1 - range.days);
 }
 
 final weightHistoryForRangeProvider = StreamProvider.autoDispose<List<BodyWeightLog>>((ref) {
@@ -50,18 +51,23 @@ class AverageMacros {
   final int dayCount;
 }
 
-// Averages the diary's logged macros over the selected range — divides by
-// the range's full day count (not just days with entries logged), so a
-// mostly-untracked range correctly shows a low average instead of an
-// inflated one.
+// Averages what was actually eaten over the days in the range that have
+// anything logged — dividing by the range's full length instead made a
+// brand-new user's first day read as "11 kcal/día" on the 30-day view.
+// Planned-but-not-eaten entries never count.
 final averageMacrosForRangeProvider = StreamProvider.autoDispose<AverageMacros>((ref) {
   final range = ref.watch(progressRangeProvider);
   final db = ref.watch(appDatabaseProvider);
   final start = _startOfRange(range);
-  return db.mealPlanDao.watchEntriesInRange(start, DateTime.now()).asyncMap((displays) async {
+  return db.mealPlanDao
+      .watchEntriesInRange(start, DateTime.now(), eatenOnly: true)
+      .asyncMap((displays) async {
     final macros = await Future.wait(displays.map((d) => resolveEntryMacros(db, d.entry)));
     final total = macros.fold(FoodMacros.zero, (sum, m) => sum + m);
-    final dayCount = range.days;
-    return AverageMacros(perDay: total / dayCount.toDouble(), dayCount: dayCount);
+    final dayCount = {for (final d in displays) d.entry.date}.length;
+    return AverageMacros(
+      perDay: dayCount == 0 ? FoodMacros.zero : total / dayCount.toDouble(),
+      dayCount: dayCount,
+    );
   });
 });

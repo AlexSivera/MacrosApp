@@ -8,6 +8,7 @@ import '../../../core/widgets/editable_checklist.dart';
 import '../../../data/database/database_provider.dart';
 import '../../diario/widgets/food_category_chips.dart';
 import '../providers/meal_plan_providers.dart';
+import '../../../core/utils/dates.dart';
 
 // A trip-friendly checklist for the week currently visible in Plan semanal.
 // Two independent modes per week (see ShoppingListWeekModes):
@@ -48,7 +49,7 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
                   tooltip: 'Semana anterior',
                   icon: const Icon(Icons.chevron_left_rounded),
                   onPressed: () => ref.read(shoppingListWeekStartProvider.notifier).state =
-                      weekStart.subtract(const Duration(days: 7)),
+                      addDays(weekStart, -7),
                 ),
                 Expanded(
                   child: Text(
@@ -62,7 +63,7 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
                   tooltip: 'Semana siguiente',
                   icon: const Icon(Icons.chevron_right_rounded),
                   onPressed: () => ref.read(shoppingListWeekStartProvider.notifier).state =
-                      weekStart.add(const Duration(days: 7)),
+                      addDays(weekStart, 7),
                 ),
               ],
             ),

@@ -6,17 +6,18 @@ import '../../../data/database/database_provider.dart';
 import '../../../services/nutrition_engine/food_macros_calculator.dart';
 import '../../../services/nutrition_engine/meal_plan_macros_calculator.dart';
 import '../../../services/shopping_list/shopping_list_calculator.dart';
+import '../../../core/utils/dates.dart';
 
 DateTime normalizeDate(DateTime date) => DateTime(date.year, date.month, date.day);
 
 DateTime mondayOf(DateTime date) {
   final normalized = normalizeDate(date);
-  return normalized.subtract(Duration(days: normalized.weekday - 1));
+  return addDays(normalized, 1 - normalized.weekday);
 }
 
 DateTime sundayOf(DateTime date) {
   final normalized = normalizeDate(date);
-  return normalized.add(Duration(days: DateTime.daysPerWeek - normalized.weekday));
+  return addDays(normalized, DateTime.daysPerWeek - normalized.weekday);
 }
 
 // yyyy-MM-dd, used as the /plan/dia/:fecha route param.
@@ -45,8 +46,8 @@ final monthGridDaysProvider = Provider<List<DateTime>>((ref) {
   final lastDayOfMonth = DateTime(month.year, month.month + 1, 0);
   final gridStart = mondayOf(month);
   final gridEnd = sundayOf(lastDayOfMonth);
-  final dayCount = gridEnd.difference(gridStart).inDays + 1;
-  return [for (var i = 0; i < dayCount; i++) gridStart.add(Duration(days: i))];
+  final dayCount = daysBetween(gridStart, gridEnd) + 1;
+  return [for (var i = 0; i < dayCount; i++) addDays(gridStart, i)];
 });
 
 // Backs the grid's per-day meal previews — one range query for every
@@ -80,7 +81,7 @@ final selectedPlanWeekStartProvider = StateProvider<DateTime>((ref) => mondayOf(
 
 final planWeekDaysProvider = Provider<List<DateTime>>((ref) {
   final monday = ref.watch(selectedPlanWeekStartProvider);
-  return [for (var i = 0; i < 7; i++) monday.add(Duration(days: i))];
+  return [for (var i = 0; i < 7; i++) addDays(monday, i)];
 });
 
 final mealPlanEntriesForWeekViewProvider =
@@ -139,7 +140,8 @@ FoodMacros? sumEntryMacros(
 ) {
   var total = FoodMacros.zero;
   for (final display in entries) {
-    final macros = watch(entryMacrosProvider(display.entry)).valueOrNull;
+    final macros =
+        snapshotMacros(display.entry) ?? watch(entryMacrosProvider(display.entry)).valueOrNull;
     if (macros == null) return null;
     total = total + macros;
   }
@@ -153,7 +155,7 @@ final shoppingListWeekStartProvider =
 
 final shoppingListWeekDaysProvider = Provider<List<DateTime>>((ref) {
   final monday = ref.watch(shoppingListWeekStartProvider);
-  return [for (var i = 0; i < 7; i++) monday.add(Duration(days: i))];
+  return [for (var i = 0; i < 7; i++) addDays(monday, i)];
 });
 
 // Resolves every Food/Recipe/RecipeIngredient the selected week's plan

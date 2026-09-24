@@ -8,15 +8,34 @@ import '../../../services/nutrition_engine/food_macros_calculator.dart';
 import '../../../services/nutrition_engine/macro_targets_calculator.dart';
 import '../../../services/nutrition_engine/tdee_calculator.dart';
 import '../../plan_semanal/providers/meal_plan_providers.dart';
+import '../../../core/utils/dates.dart';
 
 // The day currently shown in the Diario — normalized to midnight so it can
 // be compared directly against MealPlanEntries.date. The Diario is just the
 // Plan's entries for this one day (see meal_plan_entries_table.dart), so
 // everything else (which entries, their macros) is read straight from
 // meal_plan_providers.dart.
-final selectedDiaryDateProvider = StateProvider<DateTime>((ref) {
+final selectedDiaryDateProvider = StateProvider<DateTime>((ref) => ref.read(todayProvider));
+
+DateTime currentDay() {
   final now = DateTime.now();
   return DateTime(now.year, now.month, now.day);
+}
+
+// "Today", as the app currently believes it. A PWA can stay open (or
+// suspended) across midnight, so this is refreshed by MacrosApp whenever the
+// app comes back to the foreground — see _MacrosAppState._rollOverDay —
+// instead of being computed once at startup.
+final todayProvider = StateProvider<DateTime>((ref) => currentDay());
+
+// Yesterday's entries relative to the Diario's selected day — drives the
+// "Repetir de ayer" shortcut on empty meal slots.
+final diaryPreviousDayEntriesProvider = StreamProvider<List<MealPlanEntryDisplay>>((ref) {
+  final date = ref.watch(selectedDiaryDateProvider);
+  return ref
+      .watch(appDatabaseProvider)
+      .mealPlanDao
+      .watchEntriesForDate(addDays(date, -1));
 });
 
 final userProfileStreamProvider = StreamProvider<UserProfileData?>((ref) {
@@ -135,7 +154,11 @@ final _latestWeightStreamProvider = StreamProvider<BodyWeightLog?>((ref) {
 
 final diarySummaryProvider = Provider<DiarySummary>((ref) {
   final entries = ref.watch(diaryEntriesForSelectedDateProvider).valueOrNull ?? [];
-  final consumed = sumEntryMacros(ref.watch, entries) ?? FoodMacros.zero;
+  // Only what was actually eaten counts; still-planned entries are a hint.
+  final eaten = [for (final e in entries) if (e.entry.isEaten) e];
+  final planned = [for (final e in entries) if (!e.entry.isEaten) e];
+  final consumed = sumEntryMacros(ref.watch, eaten) ?? FoodMacros.zero;
+  final plannedKcal = sumEntryMacros(ref.watch, planned)?.kcal ?? 0;
   final burned = ref.watch(burnedCaloriesForSelectedDateProvider).valueOrNull ?? [];
   final targets = ref.watch(resolvedTargetsProvider);
 
@@ -145,6 +168,7 @@ final diarySummaryProvider = Provider<DiarySummary>((ref) {
     calorieTarget: targets.calorieTarget,
     consumed: consumed,
     burnedKcal: burnedKcal,
+    plannedKcal: plannedKcal,
     macroTargets: FoodMacros(
       kcal: 0,
       proteinG: targets.proteinG,

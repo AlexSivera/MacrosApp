@@ -36,4 +36,8 @@ class UserProfile extends Table {
 
   BoolColumn get remindersEnabled => boolean().withDefault(const Constant(true))();
   BoolColumn get onboardingCompleted => boolean().withDefault(const Constant(false))();
+
+  // Last successful "Exportar copia de seguridad" — drives the reminder in
+  // Perfil, since a PWA's local data has no other backup.
+  DateTimeColumn get lastBackupAt => dateTime().nullable()();
 }
