@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../data/database/daos/meal_plan_dao.dart';
 import '../providers/meal_plan_providers.dart';
+import 'plan_day_kcal.dart';
 import '../../../core/utils/dates.dart';
 
 // Week header: date range + prev/next-week arrows, mirroring
@@ -124,6 +125,8 @@ class _WeekDayCard extends StatelessWidget {
                   ),
                 ),
               ],
+              const Spacer(),
+              PlanDayKcal(entries: entries),
             ],
           ),
           if (previews.isEmpty) ...[

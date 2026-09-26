@@ -144,11 +144,11 @@ final resolvedTargetsProvider = Provider<ResolvedTargets>((ref) {
 });
 
 final latestWeightKgProvider = Provider<double?>((ref) {
-  final latest = ref.watch(_latestWeightStreamProvider).valueOrNull;
+  final latest = ref.watch(latestWeightLogProvider).valueOrNull;
   return latest?.weightKg;
 });
 
-final _latestWeightStreamProvider = StreamProvider<BodyWeightLog?>((ref) {
+final latestWeightLogProvider = StreamProvider<BodyWeightLog?>((ref) {
   return ref.watch(appDatabaseProvider).bodyWeightDao.watchLatest();
 });
 

@@ -9,6 +9,7 @@ import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../../services/nutrition_engine/food_macros_calculator.dart';
 import '../../../services/nutrition_engine/recipe_macros_calculator.dart';
+import 'added_entry_snack_bar.dart';
 
 // Servings-entry step for a recipe, on a given day — used by the Plan
 // (mealType known from the section tapped, planned), the Diario (eaten) and
@@ -78,6 +79,8 @@ class _PlanRecipeQuantitySheetState extends ConsumerState<PlanRecipeQuantityShee
     super.initState();
     final initial = widget.entry?.servings ?? 1.0;
     _controller = TextEditingController(text: formatInputNumber(initial));
+    // Pre-selected, so typing replaces the value instead of appending to it.
+    _controller.selection = TextSelection(baseOffset: 0, extentOffset: _controller.text.length);
     _mealType = widget.mealType ?? widget.entry?.mealType ?? MealType.lunch;
     _perServing = _loadPerServing();
   }
@@ -110,12 +113,13 @@ class _PlanRecipeQuantitySheetState extends ConsumerState<PlanRecipeQuantityShee
       return;
     }
     final db = ref.read(appDatabaseProvider);
+    final messenger = ScaffoldMessenger.of(context);
 
     if (widget.entry != null) {
       await db.mealPlanDao.updateEntryQuantity(widget.entry!.id, servings: servings);
     } else {
       final orderIndex = await db.mealPlanDao.nextOrderIndex(widget.date!, _mealType);
-      await db.mealPlanDao.addRecipe(
+      final entryId = await db.mealPlanDao.addRecipe(
         date: widget.date!,
         mealType: _mealType,
         recipeId: widget.recipe.id,
@@ -123,6 +127,7 @@ class _PlanRecipeQuantitySheetState extends ConsumerState<PlanRecipeQuantityShee
         orderIndex: orderIndex,
         eaten: widget.eaten,
       );
+      showAddedEntrySnackBar(messenger, db: db, entryId: entryId, mealType: _mealType, eaten: widget.eaten);
     }
 
     if (mounted) Navigator.of(context).pop();

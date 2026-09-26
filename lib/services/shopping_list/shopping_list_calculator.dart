@@ -27,7 +27,9 @@ class ShoppingListSection {
 // (the provider layer, via a handful of DB queries) so this stays a pure,
 // easily testable function with no DB access of its own. An entry whose
 // food/recipe was since deleted (foodsById/recipesById has no match) is
-// silently skipped rather than crashing the whole list.
+// silently skipped rather than crashing the whole list. Entries already
+// eaten are skipped too: what's been eaten was already bought, so only
+// what's still planned for the week is left to buy.
 List<ShoppingListItem> aggregateShoppingList({
   required List<MealPlanEntry> entries,
   required Map<int, Food> foodsById,
@@ -41,6 +43,7 @@ List<ShoppingListItem> aggregateShoppingList({
   }
 
   for (final entry in entries) {
+    if (entry.isEaten) continue;
     if (entry.foodId != null) {
       addGrams(entry.foodId!, entry.quantityGrams ?? 0);
       continue;

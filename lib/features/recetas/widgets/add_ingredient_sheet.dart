@@ -53,6 +53,8 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
     _controller = TextEditingController(
       text: initial == initial.roundToDouble() ? initial.round().toString() : initial.toString(),
     );
+    // Pre-selected, so typing replaces the value instead of appending to it.
+    _controller.selection = TextSelection(baseOffset: 0, extentOffset: _controller.text.length);
   }
 
   @override

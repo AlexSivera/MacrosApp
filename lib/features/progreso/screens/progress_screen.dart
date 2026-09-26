@@ -39,18 +39,17 @@ class ProgressScreen extends ConsumerWidget {
     final goalKg = goalType != GoalType.maintain && goalIsSet ? profile?.goalWeightKg : null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Progreso'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'Registrar peso',
-            onPressed: () => LogWeightSheet.show(context),
-          ),
-        ],
+      appBar: AppBar(title: const Text('Progreso')),
+      // Labelled rather than a bare "+" in the app bar, which didn't say
+      // what it added.
+      floatingActionButton: FloatingActionButton.extended(
+        icon: const Icon(Icons.monitor_weight_outlined),
+        label: const Text('Registrar peso'),
+        onPressed: () => LogWeightSheet.show(context),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        // Bottom room so the last card can scroll clear of the button.
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 96),
         children: [
           if (profile != null && !goalIsSet) ...[
             _SetGoalWeightCard(onTap: () => context.push('/perfil/objetivo')),

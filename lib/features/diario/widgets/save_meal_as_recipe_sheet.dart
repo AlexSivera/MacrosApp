@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../data/database/app_database.dart';
@@ -98,8 +99,9 @@ class _SaveMealAsRecipeSheetState extends ConsumerState<SaveMealAsRecipeSheet> {
       return;
     }
 
+    final name = _name.text.trim();
     final recipeId = await db.recipesDao.insert(RecipesCompanion.insert(
-      name: _name.text.trim(),
+      name: name,
       category: Value(_categoryFor(widget.mealType)),
     ));
     var orderIndex = 0;
@@ -113,7 +115,17 @@ class _SaveMealAsRecipeSheetState extends ConsumerState<SaveMealAsRecipeSheet> {
         ),
     ]);
 
-    if (mounted) Navigator.of(context).pop();
+    if (!mounted) return;
+    // Grabbed before the pop: this sheet's context is gone right after.
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    Navigator.of(context).pop();
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text('Receta «$name» guardada'),
+        action: SnackBarAction(label: 'Ver', onPressed: () => router.push('/recetas/$recipeId')),
+      ));
   }
 
   @override

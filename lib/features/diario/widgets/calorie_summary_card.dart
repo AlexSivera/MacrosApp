@@ -8,12 +8,9 @@ import '../../../services/nutrition_engine/diary_summary_calculator.dart';
 import 'macro_progress_bars.dart';
 
 class CalorieSummaryCard extends StatelessWidget {
-  const CalorieSummaryCard({super.key, required this.summary, this.consumedLabel = 'Consumidas'});
+  const CalorieSummaryCard({super.key, required this.summary});
 
   final DiarySummary summary;
-
-  // "Planificadas" on a Plan day, where nothing has been eaten yet.
-  final String consumedLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +22,7 @@ class CalorieSummaryCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: _StatColumn(value: summary.consumedKcal.round(), label: consumedLabel),
+                child: _StatColumn(value: summary.consumedKcal.round(), label: 'Consumidas'),
               ),
               CircularCalorieRing(
                 fraction: summary.ringFraction,

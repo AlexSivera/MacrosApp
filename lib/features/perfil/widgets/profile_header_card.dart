@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_add_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../data/database/app_database.dart';
 import '../../../core/utils/formatters.dart';
+import '../../progreso/screens/log_weight_sheet.dart';
 
 class ProfileHeaderCard extends StatelessWidget {
   const ProfileHeaderCard({super.key, required this.profile, required this.currentWeightKg});
@@ -24,7 +27,10 @@ class ProfileHeaderCard extends StatelessWidget {
     final name = profile.name?.trim().isNotEmpty == true ? profile.name! : 'Tu perfil';
     final initial = name.substring(0, 1).toUpperCase();
 
+    // The weight line leads to Progreso; the scale button logs a weigh-in
+    // right here.
     return AppCard(
+      onTap: () => context.push('/perfil/progreso'),
       child: Row(
         children: [
           CircleAvatar(
@@ -55,6 +61,7 @@ class ProfileHeaderCard extends StatelessWidget {
               ],
             ),
           ),
+          AppAddButton(label: 'Peso', onPressed: () => LogWeightSheet.show(context)),
         ],
       ),
     );

@@ -55,7 +55,9 @@ void main() {
     expect(find.text('Consumidas'), findsOneWidget);
     expect(find.text('Restantes'), findsOneWidget);
     expect(find.text('Quemadas'), findsOneWidget);
-    expect(find.textContaining('Sin registrar'), findsWidgets);
+    // An empty meal is a compact row: its label plus an "Añadir" action.
+    expect(find.text('Añadir'), findsNWidgets(6));
+    expect(find.textContaining('Sin registrar'), findsNothing);
 
     await _teardown(tester, container, db);
   });
@@ -141,6 +143,31 @@ void main() {
 
     expect(find.text('330'), findsOneWidget); // Consumidas
     expect(find.textContaining('kcal planeadas'), findsNothing);
+
+    await _teardown(tester, container, db);
+  });
+
+  testWidgets('the weigh-in reminder shows with no recent weight and hides after a weigh-in',
+      (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    await db.userProfileDao.ensureDefaultRow();
+    await db.userProfileDao.updateProfile(const UserProfileCompanion(
+      heightCm: Value(180),
+      startingWeightKg: Value(80),
+      onboardingCompleted: Value(true),
+    ));
+    await db.bodyWeightDao.logForDay(DateTime.now().subtract(const Duration(days: 9)), 80);
+    final container = ProviderContainer(overrides: [appDatabaseProvider.overrideWithValue(db)]);
+
+    await _pumpApp(tester, container, buildAppRouter(initialLocation: '/diario'));
+    expect(find.text('Registra tu peso'), findsOneWidget);
+    expect(find.text('El último fue hace 9 días.'), findsOneWidget);
+
+    await tester.runAsync(() => db.bodyWeightDao.logForDay(DateTime.now(), 79.5));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Registra tu peso'), findsNothing);
 
     await _teardown(tester, container, db);
   });

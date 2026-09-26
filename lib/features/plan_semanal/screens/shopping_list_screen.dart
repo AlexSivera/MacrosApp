@@ -108,7 +108,7 @@ class _AutomaticShoppingListState extends ConsumerState<_AutomaticShoppingList> 
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.xl),
               child: Text(
-                'No hay comidas planificadas para esta semana.\n'
+                'No queda nada planificado por comer esta semana.\n'
                 'Añade alimentos o recetas en Plan semanal y aparecerán aquí.',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium,
@@ -119,6 +119,13 @@ class _AutomaticShoppingListState extends ConsumerState<_AutomaticShoppingList> 
         return ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: Text(
+                'Lo planificado que aún no has comido. Lo ya comido no cuenta.',
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
             for (final section in sections) ...[
               AppCard(
                 child: Column(

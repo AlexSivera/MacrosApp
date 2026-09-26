@@ -22,7 +22,7 @@ Recipe _recipe(int id, {double servings = 1}) => Recipe(
       createdAt: DateTime(2026),
     );
 
-MealPlanEntry _foodEntry({required int id, required int foodId, required double grams}) =>
+MealPlanEntry _foodEntry({required int id, required int foodId, required double grams, bool eaten = false}) =>
     MealPlanEntry(
       id: id,
       date: DateTime(2026, 9, 14),
@@ -30,7 +30,7 @@ MealPlanEntry _foodEntry({required int id, required int foodId, required double 
       foodId: foodId,
       quantityGrams: grams,
       orderIndex: 0,
-      isEaten: false,
+      isEaten: eaten,
     );
 
 MealPlanEntry _recipeEntry({required int id, required int recipeId, required double servings}) =>
@@ -62,6 +62,27 @@ void main() {
 
       expect(items, hasLength(1));
       expect(items.single.grams, 350);
+    });
+
+    test('leaves out entries already eaten', () {
+      final chicken = _food(1, 'Pechuga de pollo');
+      final rice = _food(2, 'Arroz');
+      final entries = [
+        _foodEntry(id: 1, foodId: 1, grams: 200, eaten: true),
+        _foodEntry(id: 2, foodId: 1, grams: 150),
+        _foodEntry(id: 3, foodId: 2, grams: 80, eaten: true),
+      ];
+
+      final items = aggregateShoppingList(
+        entries: entries,
+        foodsById: {1: chicken, 2: rice},
+        recipesById: const {},
+        ingredientsByRecipeId: const {},
+      );
+
+      expect(items, hasLength(1));
+      expect(items.single.food.name, 'Pechuga de pollo');
+      expect(items.single.grams, 150);
     });
 
     // RecipeIngredients.grams is always for the recipe's whole batch (see

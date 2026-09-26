@@ -143,4 +143,38 @@ void main() {
     });
     await db.close();
   });
+
+  testWidgets('a fresh add starts from the last quantity used, pre-selected', (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final foodId = await db.foodsDao.insert(FoodsCompanion.insert(
+      name: 'Pechuga de pollo',
+      kcalPer100g: 165,
+      proteinPer100g: 31,
+      carbsPer100g: 0,
+      fatPer100g: 3.6,
+    ));
+    final chicken = (await db.foodsDao.getById(foodId))!;
+    final today = DateTime.now();
+    final date = DateTime(today.year, today.month, today.day);
+    await db.mealPlanDao.addFood(
+      date: date,
+      mealType: MealType.lunch,
+      foodId: foodId,
+      quantityGrams: 175,
+      orderIndex: 0,
+    );
+    final container = ProviderContainer(overrides: [appDatabaseProvider.overrideWithValue(db)]);
+
+    await _openSheet(tester, container, chicken, date);
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, '175');
+    expect(field.controller!.selection, const TextSelection(baseOffset: 0, extentOffset: 3));
+
+    await tester.runAsync(() async {
+      container.dispose();
+      await Future<void>.delayed(Duration.zero);
+    });
+    await db.close();
+  });
 }

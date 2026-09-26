@@ -100,33 +100,24 @@ class PlanMealSectionCard extends ConsumerWidget {
                     ),
                   ),
                 ],
+                // An empty meal is a single row — header plus its add
+                // action — so a fresh day isn't six tall "empty" cards.
+                if (isEmpty) AppAddButton(label: 'Añadir', onPressed: () => _addEntry(context)),
               ],
             ),
             if (isEmpty) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Padding(
-                padding: const EdgeInsets.only(left: 48),
-                child: Text(
-                  diaryMode ? 'Sin registrar' : 'Nada planificado',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Row(
-                children: [
-                  AppAddButton(label: 'Añadir', onPressed: () => _addEntry(context)),
-                  if (canRepeatFromYesterday) ...[
-                    const SizedBox(width: AppSpacing.sm),
-                    TextButton.icon(
+              if (canRepeatFromYesterday)
+                Padding(
+                  padding: const EdgeInsets.only(left: 40, top: AppSpacing.xs),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
                       icon: const Icon(Icons.replay_rounded, size: 18),
                       label: const Text('Repetir de ayer'),
                       onPressed: () => _repeatFromYesterday(context, ref),
                     ),
-                  ],
-                ],
-              ),
+                  ),
+                ),
             ] else ...[
               const Divider(height: AppSpacing.lg),
               for (var i = 0; i < entries.length; i++) ...[

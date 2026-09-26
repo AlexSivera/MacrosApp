@@ -219,6 +219,16 @@ class MealPlanDao extends DatabaseAccessor<AppDatabase> with _$MealPlanDaoMixin 
     return ids;
   }
 
+  // The grams used the last time this food was logged or planned, if ever.
+  Future<double?> lastFoodQuantityGrams(int foodId) async {
+    final row = await (select(mealPlanEntries)
+          ..where((e) => e.foodId.equals(foodId) & e.quantityGrams.isNotNull())
+          ..orderBy([(e) => OrderingTerm.desc(e.id)])
+          ..limit(1))
+        .getSingleOrNull();
+    return row?.quantityGrams;
+  }
+
   // The foods used most often in one meal slot ("Frecuentes en Desayuno"),
   // counted over that slot's latest 300 entries so old habits fade out. Ties
   // go to the most recently used; foods used only once aren't habits yet.

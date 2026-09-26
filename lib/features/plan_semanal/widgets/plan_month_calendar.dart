@@ -6,6 +6,7 @@ import '../../../core/constants/meal_types.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../data/database/daos/meal_plan_dao.dart';
 import '../providers/meal_plan_providers.dart';
+import 'plan_day_kcal.dart';
 
 // Month header: name + year, with prev/next-month arrows and a jump-to-date
 // shortcut — navigating by month here, unlike the Diario's day-by-day bar.
@@ -194,6 +195,8 @@ class _DayCell extends StatelessWidget {
                   ),
                 ),
                 if (previews.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  PlanDayKcal(entries: entries, compact: true, dimmed: dimmed),
                   const SizedBox(height: 3),
                   for (final preview in previews) _MealPreviewLine(preview: preview, dimmed: dimmed),
                 ],

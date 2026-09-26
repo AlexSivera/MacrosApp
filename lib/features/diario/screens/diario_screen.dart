@@ -16,6 +16,7 @@ import '../providers/diary_providers.dart';
 import '../widgets/calorie_summary_card.dart';
 import '../widgets/date_selector_bar.dart';
 import '../widgets/detalles_sheet.dart';
+import '../widgets/weigh_in_reminder.dart';
 import '../../../core/utils/dates.dart';
 
 class DiarioScreen extends ConsumerStatefulWidget {
@@ -131,6 +132,7 @@ class _DiarioScreenState extends ConsumerState<DiarioScreen> {
       key: ValueKey(selectedDate),
       children: [
         CalorieSummaryCard(summary: summary),
+        if (selectedDate == ref.watch(todayProvider)) const WeighInReminder(),
         const SizedBox(height: AppSpacing.xl),
         entriesAsync.when(
           data: (entries) {

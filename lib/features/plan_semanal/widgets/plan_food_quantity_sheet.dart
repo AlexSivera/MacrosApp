@@ -8,6 +8,7 @@ import '../../../core/widgets/macro_preview_row.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../../services/nutrition_engine/food_macros_calculator.dart';
+import 'added_entry_snack_bar.dart';
 
 enum _QuantityMode { grams, units }
 
@@ -29,6 +30,7 @@ class PlanFoodQuantitySheet extends ConsumerStatefulWidget {
     this.mealType,
     this.entry,
     this.eaten = false,
+    this.lastGrams,
   });
 
   final Food food;
@@ -37,19 +39,31 @@ class PlanFoodQuantitySheet extends ConsumerStatefulWidget {
   final MealPlanEntry? entry;
   final bool eaten;
 
+  // How much of this food was used last time — a fresh add starts from it,
+  // since people tend to eat the same amount of the same thing.
+  final double? lastGrams;
+
   static Future<void> showAdd(
     BuildContext context, {
     required Food food,
     required DateTime date,
     required MealType mealType,
     bool eaten = false,
-  }) {
-    return showModalBottomSheet(
+  }) async {
+    final db = ProviderScope.containerOf(context, listen: false).read(appDatabaseProvider);
+    final lastGrams = await db.mealPlanDao.lastFoodQuantityGrams(food.id);
+    if (!context.mounted) return;
+    await showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
-      builder: (context) =>
-          PlanFoodQuantitySheet(food: food, date: date, mealType: mealType, eaten: eaten),
+      builder: (context) => PlanFoodQuantitySheet(
+        food: food,
+        date: date,
+        mealType: mealType,
+        eaten: eaten,
+        lastGrams: lastGrams,
+      ),
     );
   }
 
@@ -81,16 +95,22 @@ class _PlanFoodQuantitySheetState extends ConsumerState<PlanFoodQuantitySheet> {
   void initState() {
     super.initState();
     final existingGrams = widget.entry?.quantityGrams;
-    if (existingGrams == null && _hasServingSize) {
+    final serving = widget.food.defaultServingGrams;
+    final lastUnits = widget.lastGrams != null && serving != null ? widget.lastGrams! / serving : null;
+    if (existingGrams == null && serving != null && (lastUnits == null || _isWholeOrHalf(lastUnits))) {
       // Fresh add on a food with a known piece size: "1 huevo" reads more
       // naturally than "50g" as the starting point.
       _mode = _QuantityMode.units;
-      _controller = TextEditingController(text: formatInputNumber(1));
+      _controller = TextEditingController(text: formatInputNumber(lastUnits ?? 1));
     } else {
       _mode = _QuantityMode.grams;
-      _controller = TextEditingController(text: formatInputNumber(existingGrams ?? 100));
+      _controller = TextEditingController(text: formatInputNumber(existingGrams ?? widget.lastGrams ?? 100));
     }
+    // Pre-selected, so typing replaces the value instead of appending to it.
+    _controller.selection = TextSelection(baseOffset: 0, extentOffset: _controller.text.length);
   }
+
+  static bool _isWholeOrHalf(double units) => units > 0 && (units * 2 - (units * 2).round()).abs() < 0.001;
 
   @override
   void dispose() {
@@ -138,12 +158,13 @@ class _PlanFoodQuantitySheetState extends ConsumerState<PlanFoodQuantitySheet> {
       return;
     }
     final db = ref.read(appDatabaseProvider);
+    final messenger = ScaffoldMessenger.of(context);
 
     if (widget.entry != null) {
       await db.mealPlanDao.updateEntryQuantity(widget.entry!.id, quantityGrams: grams);
     } else {
       final orderIndex = await db.mealPlanDao.nextOrderIndex(widget.date!, widget.mealType!);
-      await db.mealPlanDao.addFood(
+      final entryId = await db.mealPlanDao.addFood(
         date: widget.date!,
         mealType: widget.mealType!,
         foodId: widget.food.id,
@@ -151,6 +172,7 @@ class _PlanFoodQuantitySheetState extends ConsumerState<PlanFoodQuantitySheet> {
         orderIndex: orderIndex,
         eaten: widget.eaten,
       );
+      showAddedEntrySnackBar(messenger, db: db, entryId: entryId, mealType: widget.mealType!, eaten: widget.eaten);
     }
 
     if (mounted) Navigator.of(context).pop();
