@@ -7,6 +7,7 @@ import '../../../core/widgets/app_card.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../diario/providers/diary_providers.dart';
+import '../../../core/widgets/unit_input_decoration.dart';
 
 class NutritionGoalsScreen extends ConsumerStatefulWidget {
   const NutritionGoalsScreen({super.key});
@@ -96,25 +97,25 @@ class _NutritionGoalsScreenState extends ConsumerState<NutritionGoalsScreen> {
                 TextField(
                   controller: _kcal,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Calorías objetivo', suffixText: 'kcal'),
+                  decoration: unitInputDecoration(label: 'Calorías objetivo', unit: 'kcal'),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextField(
                   controller: _protein,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Proteínas', suffixText: 'g'),
+                  decoration: unitInputDecoration(label: 'Proteínas', unit: 'g'),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextField(
                   controller: _carbs,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Carbohidratos', suffixText: 'g'),
+                  decoration: unitInputDecoration(label: 'Carbohidratos', unit: 'g'),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextField(
                   controller: _fat,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Grasas', suffixText: 'g'),
+                  decoration: unitInputDecoration(label: 'Grasas', unit: 'g'),
                 ),
               ],
               const SizedBox(height: AppSpacing.xl),

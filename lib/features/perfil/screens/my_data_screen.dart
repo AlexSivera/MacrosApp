@@ -7,6 +7,10 @@ import '../../../core/widgets/date_field_tile.dart';
 import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../diario/providers/diary_providers.dart';
+import '../../../core/widgets/app_date_picker.dart';
+import '../../../core/constants/profile_labels.dart';
+import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/unit_input_decoration.dart';
 
 class MyDataScreen extends ConsumerStatefulWidget {
   const MyDataScreen({super.key});
@@ -41,7 +45,7 @@ class _MyDataScreenState extends ConsumerState<MyDataScreen> {
   }
 
   Future<void> _save() async {
-    final height = double.tryParse(_height.text.replaceAll(',', '.'));
+    final height = parseDecimal(_height.text);
     await ref.read(appDatabaseProvider).userProfileDao.updateProfile(UserProfileCompanion(
           name: Value(_name.text.trim().isEmpty ? null : _name.text.trim()),
           sex: Value(_sex),
@@ -81,9 +85,9 @@ class _MyDataScreenState extends ConsumerState<MyDataScreen> {
               const SizedBox(height: AppSpacing.md),
               DateFieldTile(
                 label: 'Fecha de nacimiento',
-                value: '${_birthDate.day}/${_birthDate.month}/${_birthDate.year}',
+                value: formatLongDate(_birthDate),
                 onTap: () async {
-                  final picked = await showDatePicker(
+                  final picked = await showAppDatePicker(
                     context: context,
                     initialDate: _birthDate,
                     firstDate: DateTime(1920),
@@ -96,19 +100,14 @@ class _MyDataScreenState extends ConsumerState<MyDataScreen> {
               TextField(
                 controller: _height,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Altura (cm)'),
+                decoration: unitInputDecoration(label: 'Altura', unit: 'cm', hint: '175'),
               ),
               const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<ActivityLevel>(
                 initialValue: _activityLevel,
                 decoration: const InputDecoration(labelText: 'Nivel de actividad'),
-                items: const [
-                  DropdownMenuItem(value: ActivityLevel.sedentary, child: Text('Sedentario')),
-                  DropdownMenuItem(value: ActivityLevel.light, child: Text('Ligera')),
-                  DropdownMenuItem(value: ActivityLevel.moderate, child: Text('Moderada')),
-                  DropdownMenuItem(value: ActivityLevel.active, child: Text('Alta')),
-                  DropdownMenuItem(value: ActivityLevel.veryActive, child: Text('Muy alta')),
-                ],
+                isExpanded: true,
+                items: activityLevelItems(),
                 onChanged: (v) => setState(() => _activityLevel = v ?? _activityLevel),
               ),
               const SizedBox(height: AppSpacing.xl),

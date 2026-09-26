@@ -48,10 +48,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     await tester.enterText(find.widgetWithText(TextField, 'Nombre'), 'Batido casero');
-    await tester.enterText(find.widgetWithText(TextField, 'kcal'), '120');
-    await tester.enterText(find.widgetWithText(TextField, 'Proteína (g)'), '8');
-    await tester.enterText(find.widgetWithText(TextField, 'Carbohidratos (g)'), '15');
-    await tester.enterText(find.widgetWithText(TextField, 'Grasas (g)'), '2');
+    await tester.enterText(find.widgetWithText(TextField, 'Calorías'), '120');
+    await tester.enterText(find.widgetWithText(TextField, 'Proteína'), '8');
+    await tester.enterText(find.widgetWithText(TextField, 'Carbohidratos'), '15');
+    await tester.enterText(find.widgetWithText(TextField, 'Grasas'), '2');
     await tester.pump();
 
     await tester.tap(find.text('Crear y continuar'));

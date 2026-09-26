@@ -4,6 +4,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/legacy_recipe_image.dart';
 import '../providers/recipes_providers.dart';
+import '../../../core/theme/app_theme.dart';
 
 class RecipeCard extends StatelessWidget {
   const RecipeCard({super.key, required this.data, required this.onTap});
@@ -31,9 +32,24 @@ class RecipeCard extends StatelessWidget {
               borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.md)),
               child: image != null
                   ? SizedBox.expand(child: image)
+                  // No photo: the recipe's category, in the accent, rather
+                  // than a flat grey box with a generic icon.
                   : Container(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      child: Icon(Icons.restaurant_menu, size: 36, color: theme.colorScheme.onSurfaceVariant),
+                      color: AppTheme.tint(context),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(recipe.category.icon, size: 32, color: theme.colorScheme.primary),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            recipe.category.label.toUpperCase(),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              letterSpacing: 0.8,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
             ),
           ),

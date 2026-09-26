@@ -54,7 +54,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -108,6 +108,9 @@ class AppDatabase extends _$AppDatabase {
             // Everything up to today was shown as "consumed" before this split
             // existed, so it stays that way — frozen at today's values.
             await mealPlanDao.backfillEatenUpTo(DateTime.now());
+          }
+          if (from < 9) {
+            await m.addColumn(recipes, recipes.instructions);
           }
         },
         beforeOpen: (details) async {

@@ -8,6 +8,7 @@ import '../../../data/database/database_provider.dart';
 import '../../diario/providers/diary_providers.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../services/nutrition_engine/goal_weight.dart';
+import '../../../core/widgets/unit_input_decoration.dart';
 
 class GoalScreen extends ConsumerStatefulWidget {
   const GoalScreen({super.key});
@@ -99,12 +100,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                 TextField(
                   controller: _goalWeight,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: 'Peso objetivo',
-                    suffixText: 'kg',
-                    errorText: _goalWeightError,
-                    errorMaxLines: 2,
-                  ),
+                  decoration: unitInputDecoration(label: 'Peso objetivo', unit: 'kg', errorText: _goalWeightError),
                   onChanged: (_) => setState(() => _goalWeightError = null),
                 ),
                 const SizedBox(height: AppSpacing.lg),

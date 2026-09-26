@@ -7,6 +7,7 @@ import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import 'food_category_chips.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/unit_input_decoration.dart';
 
 // "Crear alimento personalizado" / "Editar alimento" — a minimal form (name
 // + macros, entered either per 100g or per serving when creating), saved to
@@ -239,9 +240,9 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
                     child: TextField(
                       controller: _servingGrams,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(
-                        labelText: _isEditing ? 'Tamaño de ración (opcional)' : 'Tamaño de la ración',
-                        suffixText: 'g',
+                      decoration: unitInputDecoration(
+                        label: _isEditing ? 'Tamaño de ración (opcional)' : 'Tamaño de la ración',
+                        unit: 'g',
                       ),
                     ),
                   ),
@@ -277,7 +278,7 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
                   child: TextField(
                     controller: _kcal,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'kcal'),
+                    decoration: unitInputDecoration(label: 'Calorías', unit: 'kcal'),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -285,7 +286,7 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
                   child: TextField(
                     controller: _protein,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'Proteína (g)'),
+                    decoration: unitInputDecoration(label: 'Proteína', unit: 'g'),
                   ),
                 ),
               ],
@@ -297,7 +298,7 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
                   child: TextField(
                     controller: _carbs,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'Carbohidratos (g)'),
+                    decoration: unitInputDecoration(label: 'Carbohidratos', unit: 'g'),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -305,7 +306,7 @@ class _CustomFoodFormSheetState extends ConsumerState<CustomFoodFormSheet> {
                   child: TextField(
                     controller: _fat,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'Grasas (g)'),
+                    decoration: unitInputDecoration(label: 'Grasas', unit: 'g'),
                   ),
                 ),
               ],

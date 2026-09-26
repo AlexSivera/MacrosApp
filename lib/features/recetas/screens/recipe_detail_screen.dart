@@ -13,6 +13,7 @@ import '../../plan_semanal/widgets/plan_recipe_quantity_sheet.dart';
 import '../providers/recipes_providers.dart';
 import '../../../core/widgets/macro_preview_row.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/app_date_picker.dart';
 
 class RecipeDetailScreen extends ConsumerWidget {
   const RecipeDetailScreen({super.key, required this.recipeId});
@@ -32,6 +33,26 @@ class RecipeDetailScreen extends ConsumerWidget {
         }
         return _RecipeDetailBody(recipe: recipe);
       },
+    );
+  }
+}
+
+class _Meta extends StatelessWidget {
+  const _Meta({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: AppSpacing.xs),
+        Text(text, style: theme.textTheme.bodyMedium),
+      ],
     );
   }
 }
@@ -79,19 +100,19 @@ class _RecipeDetailBody extends ConsumerWidget {
                 child: SizedBox.expand(child: image),
               ),
             ),
-          const SizedBox(height: AppSpacing.lg),
-          if (recipe.prepTimeMinutes != null)
-            Row(
-              children: [
-                Icon(Icons.schedule, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                const SizedBox(width: AppSpacing.xs),
-                Text('${recipe.prepTimeMinutes} min', style: theme.textTheme.bodyMedium),
-              ],
-            ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            recipe.servings == 1 ? '1 ración' : '${formatDecimal(recipe.servings)} raciones',
-            style: theme.textTheme.bodyMedium,
+          if (image != null) const SizedBox(height: AppSpacing.lg),
+          // Category · time · servings on one line.
+          Wrap(
+            spacing: AppSpacing.md,
+            runSpacing: AppSpacing.xs,
+            children: [
+              _Meta(icon: recipe.category.icon, text: recipe.category.label),
+              if (recipe.prepTimeMinutes != null) _Meta(icon: Icons.schedule, text: '${recipe.prepTimeMinutes} min'),
+              _Meta(
+                icon: Icons.restaurant_outlined,
+                text: recipe.servings == 1 ? '1 ración' : '${formatDecimal(recipe.servings)} raciones',
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.lg),
           macrosAsync.when(
@@ -148,18 +169,90 @@ class _RecipeDetailBody extends ConsumerWidget {
               );
             },
           ),
-          const SizedBox(height: AppSpacing.xxl),
-          ElevatedButton(
-            onPressed: () => PlanRecipeQuantitySheet.showAdd(
-              context,
-              recipe: recipe,
-              date: ref.read(selectedDiaryDateProvider),
-              eaten: true,
+          if (_steps(recipe).isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xl),
+            Text('Preparación', style: theme.textTheme.labelMedium),
+            const SizedBox(height: AppSpacing.sm),
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final (i, step) in _steps(recipe).indexed)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            child: Text(
+                              '${i + 1}.',
+                              style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary),
+                            ),
+                          ),
+                          Expanded(child: Text(step, style: theme.textTheme.bodyMedium)),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
-            child: const Text('Añadir al diario'),
-          ),
+          ],
+          const SizedBox(height: AppSpacing.lg),
         ],
       ),
+      // Pinned, so adding it doesn't mean scrolling past a long recipe.
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.md),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _addToPlan(context),
+                  child: const Text('Añadir al plan'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => PlanRecipeQuantitySheet.showAdd(
+                    context,
+                    recipe: recipe,
+                    date: ref.read(selectedDiaryDateProvider),
+                    eaten: true,
+                  ),
+                  child: const Text('Añadir al diario'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // One step per non-empty line of the free-text instructions.
+  static List<String> _steps(Recipe recipe) => [
+        for (final line in (recipe.instructions ?? '').split('\n'))
+          if (line.trim().isNotEmpty) line.trim(),
+      ];
+
+  // Planning needs a day first; the meal is picked in the quantity sheet.
+  Future<void> _addToPlan(BuildContext context) async {
+    final today = DateTime.now();
+    final picked = await showAppDatePicker(
+      context: context,
+      initialDate: today,
+      firstDate: DateTime(today.year - 1),
+      lastDate: today.add(const Duration(days: 365)),
+    );
+    if (picked == null || !context.mounted) return;
+    await PlanRecipeQuantitySheet.showAdd(
+      context,
+      recipe: recipe,
+      date: DateTime(picked.year, picked.month, picked.day),
+      eaten: false,
     );
   }
 
@@ -177,6 +270,7 @@ class _RecipeDetailBody extends ConsumerWidget {
             category: Value(recipe.category),
             servings: Value(recipe.servings),
             prepTimeMinutes: Value(recipe.prepTimeMinutes),
+            instructions: Value(recipe.instructions),
           ),
         );
         final ingredients = await db.recipeIngredientsDao.getForRecipe(recipe.id);

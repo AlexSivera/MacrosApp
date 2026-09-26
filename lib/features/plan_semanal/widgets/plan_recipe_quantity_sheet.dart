@@ -81,7 +81,16 @@ class _PlanRecipeQuantitySheetState extends ConsumerState<PlanRecipeQuantityShee
     _controller = TextEditingController(text: formatInputNumber(initial));
     // Pre-selected, so typing replaces the value instead of appending to it.
     _controller.selection = TextSelection(baseOffset: 0, extentOffset: _controller.text.length);
-    _mealType = widget.mealType ?? widget.entry?.mealType ?? MealType.lunch;
+    // Opened from the recipe itself (no meal section tapped): start from the
+    // meal its category names.
+    _mealType = widget.mealType ??
+        widget.entry?.mealType ??
+        switch (widget.recipe.category) {
+          RecipeCategory.breakfast => MealType.breakfast,
+          RecipeCategory.lunch => MealType.lunch,
+          RecipeCategory.dinner => MealType.dinner,
+          RecipeCategory.snack => MealType.snack,
+        };
     _perServing = _loadPerServing();
   }
 

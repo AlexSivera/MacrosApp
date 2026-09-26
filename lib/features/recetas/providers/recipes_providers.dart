@@ -5,6 +5,7 @@ import '../../../data/database/app_database.dart';
 import '../../../data/database/database_provider.dart';
 import '../../../services/nutrition_engine/food_macros_calculator.dart';
 import '../../../services/nutrition_engine/recipe_macros_calculator.dart';
+import 'package:flutter/material.dart' show IconData, Icons;
 
 final recipeSearchQueryProvider = StateProvider.autoDispose<String>((ref) => '');
 
@@ -56,6 +57,23 @@ final recipePerServingMacrosProvider =
     FutureProvider.autoDispose.family<FoodMacros, Recipe>((ref, recipe) {
   return _perServingMacrosFor(ref.watch(appDatabaseProvider), recipe);
 });
+
+extension RecipeCategoryLabel on RecipeCategory {
+  String get label => switch (this) {
+        RecipeCategory.breakfast => 'Desayuno',
+        RecipeCategory.lunch => 'Comida',
+        RecipeCategory.dinner => 'Cena',
+        RecipeCategory.snack => 'Extra',
+      };
+
+  // Same icons as the matching Diario meal sections.
+  IconData get icon => switch (this) {
+        RecipeCategory.breakfast => Icons.free_breakfast_rounded,
+        RecipeCategory.lunch => Icons.lunch_dining_rounded,
+        RecipeCategory.dinner => Icons.dinner_dining_rounded,
+        RecipeCategory.snack => Icons.cookie_rounded,
+      };
+}
 
 enum RecipeFilter { all, breakfast, lunch, dinner, snack, favorites, highProtein }
 

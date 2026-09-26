@@ -97,7 +97,7 @@ class _MacrosAppState extends ConsumerState<MacrosApp> {
   @override
   Widget build(BuildContext context) {
     final appearanceMode =
-        ref.watch(userProfileStreamProvider).valueOrNull?.appearanceMode ?? AppearanceMode.dark;
+        ref.watch(userProfileStreamProvider).valueOrNull?.appearanceMode ?? AppearanceMode.system;
     final fixedTheme = _fixedTheme(appearanceMode);
 
     return MaterialApp.router(

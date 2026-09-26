@@ -6,6 +6,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/date_field_tile.dart';
 import '../../../data/database/database_provider.dart';
+import '../../../core/widgets/app_date_picker.dart';
+import '../../../core/widgets/unit_input_decoration.dart';
 
 class LogWeightSheet extends ConsumerStatefulWidget {
   const LogWeightSheet({super.key});
@@ -65,7 +67,7 @@ class _LogWeightSheetState extends ConsumerState<LogWeightSheet> {
               controller: _weight,
               autofocus: true,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(labelText: 'Peso', suffixText: 'kg', errorText: _error),
+              decoration: unitInputDecoration(label: 'Peso', unit: 'kg', hint: '72,5', errorText: _error),
               onChanged: (_) => setState(() => _error = null),
               onSubmitted: (_) => _submit(),
             ),
@@ -74,7 +76,7 @@ class _LogWeightSheetState extends ConsumerState<LogWeightSheet> {
               label: 'Fecha',
               value: capitalize(DateFormat('EEEE d MMM y', 'es').format(_date)),
               onTap: () async {
-                final picked = await showDatePicker(
+                final picked = await showAppDatePicker(
                   context: context,
                   initialDate: _date,
                   firstDate: DateTime(2020),

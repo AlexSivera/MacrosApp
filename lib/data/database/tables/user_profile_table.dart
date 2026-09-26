@@ -31,11 +31,13 @@ class UserProfile extends Table {
   // weightUnit, foodMassUnit and remindersEnabled are unused: everything
   // displays in kg/g and there are no reminders. Their settings screens were
   // removed; the columns stay so the schema doesn't need a migration.
-  IntColumn get weightUnit =>intEnum<WeightUnit>().withDefault(Constant(WeightUnit.kg.index))();
+  IntColumn get weightUnit => intEnum<WeightUnit>().withDefault(Constant(WeightUnit.kg.index))();
   IntColumn get foodMassUnit =>
       intEnum<FoodMassUnit>().withDefault(Constant(FoodMassUnit.g.index))();
+  // New installs follow the phone's light/dark setting; existing profiles
+  // keep whatever they already have stored.
   IntColumn get appearanceMode =>
-      intEnum<AppearanceMode>().withDefault(Constant(AppearanceMode.dark.index))();
+      intEnum<AppearanceMode>().withDefault(Constant(AppearanceMode.system.index))();
 
   BoolColumn get remindersEnabled => boolean().withDefault(const Constant(true))();
   BoolColumn get onboardingCompleted => boolean().withDefault(const Constant(false))();

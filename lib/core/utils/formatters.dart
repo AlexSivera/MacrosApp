@@ -27,6 +27,9 @@ double? parseDecimal(String text) => double.tryParse(text.trim().replaceAll(',',
 String macroLine(FoodMacros m) =>
     '${m.kcal.round()} kcal · P ${m.proteinG.round()} · C ${m.carbsG.round()} · G ${m.fatG.round()}';
 
+// A calendar date in full, everywhere one is shown on its own: "1 ene 2001".
+String formatLongDate(DateTime date) => DateFormat('d MMM y', 'es').format(date);
+
 // Spanish dates are lowercase ("21 de septiembre"); only a leading word gets
 // capitalized where it opens a title.
 String capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);

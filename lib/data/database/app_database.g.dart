@@ -226,7 +226,7 @@ class $UserProfileTable extends UserProfile
     false,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultValue: Constant(AppearanceMode.dark.index),
+    defaultValue: Constant(AppearanceMode.system.index),
   ).withConverter<AppearanceMode>($UserProfileTable.$converterappearanceMode);
   static const VerificationMeta _remindersEnabledMeta = const VerificationMeta(
     'remindersEnabled',
@@ -2154,6 +2154,17 @@ class $RecipesTable extends Recipes with TableInfo<$RecipesTable, Recipe> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _instructionsMeta = const VerificationMeta(
+    'instructions',
+  );
+  @override
+  late final GeneratedColumn<String> instructions = GeneratedColumn<String>(
+    'instructions',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2176,6 +2187,7 @@ class $RecipesTable extends Recipes with TableInfo<$RecipesTable, Recipe> {
     servings,
     isFavorite,
     prepTimeMinutes,
+    instructions,
     createdAt,
   ];
   @override
@@ -2234,6 +2246,15 @@ class $RecipesTable extends Recipes with TableInfo<$RecipesTable, Recipe> {
         ),
       );
     }
+    if (data.containsKey('instructions')) {
+      context.handle(
+        _instructionsMeta,
+        instructions.isAcceptableOrUnknown(
+          data['instructions']!,
+          _instructionsMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2283,6 +2304,10 @@ class $RecipesTable extends Recipes with TableInfo<$RecipesTable, Recipe> {
         DriftSqlType.int,
         data['${effectivePrefix}prep_time_minutes'],
       ),
+      instructions: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}instructions'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2308,6 +2333,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
   final double servings;
   final bool isFavorite;
   final int? prepTimeMinutes;
+  final String? instructions;
   final DateTime createdAt;
   const Recipe({
     required this.id,
@@ -2318,6 +2344,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
     required this.servings,
     required this.isFavorite,
     this.prepTimeMinutes,
+    this.instructions,
     required this.createdAt,
   });
   @override
@@ -2341,6 +2368,9 @@ class Recipe extends DataClass implements Insertable<Recipe> {
     if (!nullToAbsent || prepTimeMinutes != null) {
       map['prep_time_minutes'] = Variable<int>(prepTimeMinutes);
     }
+    if (!nullToAbsent || instructions != null) {
+      map['instructions'] = Variable<String>(instructions);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -2361,6 +2391,9 @@ class Recipe extends DataClass implements Insertable<Recipe> {
       prepTimeMinutes: prepTimeMinutes == null && nullToAbsent
           ? const Value.absent()
           : Value(prepTimeMinutes),
+      instructions: instructions == null && nullToAbsent
+          ? const Value.absent()
+          : Value(instructions),
       createdAt: Value(createdAt),
     );
   }
@@ -2381,6 +2414,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
       servings: serializer.fromJson<double>(json['servings']),
       isFavorite: serializer.fromJson<bool>(json['isFavorite']),
       prepTimeMinutes: serializer.fromJson<int?>(json['prepTimeMinutes']),
+      instructions: serializer.fromJson<String?>(json['instructions']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -2398,6 +2432,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
       'servings': serializer.toJson<double>(servings),
       'isFavorite': serializer.toJson<bool>(isFavorite),
       'prepTimeMinutes': serializer.toJson<int?>(prepTimeMinutes),
+      'instructions': serializer.toJson<String?>(instructions),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -2411,6 +2446,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
     double? servings,
     bool? isFavorite,
     Value<int?> prepTimeMinutes = const Value.absent(),
+    Value<String?> instructions = const Value.absent(),
     DateTime? createdAt,
   }) => Recipe(
     id: id ?? this.id,
@@ -2423,6 +2459,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
     prepTimeMinutes: prepTimeMinutes.present
         ? prepTimeMinutes.value
         : this.prepTimeMinutes,
+    instructions: instructions.present ? instructions.value : this.instructions,
     createdAt: createdAt ?? this.createdAt,
   );
   Recipe copyWithCompanion(RecipesCompanion data) {
@@ -2441,6 +2478,9 @@ class Recipe extends DataClass implements Insertable<Recipe> {
       prepTimeMinutes: data.prepTimeMinutes.present
           ? data.prepTimeMinutes.value
           : this.prepTimeMinutes,
+      instructions: data.instructions.present
+          ? data.instructions.value
+          : this.instructions,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -2456,6 +2496,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
           ..write('servings: $servings, ')
           ..write('isFavorite: $isFavorite, ')
           ..write('prepTimeMinutes: $prepTimeMinutes, ')
+          ..write('instructions: $instructions, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -2471,6 +2512,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
     servings,
     isFavorite,
     prepTimeMinutes,
+    instructions,
     createdAt,
   );
   @override
@@ -2485,6 +2527,7 @@ class Recipe extends DataClass implements Insertable<Recipe> {
           other.servings == this.servings &&
           other.isFavorite == this.isFavorite &&
           other.prepTimeMinutes == this.prepTimeMinutes &&
+          other.instructions == this.instructions &&
           other.createdAt == this.createdAt);
 }
 
@@ -2497,6 +2540,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
   final Value<double> servings;
   final Value<bool> isFavorite;
   final Value<int?> prepTimeMinutes;
+  final Value<String?> instructions;
   final Value<DateTime> createdAt;
   const RecipesCompanion({
     this.id = const Value.absent(),
@@ -2507,6 +2551,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
     this.servings = const Value.absent(),
     this.isFavorite = const Value.absent(),
     this.prepTimeMinutes = const Value.absent(),
+    this.instructions = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   RecipesCompanion.insert({
@@ -2518,6 +2563,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
     this.servings = const Value.absent(),
     this.isFavorite = const Value.absent(),
     this.prepTimeMinutes = const Value.absent(),
+    this.instructions = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : name = Value(name);
   static Insertable<Recipe> custom({
@@ -2529,6 +2575,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
     Expression<double>? servings,
     Expression<bool>? isFavorite,
     Expression<int>? prepTimeMinutes,
+    Expression<String>? instructions,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -2540,6 +2587,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
       if (servings != null) 'servings': servings,
       if (isFavorite != null) 'is_favorite': isFavorite,
       if (prepTimeMinutes != null) 'prep_time_minutes': prepTimeMinutes,
+      if (instructions != null) 'instructions': instructions,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -2553,6 +2601,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
     Value<double>? servings,
     Value<bool>? isFavorite,
     Value<int?>? prepTimeMinutes,
+    Value<String?>? instructions,
     Value<DateTime>? createdAt,
   }) {
     return RecipesCompanion(
@@ -2564,6 +2613,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
       servings: servings ?? this.servings,
       isFavorite: isFavorite ?? this.isFavorite,
       prepTimeMinutes: prepTimeMinutes ?? this.prepTimeMinutes,
+      instructions: instructions ?? this.instructions,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -2597,6 +2647,9 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
     if (prepTimeMinutes.present) {
       map['prep_time_minutes'] = Variable<int>(prepTimeMinutes.value);
     }
+    if (instructions.present) {
+      map['instructions'] = Variable<String>(instructions.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -2614,6 +2667,7 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
           ..write('servings: $servings, ')
           ..write('isFavorite: $isFavorite, ')
           ..write('prepTimeMinutes: $prepTimeMinutes, ')
+          ..write('instructions: $instructions, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -6614,6 +6668,7 @@ typedef $$RecipesTableCreateCompanionBuilder =
       Value<double> servings,
       Value<bool> isFavorite,
       Value<int?> prepTimeMinutes,
+      Value<String?> instructions,
       Value<DateTime> createdAt,
     });
 typedef $$RecipesTableUpdateCompanionBuilder =
@@ -6626,6 +6681,7 @@ typedef $$RecipesTableUpdateCompanionBuilder =
       Value<double> servings,
       Value<bool> isFavorite,
       Value<int?> prepTimeMinutes,
+      Value<String?> instructions,
       Value<DateTime> createdAt,
     });
 
@@ -6676,6 +6732,11 @@ class $$RecipesTableFilterComposer
 
   ColumnFilters<int> get prepTimeMinutes => $composableBuilder(
     column: $table.prepTimeMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get instructions => $composableBuilder(
+    column: $table.instructions,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6734,6 +6795,11 @@ class $$RecipesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get instructions => $composableBuilder(
+    column: $table.instructions,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -6779,6 +6845,11 @@ class $$RecipesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get instructions => $composableBuilder(
+    column: $table.instructions,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 }
@@ -6819,6 +6890,7 @@ class $$RecipesTableTableManager
                 Value<double> servings = const Value.absent(),
                 Value<bool> isFavorite = const Value.absent(),
                 Value<int?> prepTimeMinutes = const Value.absent(),
+                Value<String?> instructions = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => RecipesCompanion(
                 id: id,
@@ -6829,6 +6901,7 @@ class $$RecipesTableTableManager
                 servings: servings,
                 isFavorite: isFavorite,
                 prepTimeMinutes: prepTimeMinutes,
+                instructions: instructions,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -6841,6 +6914,7 @@ class $$RecipesTableTableManager
                 Value<double> servings = const Value.absent(),
                 Value<bool> isFavorite = const Value.absent(),
                 Value<int?> prepTimeMinutes = const Value.absent(),
+                Value<String?> instructions = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => RecipesCompanion.insert(
                 id: id,
@@ -6851,6 +6925,7 @@ class $$RecipesTableTableManager
                 servings: servings,
                 isFavorite: isFavorite,
                 prepTimeMinutes: prepTimeMinutes,
+                instructions: instructions,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0

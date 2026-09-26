@@ -28,7 +28,12 @@
        standalone. -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- Set per theme by the script below: "default" (dark text on light) for
+       the light skins, "black" (light text on dark) otherwise. Never
+       "black-translucent": its text is always white — unreadable over a
+       light theme — and it lays the page under the clock, which the canvas
+       has no inset to avoid. -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Kalibra">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
@@ -54,13 +59,22 @@
   </style>
   <script>
     (function () {
+      var bg = null;
       try {
-        var bg = localStorage.getItem('kalibra-bg');
-        if (bg && /^#[0-9a-fA-F]{6}$/.test(bg)) {
-          document.documentElement.style.setProperty('--kalibra-bg', bg);
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', bg);
-        }
-      } catch (e) { /* storage blocked: keep the dark default */ }
+        bg = localStorage.getItem('kalibra-bg');
+      } catch (e) { /* storage blocked: fall back to the system theme */ }
+      if (!bg || !/^#[0-9a-fA-F]{6}$/.test(bg)) {
+        // First launch: the app follows the phone's theme by default, so
+        // does the splash.
+        var light = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        bg = light ? '#FAFAF9' : '#0A0C0E';
+      }
+      document.documentElement.style.setProperty('--kalibra-bg', bg);
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', bg);
+      var n = parseInt(bg.slice(1), 16);
+      var luminance = 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
+      document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
+        .setAttribute('content', luminance > 140 ? 'default' : 'black');
     })();
   </script>
 </head>

@@ -36,10 +36,16 @@ void main() {
     expect(find.text('Sobre ti'), findsOneWidget);
     expect(find.text('Paso 1 de 3'), findsOneWidget);
 
-    // Missing height/weight blocks the first step.
+    // Missing sex/height/weight blocks the first step, each error under its field.
     await tester.tap(find.text('Siguiente'));
     await _settle(tester);
-    expect(find.textContaining('altura'), findsOneWidget);
+    expect(find.text('Introduce tu altura'), findsOneWidget);
+    expect(find.text('Introduce tu peso'), findsOneWidget);
+    expect(find.textContaining('según el sexo'), findsOneWidget);
+
+    await tester.tap(find.text('Hombre'));
+    await _settle(tester);
+    expect(find.textContaining('según el sexo'), findsNothing);
 
     await tester.enterText(find.widgetWithText(TextField, 'Altura'), '180');
     await tester.enterText(find.widgetWithText(TextField, 'Peso actual'), '80,5');
@@ -65,6 +71,11 @@ void main() {
     await _settle(tester);
     expect(find.text('Tu plan'), findsOneWidget);
     expect(find.text('kcal al día'), findsOneWidget);
+    // The breakdown behind the number.
+    expect(find.text('Gasto diario estimado'), findsOneWidget);
+    expect(find.text('Déficit para perder 0,5 kg/semana'), findsOneWidget);
+    expect(find.text('−550 kcal'), findsOneWidget);
+    expect(find.textContaining('llegarías a 75,0 kg'), findsOneWidget);
 
     await tester.tap(find.text('Empezar'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));

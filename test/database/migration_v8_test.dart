@@ -23,6 +23,7 @@ void main() {
       raw.execute('ALTER TABLE meal_plan_entries DROP COLUMN $column');
     }
     raw.execute('ALTER TABLE user_profile DROP COLUMN last_backup_at');
+    raw.execute('ALTER TABLE recipes DROP COLUMN instructions'); // v9
     raw.execute(
       "INSERT INTO foods (name, kcal_per100g, protein_per100g, carbs_per100g, fat_per100g, is_custom, category) "
       "VALUES ('Arroz', 130, 2.7, 28, 0.3, 1, 0)",

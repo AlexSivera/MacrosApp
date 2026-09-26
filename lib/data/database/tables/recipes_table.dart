@@ -20,5 +20,7 @@ class Recipes extends Table {
   RealColumn get servings => real().withDefault(const Constant(1))();
   BoolColumn get isFavorite => boolean().withDefault(const Constant(false))();
   IntColumn get prepTimeMinutes => integer().nullable()();
+  // Preparation steps as free text, one per line (schema v9).
+  TextColumn get instructions => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }

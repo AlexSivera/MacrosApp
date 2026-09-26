@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../data/database/daos/meal_plan_dao.dart';
 import '../providers/meal_plan_providers.dart';
 import 'plan_day_kcal.dart';
+import '../../../core/widgets/app_date_picker.dart';
 
 // Month header: name + year, with prev/next-month arrows and a jump-to-date
 // shortcut — navigating by month here, unlike the Diario's day-by-day bar.
@@ -36,7 +37,7 @@ class PlanMonthHeader extends ConsumerWidget {
           tooltip: 'Ir a una fecha',
           icon: const Icon(Icons.calendar_month_outlined),
           onPressed: () async {
-            final picked = await showDatePicker(
+            final picked = await showAppDatePicker(
               context: context,
               initialDate: month,
               firstDate: DateTime(2020),

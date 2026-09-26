@@ -16,6 +16,8 @@ import '../../../services/nutrition_engine/recipe_macros_calculator.dart';
 import '../widgets/add_ingredient_sheet.dart';
 import '../widgets/ingredient_builder_list.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/unit_input_decoration.dart';
+import '../providers/recipes_providers.dart';
 
 // Handles both "+ Crear receta" (recipeId == null) and "Editar" (recipeId
 // set) — the brief asks for both flows to share the same fast
@@ -33,6 +35,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
   final _name = TextEditingController();
   final _servings = TextEditingController(text: '1');
   final _prepTime = TextEditingController();
+  final _instructions = TextEditingController();
   RecipeCategory _category = RecipeCategory.lunch;
   Uint8List? _imageBytes;
   // Only set when editing a pre-web recipe whose photo is still a legacy
@@ -58,6 +61,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
         _name.text = recipe.name;
         _servings.text = _formatNum(recipe.servings);
         _prepTime.text = recipe.prepTimeMinutes?.toString() ?? '';
+        _instructions.text = recipe.instructions ?? '';
         _category = recipe.category;
         _imageBytes = recipe.imageBytes;
         if (_imageBytes == null) _legacyImagePath = recipe.imagePath;
@@ -80,6 +84,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
     _name.dispose();
     _servings.dispose();
     _prepTime.dispose();
+    _instructions.dispose();
     super.dispose();
   }
 
@@ -124,6 +129,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
     required int? prepTime,
   }) async {
     final db = ref.read(appDatabaseProvider);
+    final instructions = _instructions.text.trim().isEmpty ? null : _instructions.text.trim();
     int recipeId;
     if (widget.recipeId != null) {
       recipeId = widget.recipeId!;
@@ -139,6 +145,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
           category: _category,
           servings: servings,
           prepTimeMinutes: Value(prepTime),
+          instructions: Value(instructions),
         )),
       );
     } else {
@@ -149,6 +156,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
           category: Value(_category),
           servings: Value(servings),
           prepTimeMinutes: Value(prepTime),
+          instructions: Value(instructions),
         ),
       );
     }
@@ -277,11 +285,9 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
                   child: DropdownButtonFormField<RecipeCategory>(
                     initialValue: _category,
                     decoration: const InputDecoration(labelText: 'Categoría'),
-                    items: const [
-                      DropdownMenuItem(value: RecipeCategory.breakfast, child: Text('Desayuno')),
-                      DropdownMenuItem(value: RecipeCategory.lunch, child: Text('Comida')),
-                      DropdownMenuItem(value: RecipeCategory.dinner, child: Text('Cena')),
-                      DropdownMenuItem(value: RecipeCategory.snack, child: Text('Extra')),
+                    items: [
+                      for (final category in RecipeCategory.values)
+                        DropdownMenuItem(value: category, child: Text(category.label)),
                     ],
                     onChanged: (v) => setState(() => _category = v ?? _category),
                   ),
@@ -291,7 +297,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
                   child: TextField(
                     controller: _prepTime,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Minutos'),
+                    decoration: unitInputDecoration(label: 'Tiempo', unit: 'min'),
                   ),
                 ),
               ],
@@ -333,6 +339,19 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
                 ),
               ),
             ],
+            const SizedBox(height: AppSpacing.xl),
+            TextField(
+              controller: _instructions,
+              minLines: 4,
+              maxLines: null,
+              textCapitalization: TextCapitalization.sentences,
+              keyboardType: TextInputType.multiline,
+              decoration: const InputDecoration(
+                labelText: 'Preparación (opcional)',
+                hintText: 'Un paso por línea',
+                alignLabelWithHint: true,
+              ),
+            ),
             if (_error != null) ...[
               const SizedBox(height: AppSpacing.md),
               Text(_error!, style: TextStyle(color: theme.colorScheme.error)),

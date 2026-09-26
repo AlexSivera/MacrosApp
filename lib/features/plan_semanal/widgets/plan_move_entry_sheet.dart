@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/meal_types.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../data/database/database_provider.dart';
+import '../../../core/widgets/app_date_picker.dart';
 
 // Move-entry sheet for a planned meal — like the Diario's MoveEntrySheet but
 // also offers changing the day, since a plan entry (unlike a diary log) is
@@ -51,7 +52,7 @@ class PlanMoveEntrySheet extends ConsumerWidget {
               leading: const Icon(Icons.calendar_month_outlined),
               title: const Text('Cambiar de día'),
               onTap: () async {
-                final picked = await showDatePicker(
+                final picked = await showAppDatePicker(
                   context: context,
                   initialDate: currentDate,
                   firstDate: DateTime(2020),

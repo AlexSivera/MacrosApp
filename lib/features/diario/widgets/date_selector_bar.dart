@@ -8,6 +8,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/diary_providers.dart';
 import '../../../core/utils/dates.dart';
+import '../../../core/widgets/app_date_picker.dart';
 
 class DateSelectorBar extends ConsumerWidget {
   const DateSelectorBar({super.key});
@@ -38,7 +39,7 @@ class DateSelectorBar extends ConsumerWidget {
             child: InkWell(
               borderRadius: BorderRadius.circular(AppRadius.pill),
               onTap: () async {
-                final picked = await showDatePicker(
+                final picked = await showAppDatePicker(
                   context: context,
                   initialDate: selected,
                   firstDate: DateTime(2020),
