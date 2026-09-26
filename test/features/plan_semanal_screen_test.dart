@@ -28,7 +28,7 @@ Future<void> _teardown(WidgetTester tester, ProviderContainer container, AppData
 }
 
 void main() {
-  testWidgets('Plan semanal shows the current month and tapping today opens its day screen',
+  testWidgets('Plan semanal opens on the week agenda and tapping today opens its day screen',
       (tester) async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     await db.userProfileDao.ensureDefaultRow();
@@ -37,14 +37,13 @@ void main() {
     await _pumpApp(tester, container, buildAppRouter(initialLocation: '/plan'));
 
     expect(find.text('Plan semanal'), findsOneWidget);
-    // The month grid's weekday header row (L a D).
-    expect(find.text('L'), findsOneWidget);
-    expect(find.text('D'), findsOneWidget);
+    // One agenda row per day, all empty.
+    expect(find.text('LUN'), findsOneWidget);
+    expect(find.text('DOM'), findsOneWidget);
+    expect(find.text('Sin planificar'), findsNWidgets(7));
 
     final today = normalizeDate(DateTime.now());
-    final gridStart = mondayOf(DateTime(today.year, today.month, 1));
-    final todayCellIndex = today.difference(gridStart).inDays;
-    await tester.tap(find.byType(InkWell).at(todayCellIndex));
+    await tester.tap(find.text('${today.day}'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
@@ -54,6 +53,50 @@ void main() {
     expect(find.text('MERIENDA'), findsOneWidget);
     expect(find.text('CENA'), findsOneWidget);
     expect(find.text('EXTRA'), findsOneWidget);
+
+    await _teardown(tester, container, db);
+  });
+
+  testWidgets('in Mes, the week of the picked day shows under the grid; tapping it again opens it',
+      (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    await db.userProfileDao.ensureDefaultRow();
+    final today = normalizeDate(DateTime.now());
+    final foodId = await db.foodsDao.insert(FoodsCompanion.insert(
+      name: 'Pechuga de pollo',
+      kcalPer100g: 165,
+      proteinPer100g: 31,
+      carbsPer100g: 0,
+      fatPer100g: 3.6,
+    ));
+    for (var i = 0; i < 2; i++) {
+      await db.mealPlanDao.addFood(
+        date: today,
+        mealType: MealType.dinner,
+        foodId: foodId,
+        quantityGrams: 150,
+        orderIndex: i,
+      );
+    }
+    final container = ProviderContainer(overrides: [appDatabaseProvider.overrideWithValue(db)]);
+
+    await _pumpApp(tester, container, buildAppRouter(initialLocation: '/plan'));
+    await tester.tap(find.text('Mes'));
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pump();
+
+    // The grid's weekday header, and today's week under it with the
+    // repeated food collapsed.
+    expect(find.text('L'), findsOneWidget);
+    expect(find.text('D'), findsOneWidget);
+    expect(find.text('Pechuga de pollo ×2'), findsOneWidget);
+
+    // Today starts out selected, so this tap opens it.
+    await tester.tap(find.byKey(ValueKey(today)));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('CENA'), findsOneWidget);
 
     await _teardown(tester, container, db);
   });

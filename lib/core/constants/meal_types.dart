@@ -20,7 +20,9 @@ extension MealTypeLabel on MealType {
         MealType.breakfast => Icons.free_breakfast_rounded,
         MealType.almuerzo => Icons.bakery_dining_rounded,
         MealType.lunch => Icons.lunch_dining_rounded,
-        MealType.snackMerienda => Icons.local_cafe_rounded,
+        // Not a cup: Desayuno already is one, and the two sit side by side
+        // in the Plan's week agenda.
+        MealType.snackMerienda => Icons.icecream_rounded,
         MealType.dinner => Icons.dinner_dining_rounded,
         MealType.snack => Icons.cookie_rounded,
       };

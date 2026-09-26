@@ -34,6 +34,9 @@ DateTime parsePlanDayPathSegment(String segment) {
 // --- Month calendar (Plan semanal's landing screen) -----------------------
 
 // The month currently shown in the calendar grid, anchored to its 1st day.
+// The day picked in the Mes grid — its week is the agenda shown under it.
+final selectedPlanDayProvider = StateProvider<DateTime>((ref) => normalizeDate(DateTime.now()));
+
 final selectedPlanMonthProvider =
     StateProvider<DateTime>((ref) => DateTime(DateTime.now().year, DateTime.now().month, 1));
 
@@ -75,7 +78,8 @@ enum PlanViewMode { month, week }
 // Which of the two landing layouts is showing — the month grid is compact
 // but every cell is tiny, so a full-width week list gives more room to
 // actually read what's planned that week.
-final planViewModeProvider = StateProvider<PlanViewMode>((ref) => PlanViewMode.month);
+// Semana first: it's the view that shows what's eaten that week at a glance.
+final planViewModeProvider = StateProvider<PlanViewMode>((ref) => PlanViewMode.week);
 
 final selectedPlanWeekStartProvider = StateProvider<DateTime>((ref) => mondayOf(DateTime.now()));
 

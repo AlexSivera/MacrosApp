@@ -6,7 +6,8 @@ import '../../../core/constants/meal_types.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../data/database/daos/meal_plan_dao.dart';
 import '../providers/meal_plan_providers.dart';
-import 'plan_day_kcal.dart';
+import 'plan_week_agenda.dart';
+import '../../../core/utils/dates.dart';
 import '../../../core/widgets/app_date_picker.dart';
 
 // Month header: name + year, with prev/next-month arrows and a jump-to-date
@@ -63,9 +64,11 @@ class PlanMonthHeader extends ConsumerWidget {
 
 // A Google-Calendar-style month grid: 7 columns (L a D), full weeks only, so
 // days from the adjacent month fill out the first/last row rather than
-// leaving it ragged. Tapping a day is the sole way in: there's no separate
-// "selected day" state here, each tap just navigates straight to that day's
-// PlanDayScreen.
+// leaving it ragged. Cells stay small and even — the day number plus a dot
+// per planned meal — and the food itself is read in the week agenda under
+// the grid: tapping a day selects it (and so its week), tapping it again
+// opens that day. Full names used to be squeezed into the cells, which
+// broke words mid-way and made every row a different height.
 class PlanMonthGrid extends ConsumerWidget {
   const PlanMonthGrid({super.key, required this.onDayTap});
 
@@ -81,8 +84,24 @@ class PlanMonthGrid extends ConsumerWidget {
     final entries = ref.watch(mealPlanEntriesForMonthGridProvider).valueOrNull ?? [];
     final entriesByDay = groupPlanEntriesByDay(entries);
     final today = normalizeDate(DateTime.now());
+    // The picked day if it's on this page of the calendar; otherwise today
+    // (when this is the current month) or the 1st.
+    final picked = ref.watch(selectedPlanDayProvider);
+    final selected = days.contains(picked)
+        ? picked
+        : (today.year == month.year && today.month == month.month ? today : month);
+    final weekStart = mondayOf(selected);
+    final weekDays = [for (var i = 0; i < 7; i++) addDays(weekStart, i)];
 
-    return Column(
+    void onCellTap(DateTime day) {
+      if (day == selected) {
+        onDayTap(day);
+      } else {
+        ref.read(selectedPlanDayProvider.notifier).state = day;
+      }
+    }
+
+    return ListView(
       children: [
         Row(
           children: [
@@ -93,36 +112,40 @@ class PlanMonthGrid extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
-        // Expanded + scrollable: each week's Row sizes to its own tallest
-        // day cell (full food names can wrap over several lines — see
-        // _DayCell — so a week's height isn't predictable up front), and
-        // the whole grid scrolls on months where that adds up to more than
-        // the screen's height instead of forcing a size that would either
-        // clip a long name or leave empty space on lighter months.
-        Expanded(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                for (var weekStart = 0; weekStart < days.length; weekStart += 7)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final day in days.skip(weekStart).take(7))
-                        Expanded(
-                          child: _DayCell(
-                            day: day,
-                            isCurrentMonth: day.month == month.month,
-                            isToday: day == today,
-                            entries: entriesByDay[day] ?? const [],
-                            onTap: () => onDayTap(day),
-                          ),
-                        ),
-                    ],
+        for (var rowStart = 0; rowStart < days.length; rowStart += 7)
+          Row(
+            children: [
+              for (final day in days.skip(rowStart).take(7))
+                Expanded(
+                  child: _DayCell(
+                    key: ValueKey(day),
+                    day: day,
+                    isCurrentMonth: day.month == month.month,
+                    isToday: day == today,
+                    isSelected: day == selected,
+                    entries: entriesByDay[day] ?? const [],
+                    onTap: () => onCellTap(day),
                   ),
-              ],
-            ),
+                ),
+            ],
+          ),
+        const SizedBox(height: AppSpacing.lg),
+        Padding(
+          padding: const EdgeInsets.only(left: AppSpacing.xs, bottom: AppSpacing.sm),
+          child: Text(
+            'SEMANA DEL ${weekDays.first.day} AL ${weekDays.last.day} '
+                    '${DateFormat('MMM', 'es').format(weekDays.last)}'
+                .toUpperCase(),
+            style: theme.textTheme.labelMedium?.copyWith(letterSpacing: 0.6),
           ),
         ),
+        PlanWeekAgenda(
+          days: weekDays,
+          entriesByDay: entriesByDay,
+          onDayTap: onDayTap,
+          highlightedDay: selected,
+        ),
+        const SizedBox(height: AppSpacing.lg),
       ],
     );
   }
@@ -130,9 +153,11 @@ class PlanMonthGrid extends ConsumerWidget {
 
 class _DayCell extends StatelessWidget {
   const _DayCell({
+    super.key,
     required this.day,
     required this.isCurrentMonth,
     required this.isToday,
+    required this.isSelected,
     required this.entries,
     required this.onTap,
   });
@@ -140,28 +165,18 @@ class _DayCell extends StatelessWidget {
   final DateTime day;
   final bool isCurrentMonth;
   final bool isToday;
+  final bool isSelected;
   final List<MealPlanEntryDisplay> entries;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final dimmed = !isCurrentMonth;
-    final foreground = dimmed
-        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)
-        : theme.colorScheme.onSurface;
-
-    final entriesByMeal = groupPlanEntriesByMeal(entries);
-    // A block per meal that has something planned that day: its label
-    // ("Comida") on its own line, then the food/recipe name(s) wrapped
-    // onto their own line(s) below — never truncated with "…", so a name
-    // that doesn't fit ("macarrones con tomate") just breaks onto a
-    // second line ("macarrones" / "con tomate") instead.
-    final previews = [
-      for (final meal in mealSectionOrder)
-        if (entriesByMeal[meal]!.isNotEmpty)
-          (label: meal.label, names: entriesByMeal[meal]!.map((e) => e.label).join(', ')),
-    ];
+    final foreground = dimmed ? scheme.onSurfaceVariant.withValues(alpha: 0.4) : scheme.onSurface;
+    final byMeal = groupPlanEntriesByMeal(entries);
+    final plannedMeals = mealSectionOrder.where((meal) => byMeal[meal]!.isNotEmpty).length;
 
     return Padding(
       padding: const EdgeInsets.all(1),
@@ -170,95 +185,52 @@ class _DayCell extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadius.sm),
           onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 4),
-            // mainAxisSize.min: the cell (and the week Row it sits in)
-            // sizes to fit however many lines the food names actually
-            // need, instead of being handed a fixed height that would
-            // force truncating them.
+          child: SizedBox(
+            height: 48,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 26,
-                  height: 26,
+                  width: 30,
+                  height: 30,
                   alignment: Alignment.center,
-                  decoration: isToday
-                      ? BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle)
-                      : null,
+                  decoration: BoxDecoration(
+                    color: isToday ? scheme.primary : null,
+                    shape: BoxShape.circle,
+                    border: isSelected && !isToday ? Border.all(color: scheme.primary, width: 1.5) : null,
+                  ),
                   child: Text(
                     '${day.day}',
                     style: theme.textTheme.titleSmall?.copyWith(
-                      color: isToday ? theme.colorScheme.onPrimary : foreground,
-                      fontWeight: isToday ? FontWeight.bold : null,
+                      color: isToday ? scheme.onPrimary : foreground,
+                      fontWeight: isToday || isSelected ? FontWeight.bold : null,
                     ),
                   ),
                 ),
-                if (previews.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  PlanDayKcal(entries: entries, compact: true, dimmed: dimmed),
-                  const SizedBox(height: 3),
-                  for (final preview in previews) _MealPreviewLine(preview: preview, dimmed: dimmed),
-                ],
+                const SizedBox(height: 4),
+                // One dot per meal with something planned.
+                SizedBox(
+                  height: 5,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (var i = 0; i < plannedMeals; i++)
+                        Container(
+                          width: 4,
+                          height: 4,
+                          margin: const EdgeInsets.symmetric(horizontal: 1),
+                          decoration: BoxDecoration(
+                            color: dimmed ? scheme.primary.withValues(alpha: 0.35) : scheme.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _MealPreviewLine extends StatelessWidget {
-  const _MealPreviewLine({required this.preview, required this.dimmed});
-
-  final ({String label, String names}) preview;
-  final bool dimmed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final labelColor = dimmed ? theme.colorScheme.primary.withValues(alpha: 0.4) : theme.colorScheme.primary;
-    final nameColor = dimmed
-        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)
-        : theme.colorScheme.onSurfaceVariant;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 3),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Scaled down rather than cut to "Desayu…" in a narrow cell.
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              preview.label,
-              maxLines: 1,
-              style: theme.textTheme.labelSmall?.copyWith(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                height: 1.1,
-                color: labelColor,
-              ),
-            ),
-          ),
-          Text(
-            // No maxLines/ellipsis: the full name always shows, wrapping
-            // over as many lines as it needs rather than ever truncating.
-            // 9 px keeps a typical long word ("Jamoncitos") on one line in a
-            // ~45 px cell instead of breaking it mid-word.
-            preview.names,
-            style: theme.textTheme.labelSmall?.copyWith(
-              fontSize: 9,
-              letterSpacing: -0.1,
-              fontWeight: FontWeight.w500,
-              height: 1.1,
-              color: nameColor,
-            ),
-          ),
-        ],
       ),
     );
   }

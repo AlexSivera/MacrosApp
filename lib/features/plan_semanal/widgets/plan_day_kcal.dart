@@ -6,16 +6,13 @@ import '../../../data/database/daos/meal_plan_dao.dart';
 import '../../diario/providers/diary_providers.dart';
 import '../providers/meal_plan_providers.dart';
 
-// A day's total kcal in the Plan's calendar views (planned and eaten alike),
+// A day's total kcal in the Plan's week agenda (planned and eaten alike),
 // in the over-target red once it passes the daily goal — so a week can be
-// balanced at a glance without opening each day. Compact is the month
-// grid's bare number; otherwise "1850 / 2240 kcal".
+// balanced at a glance without opening each day.
 class PlanDayKcal extends ConsumerWidget {
-  const PlanDayKcal({super.key, required this.entries, this.compact = false, this.dimmed = false});
+  const PlanDayKcal({super.key, required this.entries});
 
   final List<MealPlanEntryDisplay> entries;
-  final bool compact;
-  final bool dimmed;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,19 +22,13 @@ class PlanDayKcal extends ConsumerWidget {
     final kcal = total.kcal.round();
     final target = ref.watch(resolvedTargetsProvider).calorieTarget;
     final over = target > 0 && kcal > target;
-    var color = over ? AppTheme.statusOverTarget : theme.colorScheme.onSurfaceVariant;
-    if (dimmed) color = color.withValues(alpha: 0.4);
-
-    if (compact) {
-      return Text(
-        '$kcal',
-        maxLines: 1,
-        style: theme.textTheme.labelSmall?.copyWith(fontSize: 10, height: 1.1, color: color),
-      );
-    }
     return Text(
-      target > 0 ? '$kcal / $target kcal' : '$kcal kcal',
-      style: theme.textTheme.labelLarge?.copyWith(color: color),
+      '$kcal',
+      maxLines: 1,
+      style: theme.textTheme.labelSmall?.copyWith(
+        height: 1.1,
+        color: over ? AppTheme.statusOverTarget : theme.colorScheme.onSurfaceVariant,
+      ),
     );
   }
 }

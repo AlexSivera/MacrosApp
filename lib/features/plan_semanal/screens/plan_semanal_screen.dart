@@ -7,11 +7,10 @@ import '../providers/meal_plan_providers.dart';
 import '../widgets/plan_month_calendar.dart';
 import '../widgets/plan_week_view.dart';
 
-// The Plan semanal tab's landing screen: a month calendar by default, or a
-// full-width week list — the month grid's cells are too small to read what
-// a whole week looks like at a glance, so the toggle trades "whole month"
-// for "this week, in enough detail to actually plan it". Tapping a day in
-// either view pushes PlanDayScreen for that date.
+// The Plan semanal tab's landing screen: the week as a compact agenda by
+// default (what's eaten each day, all seven at a glance), or a month grid
+// for navigating further out, with the picked week's agenda under it.
+// Tapping a day in the agenda pushes PlanDayScreen for that date.
 class PlanSemanalScreen extends ConsumerWidget {
   const PlanSemanalScreen({super.key});
 
