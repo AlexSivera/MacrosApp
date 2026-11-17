@@ -418,6 +418,9 @@ const foodSeedData = <FoodSeed>[
   FoodSeed(category: FoodCategory.lacteo, name: 'Queso rallado para fundir', kcalPer100g: 284, proteinPer100g: 19, carbsPer100g: 7, fatPer100g: 20),
   FoodSeed(category: FoodCategory.lacteo, name: 'Queso fresco de Burgos', kcalPer100g: 150, proteinPer100g: 10.3, carbsPer100g: 3.7, fatPer100g: 10.4),
   FoodSeed(category: FoodCategory.lacteo, name: 'Queso fresco de Burgos 0%', kcalPer100g: 67, proteinPer100g: 12, carbsPer100g: 3.9, fatPer100g: 0.4),
+  FoodSeed(category: FoodCategory.lacteo, name: 'Queso en lonchas cremoso light', kcalPer100g: 267, proteinPer100g: 27, carbsPer100g: 1.6, fatPer100g: 17),
+  FoodSeed(category: FoodCategory.lacteo, name: 'Proteína en polvo chocolate blanco', kcalPer100g: 366, proteinPer100g: 78, carbsPer100g: 6.2, fatPer100g: 3.3, defaultServingGrams: 30, servingLabel: '1 cacito (70ml) ≈ 30g'),
+  FoodSeed(category: FoodCategory.lacteo, name: 'Proteína en polvo Kinder', kcalPer100g: 394, proteinPer100g: 79, carbsPer100g: 5.6, fatPer100g: 6.2, defaultServingGrams: 30, servingLabel: '1 cacito (70ml) ≈ 30g'),
 
   // Huevos
   FoodSeed(category: FoodCategory.huevo, name: 'Huevo', kcalPer100g: 150, proteinPer100g: 12.5, carbsPer100g: 0.5, fatPer100g: 11.1, defaultServingGrams: 50, servingLabel: '1 huevo ≈ 50g'),
