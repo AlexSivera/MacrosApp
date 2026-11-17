@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../../services/nutrition_engine/food_macros_calculator.dart';
 import '../../../services/nutrition_engine/meal_plan_macros_calculator.dart';
 import '../app_database.dart';
 import '../tables/foods_table.dart';
@@ -110,6 +111,43 @@ class MealPlanDao extends DatabaseAccessor<AppDatabase> with _$MealPlanDaoMixin 
     return id;
   }
 
+  // "Entrada rápida": a dish logged straight as kcal/macros (e.g. an
+  // estimate from a photo) with no food or recipe behind it. Its "snapshot"
+  // columns are the only source of its macros, planned or eaten — see
+  // isQuickEntry().
+  Future<int> addQuick({
+    required DateTime date,
+    required MealType mealType,
+    required String label,
+    required FoodMacros macros,
+    required int orderIndex,
+    bool eaten = true,
+  }) {
+    return into(mealPlanEntries).insert(MealPlanEntriesCompanion.insert(
+      date: normalizeDate(date),
+      mealType: mealType,
+      orderIndex: orderIndex,
+      isEaten: Value(eaten),
+      kcal: Value(macros.kcal),
+      proteinG: Value(macros.proteinG),
+      carbsG: Value(macros.carbsG),
+      fatG: Value(macros.fatG),
+      labelSnapshot: Value(label),
+    ));
+  }
+
+  Future<void> updateQuick(int entryId, {required String label, required FoodMacros macros}) async {
+    await (update(mealPlanEntries)..where((e) => e.id.equals(entryId))).write(
+      MealPlanEntriesCompanion(
+        kcal: Value(macros.kcal),
+        proteinG: Value(macros.proteinG),
+        carbsG: Value(macros.carbsG),
+        fatG: Value(macros.fatG),
+        labelSnapshot: Value(label),
+      ),
+    );
+  }
+
   // Freezes the entry's current live macros and name onto it — from here
   // on, edits to the underlying food/recipe no longer change this entry.
   Future<void> markEaten(int entryId) async {
@@ -142,8 +180,15 @@ class MealPlanDao extends DatabaseAccessor<AppDatabase> with _$MealPlanDaoMixin 
     );
   }
 
-  // Back to "planned": drops the snapshot so it tracks the live food again.
+  // Back to "planned": drops the snapshot so it tracks the live food again —
+  // unless there's no food/recipe to track, where the snapshot is all of it.
   Future<void> markPlanned(int entryId) async {
+    final entry = await getById(entryId);
+    if (entry != null && isQuickEntry(entry)) {
+      await (update(mealPlanEntries)..where((e) => e.id.equals(entryId)))
+          .write(const MealPlanEntriesCompanion(isEaten: Value(false)));
+      return;
+    }
     await (update(mealPlanEntries)..where((e) => e.id.equals(entryId))).write(
       const MealPlanEntriesCompanion(
         isEaten: Value(false),
@@ -269,6 +314,18 @@ class MealPlanDao extends DatabaseAccessor<AppDatabase> with _$MealPlanDaoMixin 
     var copied = 0;
     await transaction(() async {
       for (final entry in source) {
+        if (isQuickEntry(entry)) {
+          await addQuick(
+            date: toDate,
+            mealType: mealType,
+            label: entry.labelSnapshot ?? 'Entrada rápida',
+            macros: storedEntryMacros(entry),
+            orderIndex: orderIndex++,
+            eaten: eaten,
+          );
+          copied++;
+          continue;
+        }
         if (entry.foodId == null && entry.recipeId == null) continue;
         final id = await into(mealPlanEntries).insert(MealPlanEntriesCompanion.insert(
           date: normalizeDate(toDate),

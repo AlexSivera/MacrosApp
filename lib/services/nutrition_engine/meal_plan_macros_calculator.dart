@@ -2,16 +2,27 @@ import '../../data/database/app_database.dart';
 import 'food_macros_calculator.dart';
 import 'recipe_macros_calculator.dart';
 
+// An "Entrada rápida" (MealPlanDao.addQuick): macros typed in directly,
+// with no food or recipe behind them, so the stored kcal/P/C/G are its only
+// macros whether it's planned or eaten. Also true of an eaten entry whose
+// food was deleted and its FK nulled — for which treating the snapshot as
+// the macros is exactly right too.
+bool isQuickEntry(MealPlanEntry entry) =>
+    entry.foodId == null && entry.recipeId == null && entry.kcal != null;
+
+FoodMacros storedEntryMacros(MealPlanEntry entry) => FoodMacros(
+      kcal: entry.kcal ?? 0,
+      proteinG: entry.proteinG ?? 0,
+      carbsG: entry.carbsG ?? 0,
+      fatG: entry.fatG ?? 0,
+    );
+
 // The macros frozen on an eaten entry (see meal_plan_entries_table.dart),
 // or null for a planned entry — which resolves live instead.
 FoodMacros? snapshotMacros(MealPlanEntry entry) {
+  if (isQuickEntry(entry)) return storedEntryMacros(entry);
   if (!entry.isEaten || entry.kcal == null) return null;
-  return FoodMacros(
-    kcal: entry.kcal!,
-    proteinG: entry.proteinG ?? 0,
-    carbsG: entry.carbsG ?? 0,
-    fatG: entry.fatG ?? 0,
-  );
+  return storedEntryMacros(entry);
 }
 
 // Resolves a MealPlanEntry's macros: an eaten entry's snapshot when it has

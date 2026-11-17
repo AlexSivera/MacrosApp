@@ -13,6 +13,7 @@ import '../../../data/database/database_provider.dart';
 import '../../../data/database/enums.dart';
 import '../../diario/widgets/add_entry_options_sheet.dart';
 import '../../diario/widgets/food_search_sheet.dart';
+import '../../diario/widgets/quick_entry_sheet.dart';
 import '../../diario/widgets/save_meal_as_recipe_sheet.dart';
 import '../providers/meal_plan_providers.dart';
 import 'plan_entry_tile.dart';
@@ -170,6 +171,8 @@ class PlanMealSectionCard extends ConsumerWidget {
         }
       case AddEntryAction.recipe:
         await PlanRecipePickerSheet.show(context, date: date, mealType: mealType, eaten: diaryMode);
+      case AddEntryAction.quick:
+        await QuickEntrySheet.showAdd(context, date: date, mealType: mealType, eaten: diaryMode);
     }
   }
 }

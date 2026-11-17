@@ -14,7 +14,7 @@ import '../../../data/database/enums.dart';
 // the one already at the bottom of FoodSearchSheet (reached via "Añadir
 // alimento" → buscar → sin resultados), which is where it belongs since you
 // always land there right after confirming a search has nothing to offer.
-enum AddEntryAction { food, recipe }
+enum AddEntryAction { food, recipe, quick }
 
 // The fast add-entry entry point tapped from a meal section's "+ Añadir",
 // titled with the meal being filled.
@@ -54,6 +54,12 @@ class AddEntryOptionsSheet extends StatelessWidget {
               title: const Text('Añadir receta'),
               subtitle: const Text('Tus recetas y comidas guardadas'),
               onTap: () => Navigator.of(context).pop(AddEntryAction.recipe),
+            ),
+            ListTile(
+              leading: const Icon(Icons.bolt_outlined),
+              title: const Text('Entrada rápida'),
+              subtitle: const Text('Solo kcal y macros, p. ej. lo que te diga ChatGPT de una foto'),
+              onTap: () => Navigator.of(context).pop(AddEntryAction.quick),
             ),
           ],
         ),

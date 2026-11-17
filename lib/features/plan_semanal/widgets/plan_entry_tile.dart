@@ -7,6 +7,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../data/database/daos/meal_plan_dao.dart';
 import '../../../data/database/database_provider.dart';
 import '../../../services/nutrition_engine/meal_plan_macros_calculator.dart';
+import '../../diario/widgets/quick_entry_sheet.dart';
 import '../providers/meal_plan_providers.dart';
 import 'plan_food_quantity_sheet.dart';
 import 'plan_move_entry_sheet.dart';
@@ -23,7 +24,9 @@ class PlanEntryTile extends ConsumerWidget {
   String _subtitle() {
     final entry = display.entry;
     var quantity = '';
-    if (entry.quantityGrams != null && entry.recipeId == null) {
+    if (isQuickEntry(entry)) {
+      quantity = quickEntrySubtitle(entry);
+    } else if (entry.quantityGrams != null && entry.recipeId == null) {
       quantity = '${entry.quantityGrams!.round()} g';
     } else if (entry.servings != null) {
       final s = entry.servings!;
@@ -120,7 +123,10 @@ class PlanEntryTile extends ConsumerWidget {
                       value: entry.isEaten ? 'planned' : 'eaten',
                       child: Text(entry.isEaten ? 'Marcar como no comido' : 'Marcar como comido'),
                     ),
-                    const PopupMenuItem(value: 'edit', child: Text('Editar cantidad')),
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Text(isQuickEntry(entry) ? 'Editar macros' : 'Editar cantidad'),
+                    ),
                     const PopupMenuItem(value: 'move', child: Text('Mover')),
                     const PopupMenuItem(value: 'delete', child: Text('Eliminar')),
                   ],
@@ -160,7 +166,9 @@ class PlanEntryTile extends ConsumerWidget {
       case 'planned':
         await db.mealPlanDao.markPlanned(entry.id);
       case 'edit':
-        if (entry.recipeId != null) {
+        if (isQuickEntry(entry)) {
+          if (context.mounted) await QuickEntrySheet.showEdit(context, entry: entry);
+        } else if (entry.recipeId != null) {
           final recipe = await db.recipesDao.getById(entry.recipeId!);
           if (recipe != null && context.mounted) {
             await PlanRecipeQuantitySheet.showEdit(context, recipe: recipe, entry: entry);
